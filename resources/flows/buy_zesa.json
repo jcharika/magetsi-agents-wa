@@ -1,0 +1,106 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+  "screens": [
+    {
+      "id": "BUY_ZESA_SCREEN",
+      "terminal": true,
+      "title": "Buy ZESA Tokens",
+      "data": {
+        "quick_amounts": {
+          "type": "array",
+          "items": { "type": "number" },
+          "__example__": [100, 200, 300, 500]
+        },
+        "currency": {
+          "type": "string",
+          "__example__": "ZWG"
+        },
+        "min_amount": {
+          "type": "number",
+          "__example__": 100
+        },
+        "ecocash_number": {
+          "type": "string",
+          "__example__": "0771234567"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "Enter your meter and payment details below."
+          },
+          {
+            "type": "TextInput",
+            "name": "meter_number",
+            "label": "Meter Number",
+            "input-type": "number",
+            "required": true,
+            "helper-text": "Enter your 11-digit ZESA meter number"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Select Amount"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "amount",
+            "label": "Quick Amounts",
+            "required": true,
+            "data-source": [
+              { "id": "100", "title": "ZWG 100" },
+              { "id": "200", "title": "ZWG 200" },
+              { "id": "300", "title": "ZWG 300" },
+              { "id": "500", "title": "ZWG 500" },
+              { "id": "other", "title": "Other Amount" }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "name": "custom_amount",
+            "label": "Custom Amount (ZWG)",
+            "input-type": "number",
+            "required": false,
+            "helper-text": "Enter amount if you selected 'Other'"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Payment Details"
+          },
+          {
+            "type": "TextInput",
+            "name": "ecocash_number",
+            "label": "EcoCash Number",
+            "input-type": "phone",
+            "required": true,
+            "helper-text": "Payment will be deducted from this number"
+          },
+          {
+            "type": "TextInput",
+            "name": "recipient_phone",
+            "label": "Send Token To (Optional)",
+            "input-type": "phone",
+            "required": false,
+            "helper-text": "Customer phone for SMS token delivery"
+          },
+          {
+            "type": "Footer",
+            "label": "⚡ Submit Transaction",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "meter_number": "${form.meter_number}",
+                "amount": "${form.amount}",
+                "custom_amount": "${form.custom_amount}",
+                "ecocash_number": "${form.ecocash_number}",
+                "recipient_phone": "${form.recipient_phone}"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
