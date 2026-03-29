@@ -1,55 +1,14 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Conversation;
 
 use App\Models\Agent;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class ConversationHandler
+trait ZesaConversationHandler
 {
-    protected WhatsAppService $whatsapp;
-    protected MeterValidationService $meterService;
-    protected MagetsiApiService $magetsi;
-
-    public function __construct(WhatsAppService $whatsapp, MeterValidationService $meterService, MagetsiApiService $magetsi)
-    {
-        $this->whatsapp = $whatsapp;
-        $this->meterService = $meterService;
-        $this->magetsi = $magetsi;
-    }
-
-    /**
-     * Find or create an agent from a WhatsApp message.
-     */
-    public function resolveAgent(string $waId, ?string $name = null): Agent
-    {
-        return Agent::query()->firstOrCreate(
-            ['wa_id' => $waId],
-            [
-                'name' => $name ?? 'Agent',
-                'phone' => $waId,
-            ]
-        );
-    }
-
-    /**
-     * Send the welcome message with interactive buttons.
-     */
-    public function sendWelcome(Agent $agent): void
-    {
-        $this->whatsapp->sendInteractiveButtons(
-            $agent->wa_id,
-            "👋 Welcome back, *{$agent->name}*!\nUse the buttons below to buy ZESA or update your settings.",
-            [
-                ['id' => 'buy_zesa', 'title' => '⚡ Buy ZESA'],
-                ['id' => 'settings', 'title' => '⚙️ Settings'],
-            ],
-            'Magetsi Agents'
-        );
-    }
-
     /**
      * Launch the Buy ZESA flow.
      */
@@ -81,47 +40,6 @@ class ConversationHandler
                 'ecocash_number' => $agent->ecocash_number ?? '',
             ],
             '⚡ Buy ZESA'
-        );
-    }
-
-    /**
-     * Launch the Settings flow.
-     */
-    public function launchSettingsFlow(Agent $agent): void
-    {
-        $flowId = config('whatsapp.flows.settings');
-
-        if (! $flowId) {
-            $product = $agent->getProductOrDefault('zesa');
-            $amounts = implode(', ', $product['quick_amounts']);
-
-            $this->whatsapp->sendTextMessage(
-                $agent->wa_id,
-                "⚙️ *Your Settings*\n\n"
-                . "EcoCash: {$agent->ecocash_number}\n"
-                . "Quick Amounts: {$amounts}\n\n"
-                . "To update your settings, please use the settings flow when configured."
-            );
-            return;
-        }
-
-        $product = $agent->getProductOrDefault('zesa');
-        $flowToken = $agent->wa_id . ':settings:' . Str::uuid()->toString();
-
-        // Use data_exchange flow_action so data comes from our endpoint
-        $this->whatsapp->sendFlow(
-            $agent->wa_id,
-            $flowId,
-            $flowToken,
-            'SETTINGS_SCREEN',
-            [
-                'ecocash_number' => $agent->ecocash_number ?? '',
-                'amount_1' => (string) ($product['quick_amounts'][0] ?? 100),
-                'amount_2' => (string) ($product['quick_amounts'][1] ?? 200),
-                'amount_3' => (string) ($product['quick_amounts'][2] ?? 300),
-                'amount_4' => (string) ($product['quick_amounts'][3] ?? 500),
-            ],
-            '⚙️ Settings'
         );
     }
 
@@ -276,98 +194,5 @@ class ConversationHandler
                 ['id' => 'settings', 'title' => '⚙️ Settings'],
             ]
         );
-    }
-
-    /**
-     * Process a completed settings flow.
-     */
-    public function handleSettingsUpdate(Agent $agent, array $data): void
-    {
-        Log::info('Updating settings', ['agent' => $agent->id, 'data' => $data]);
-
-        if (isset($data['ecocash_number']) && $data['ecocash_number']) {
-            $agent->update(['ecocash_number' => $data['ecocash_number']]);
-        }
-
-        $amounts = array_filter([
-            $data['amount_1'] ?? null,
-            $data['amount_2'] ?? null,
-            $data['amount_3'] ?? null,
-            $data['amount_4'] ?? null,
-        ]);
-
-        if (count($amounts) === 4) {
-            $agent->products()->updateOrCreate(
-                ['product_id' => 'zesa'],
-                [
-                    'label' => 'ZESA Tokens',
-                    'icon' => '⚡',
-                    'currency' => 'ZWG',
-                    'min_amount' => 100,
-                    'quick_amounts' => array_map('intval', $amounts),
-                ]
-            );
-        }
-
-        $this->whatsapp->sendInteractiveButtons(
-            $agent->wa_id,
-            "✅ *Settings Saved!*\n\nYour preferences have been updated.",
-            [
-                ['id' => 'buy_zesa', 'title' => '⚡ Buy ZESA'],
-                ['id' => 'settings', 'title' => '⚙️ Settings'],
-            ]
-        );
-    }
-
-    /**
-     * Handle a text message from the agent.
-     */
-    public function handleTextMessage(Agent $agent, string $text): void
-    {
-        $normalized = strtolower(trim($text));
-
-        if (in_array($normalized, ['hi', 'hello', 'hey', 'start', 'menu'])) {
-            $this->sendWelcome($agent);
-            return;
-        }
-
-        // Check if it looks like a meter number (11 digits)
-        if (preg_match('/^\d{11}$/', $normalized)) {
-            $result = $this->meterService->validate($normalized);
-
-            if ($result['valid']) {
-                $this->whatsapp->sendTextMessage(
-                    $agent->wa_id,
-                    "✅ *Meter Found*\n\n"
-                    . "Name: {$result['name']}\n"
-                    . "Address: {$result['address']}\n"
-                    . "Currency: {$result['currency']}\n\n"
-                    . "Use the *Buy ZESA* button to purchase tokens."
-                );
-            } else {
-                $this->whatsapp->sendTextMessage(
-                    $agent->wa_id,
-                    "❌ {$result['error']}"
-                );
-            }
-
-            $this->sendWelcome($agent);
-            return;
-        }
-
-        // Default: show welcome
-        $this->sendWelcome($agent);
-    }
-
-    /**
-     * Handle an interactive button reply.
-     */
-    public function handleButtonReply(Agent $agent, string $buttonId): void
-    {
-        match ($buttonId) {
-            'buy_zesa' => $this->launchBuyZesaFlow($agent),
-            'settings' => $this->launchSettingsFlow($agent),
-            default => $this->sendWelcome($agent),
-        };
     }
 }

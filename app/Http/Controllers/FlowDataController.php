@@ -30,7 +30,7 @@ class FlowDataController extends Controller
     /**
      * Handle incoming encrypted flow data exchange request.
      */
-    public function handle(Request $request): Response
+    public function __invoke(Request $request): Response
     {
         $rawBody = $request->getContent();
 
