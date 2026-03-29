@@ -16,8 +16,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | WhatsApp Flows
+    | Meta App Secret (for signature verification)
     |--------------------------------------------------------------------------
+    */
+
+    'app_secret' => env('META_APP_SECRET'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | WhatsApp Flows Encryption
+    |--------------------------------------------------------------------------
+    |
+    | The private key is used to decrypt incoming flow data requests.
+    | The corresponding public key must be uploaded to Meta.
+    | See: docs/whatsapp-flows-setup.md
+    |
+    */
+
+    'flow_private_key_path' => env('WHATSAPP_FLOW_PRIVATE_KEY_PATH', base_path('private.pem')),
+    'flow_private_key' => env('WHATSAPP_FLOW_PRIVATE_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | WhatsApp Flow IDs
+    |--------------------------------------------------------------------------
+    |
+    | These are the Flow IDs from Meta WhatsApp Business Manager.
+    | Set after uploading and publishing flows.
+    |
     */
 
     'flows' => [

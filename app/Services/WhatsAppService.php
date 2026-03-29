@@ -92,6 +92,10 @@ class WhatsAppService
 
     /**
      * Send a WhatsApp Flow message.
+     *
+     * If $screenId is null, uses flow_action=data_exchange so WhatsApp
+     * fetches screen data from the configured endpoint.
+     * If $screenId is set, uses flow_action=navigate with inline data.
      */
     public function sendFlow(string $to, string $flowId, string $flowToken, ?string $screenId = null, ?array $data = null, string $ctaText = 'Open'): array
     {
@@ -107,6 +111,7 @@ class WhatsAppService
         ];
 
         if ($screenId) {
+            // Navigate mode — inline data, no endpoint call
             $flowAction['parameters']['flow_action'] = 'navigate';
             $flowAction['parameters']['flow_action_payload'] = [
                 'screen' => $screenId,
@@ -115,6 +120,9 @@ class WhatsAppService
             if ($data) {
                 $flowAction['parameters']['flow_action_payload']['data'] = $data;
             }
+        } else {
+            // Data exchange mode — endpoint provides screen data
+            $flowAction['parameters']['flow_action'] = 'data_exchange';
         }
 
         return $this->sendMessage($to, [
