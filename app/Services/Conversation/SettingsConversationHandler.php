@@ -10,6 +10,10 @@ trait SettingsConversationHandler
 {
     /**
      * Launch the Settings flow.
+     *
+     * Respects the WHATSAPP_FLOW_MODE setting:
+     *   - "interactive" → sends an interactive flow message with CTA
+     *   - "template"    → sends an approved template with FLOW button
      */
     public function launchSettingsFlow(Agent $agent): void
     {
@@ -31,22 +35,36 @@ trait SettingsConversationHandler
 
         $product = $agent->getProductOrDefault('zesa');
         $flowToken = $agent->wa_id . ':settings:' . Str::uuid()->toString();
+        $flowData = [
+            'ecocash_number' => $agent->ecocash_number ?? '',
+            'amount_1' => (string) ($product['quick_amounts'][0] ?? 100),
+            'amount_2' => (string) ($product['quick_amounts'][1] ?? 200),
+            'amount_3' => (string) ($product['quick_amounts'][2] ?? 300),
+            'amount_4' => (string) ($product['quick_amounts'][3] ?? 500),
+        ];
 
-        // Use data_exchange flow_action so data comes from our endpoint
-        $this->whatsapp->sendFlow(
-            $agent->wa_id,
-            $flowId,
-            $flowToken,
-            'SETTINGS_SCREEN',
-            [
-                'ecocash_number' => $agent->ecocash_number ?? '',
-                'amount_1' => (string) ($product['quick_amounts'][0] ?? 100),
-                'amount_2' => (string) ($product['quick_amounts'][1] ?? 200),
-                'amount_3' => (string) ($product['quick_amounts'][2] ?? 300),
-                'amount_4' => (string) ($product['quick_amounts'][3] ?? 500),
-            ],
-            '⚙️ Settings'
-        );
+        if (config('whatsapp.flow_mode') === 'template') {
+            // Template mode — business-initiated, requires approved template
+            $this->whatsapp->sendFlowTemplate(
+                to: $agent->wa_id,
+                templateName: config('whatsapp.flow_templates.settings', 'settings_flow'),
+                language: config('whatsapp.template_language', 'en'),
+                flowToken: $flowToken,
+                flowData: $flowData,
+                bodyParams: [$agent->name], // {{1}} = agent name
+            );
+        } else {
+            // Interactive mode — within 24h conversation window
+            $this->whatsapp->sendFlow(
+                $agent->wa_id,
+                $flowId,
+                $flowToken,
+                'SETTINGS_SCREEN',
+                $flowData,
+                '⚙️ Settings',
+                '⚙️ Settings — tap the button to update your preferences'
+            );
+        }
     }
 
     /**
@@ -80,13 +98,12 @@ trait SettingsConversationHandler
             );
         }
 
-        $this->whatsapp->sendInteractiveButtons(
+        $this->whatsapp->sendTextMessage(
             $agent->wa_id,
-            "✅ *Settings Saved!*\n\nYour preferences have been updated.",
-            [
-                ['id' => 'buy_zesa', 'title' => '⚡ Buy ZESA'],
-                ['id' => 'settings', 'title' => '⚙️ Settings'],
-            ]
+            "✅ *Settings Saved!*\n\nYour preferences have been updated."
         );
+
+        // Send the menu as direct flow CTAs
+        $this->launchBuyZesaFlow($agent);
     }
 }

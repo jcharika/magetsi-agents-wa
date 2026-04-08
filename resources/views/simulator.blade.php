@@ -179,6 +179,63 @@
         .reply-btns .rbtn:hover { background: #f0f2f5; }
         .reply-btns .rbtn:active { background: #e9edef; }
 
+        /* ── Flow CTA buttons ──────────────── */
+        .flow-cta-msg {
+            max-width: 65%;
+            align-self: flex-start;
+            margin-bottom: 2px;
+            animation: msgIn .25s ease;
+        }
+        .flow-cta-msg .cta-bubble {
+            background: #fff;
+            border-radius: 0 8px 8px 8px;
+            box-shadow: 0 1px .5px rgba(11,20,26,.13);
+            overflow: hidden;
+        }
+        .flow-cta-msg.tail::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -8px;
+            border-right: 8px solid #fff;
+            border-bottom: 13px solid transparent;
+        }
+        .flow-cta-msg .cta-body {
+            padding: 6px 9px 4px;
+            font-size: 14.2px;
+            line-height: 19px;
+            color: #111b21;
+        }
+        .flow-cta-msg .cta-body .meta {
+            float: right;
+            margin: -2px 0 -5px 12px;
+            font-size: 11px;
+            color: rgba(17,27,33,.45);
+            padding-top: 3px;
+        }
+        .flow-cta-msg .cta-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border: none;
+            border-top: 1px solid #e9edef;
+            background: #fff;
+            color: #00a884;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            font-family: inherit;
+            transition: background .1s;
+        }
+        .flow-cta-msg .cta-btn:hover { background: #f0f2f5; }
+        .flow-cta-msg .cta-btn:active { background: #e9edef; }
+        .flow-cta-msg .cta-btn svg {
+            width: 16px; height: 16px;
+            flex-shrink: 0;
+        }
+
         /* ── Success card ───────────────────── */
         .success-msg {
             max-width: 65%;
@@ -516,7 +573,7 @@ function renderMessages(messages) {
                 if (msg.text) addBubble(fmt(msg.text), 'in');
                 addReplyButtons(msg.buttons);
                 break;
-            case 'flow': openFlow(msg.flow_id); break;
+            case 'flow': addFlowCta(msg); break;
             case 'success': addSuccessCard(msg); break;
         }
     }
@@ -551,6 +608,25 @@ function addReplyButtons(buttons) {
         btn.onclick = () => handleButton(b.id, b.title);
         d.appendChild(btn);
     });
+    chat.appendChild(d);
+    scroll();
+}
+
+function addFlowCta(msg) {
+    const showTail = lastSender !== 'in';
+    lastSender = 'in';
+    const d = document.createElement('div');
+    d.className = `flow-cta-msg${showTail ? ' tail' : ''}`;
+    const bodyText = msg.text ? fmt(msg.text) : '';
+    const ctaLabel = msg.cta || msg.flow_id.replace(/_/g, ' ');
+
+    d.innerHTML = `<div class="cta-bubble">
+        ${bodyText ? `<div class="cta-body">${bodyText}<span class="meta">${now()}</span></div>` : ''}
+        <button class="cta-btn" onclick="openFlow('${esc(msg.flow_id)}')">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 7h-8v6H5v-4L1 13l4 4v-4h8v6h6V7zm0 10h-6V9h6v8z"/></svg>
+            ${esc(ctaLabel)}
+        </button>
+    </div>`;
     chat.appendChild(d);
     scroll();
 }

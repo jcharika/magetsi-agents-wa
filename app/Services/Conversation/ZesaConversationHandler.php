@@ -11,6 +11,10 @@ trait ZesaConversationHandler
 {
     /**
      * Launch the Buy ZESA flow.
+     *
+     * Respects the WHATSAPP_FLOW_MODE setting:
+     *   - "interactive" → sends an interactive flow message with CTA
+     *   - "template"    → sends an approved template with FLOW button
      */
     public function launchBuyZesaFlow(Agent $agent): void
     {
@@ -27,21 +31,34 @@ trait ZesaConversationHandler
 
         $product = $agent->getProductOrDefault('zesa');
         $flowToken = $agent->wa_id . ':buy_zesa:' . Str::uuid()->toString();
+        $flowData = [
+            'quick_amounts' => $product['quick_amounts'],
+            'min_amount' => $product['min_amount'],
+            'ecocash_number' => $agent->ecocash_number ?? '',
+        ];
 
-        // Use data_exchange flow_action so data comes from our endpoint
-        $this->whatsapp->sendFlow(
-            $agent->wa_id,
-            $flowId,
-            $flowToken,
-            'BUY_ZESA_SCREEN',
-            [
-                'quick_amounts' => $product['quick_amounts'],
-                'min_amount' => $product['min_amount'],
-                'ecocash_number' => $agent->ecocash_number ?? '',
-            ],
-            'Continue',
-            '⚡ Buy ZESA - to continue tap the button below'
-        );
+        if (config('whatsapp.flow_mode') === 'template') {
+            // Template mode — business-initiated, requires approved template
+            $this->whatsapp->sendFlowTemplate(
+                to: $agent->wa_id,
+                templateName: config('whatsapp.flow_templates.buy_zesa', 'buy_zesa_flow'),
+                language: config('whatsapp.template_language', 'en'),
+                flowToken: $flowToken,
+                flowData: $flowData,
+                bodyParams: [$agent->name], // {{1}} = agent name
+            );
+        } else {
+            // Interactive mode — within 24h conversation window
+            $this->whatsapp->sendFlow(
+                $agent->wa_id,
+                $flowId,
+                $flowToken,
+                'BUY_ZESA_SCREEN',
+                $flowData,
+                'Continue',
+                '⚡ Buy ZESA — tap the button below'
+            );
+        }
     }
 
     /**

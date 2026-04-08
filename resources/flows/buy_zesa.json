@@ -46,57 +46,34 @@
                         "name": "meter_number",
                         "label": "Meter Number",
                         "input-type": "number",
+                        "label-variant": "large",
                         "required": true,
                         "helper-text": "Enter your 11-digit ZESA meter number"
                     },
-                    {
-                        "type": "TextSubheading",
-                        "text": "Select Amount"
-                    },
-                    {
-                        "type": "RadioButtonsGroup",
-                        "name": "amount",
-                        "label": "Quick Amounts",
-                        "required": true,
-                        "on-select-action": {
-                            "name": "data_exchange",
-                            "payload": {
-                                "selected_amount": "${form.amount}"
-                            }
-                        },
-                        "data-source": [
-                            {"id": "100", "title": "ZWG 100"},
-                            {"id": "200", "title": "ZWG 200"},
-                            {"id": "300", "title": "ZWG 300"},
-                            {"id": "500", "title": "ZWG 500"},
-                            {"id": "other", "title": "Other Amount"}
-                        ]
-                    },
+
                     {
                         "type": "TextInput",
-                        "name": "custom_amount",
-                        "label": "Custom Amount (ZWG)",
+                        "name": "amount",
+                        "label": "Amount (ZWG)",
+                        "label-variant": "large",
                         "input-type": "number",
-                        "required": false,
-                        "visible": "${data.show_custom_amount}",
-                        "helper-text": "Enter your custom amount in ZWG"
-                    },
-                    {
-                        "type": "TextSubheading",
-                        "text": "Payment Details"
+                        "required": true
                     },
                     {
                         "type": "TextInput",
                         "name": "ecocash_number",
                         "label": "EcoCash Number",
+                        "label-variant": "large",
                         "input-type": "phone",
                         "required": true,
+                        "init-value": "${data.ecocash_number}",
                         "helper-text": "Payment will be deducted from this number"
                     },
                     {
                         "type": "TextInput",
                         "name": "recipient_phone",
                         "label": "Send Token To",
+                        "label-variant": "large",
                         "input-type": "phone",
                         "required": false,
                         "helper-text": "Customer phone for SMS token delivery"
@@ -109,7 +86,6 @@
                             "payload": {
                                 "meter_number": "${form.meter_number}",
                                 "amount": "${form.amount}",
-                                "custom_amount": "${form.custom_amount}",
                                 "ecocash_number": "${form.ecocash_number}",
                                 "recipient_phone": "${form.recipient_phone}"
                             }

@@ -91,7 +91,7 @@ class WhatsAppService
     }
 
     /**
-     * Send a WhatsApp Flow message.
+     * Send a WhatsApp Flow message (interactive CTA).
      *
      * If $screenId is null, uses flow_action=data_exchange so WhatsApp
      * fetches screen data from the configured endpoint.
@@ -133,6 +133,70 @@ class WhatsAppService
                     'text' => $message
                 ],
                 'action' => $flowAction,
+            ],
+        ]);
+    }
+
+    /**
+     * Send a message template with a FLOW button.
+     *
+     * Use this for business-initiated conversations (outside 24h window).
+     * The template must be pre-approved in Meta Business Suite with a
+     * FLOW button type attached.
+     *
+     * @param string      $to           Recipient WhatsApp ID
+     * @param string      $templateName Approved template name (e.g. "buy_zesa_flow")
+     * @param string      $language     Template language code (e.g. "en")
+     * @param string|null $flowToken    Flow token for session tracking
+     * @param array|null  $flowData     Initial data payload for the first screen
+     * @param array       $bodyParams   Template body parameter substitutions
+     */
+    public function sendFlowTemplate(
+        string $to,
+        string $templateName,
+        string $language = 'en',
+        ?string $flowToken = null,
+        ?array $flowData = null,
+        array $bodyParams = [],
+    ): array {
+        $components = [];
+
+        // Body parameters (template variable substitutions like {{1}})
+        if (! empty($bodyParams)) {
+            $components[] = [
+                'type' => 'body',
+                'parameters' => collect($bodyParams)->map(fn ($val) => [
+                    'type' => 'text',
+                    'text' => (string) $val,
+                ])->values()->toArray(),
+            ];
+        }
+
+        // Flow button component (always index 0 — the first button)
+        $flowComponent = [
+            'type' => 'button',
+            'sub_type' => 'flow',
+            'index' => '0',
+            'parameters' => [
+                [
+                    'type' => 'action',
+                    'action' => array_filter([
+                        'flow_token' => $flowToken ?? 'unused',
+                        'flow_action_data' => $flowData,
+                    ]),
+                ],
+            ],
+        ];
+        $components[] = $flowComponent;
+
+        return $this->sendMessage($to, [
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName,
+                'language' => [
+                    'code' => $language,
+                ],
+                'components' => $components,
             ],
         ]);
     }

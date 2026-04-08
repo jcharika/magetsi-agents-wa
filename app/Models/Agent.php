@@ -12,7 +12,32 @@ class Agent extends Model
         'phone',
         'ecocash_number',
         'wa_id',
+        'onboarded',
     ];
+
+    protected $casts = [
+        'onboarded' => 'boolean',
+    ];
+
+    /**
+     * Check if the agent still needs onboarding (name + ecocash).
+     */
+    public function needsOnboarding(): bool
+    {
+        return ! $this->onboarded;
+    }
+
+    /**
+     * Mark the agent as onboarded.
+     */
+    public function completeOnboarding(string $name, string $ecocashNumber): void
+    {
+        $this->update([
+            'name' => $name,
+            'ecocash_number' => $ecocashNumber,
+            'onboarded' => true,
+        ]);
+    }
 
     public function products(): HasMany
     {

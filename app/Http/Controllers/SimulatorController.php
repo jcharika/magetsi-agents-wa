@@ -29,20 +29,21 @@ class SimulatorController extends Controller
         $action = $request->input('action');
         $payload = $request->input('payload', []);
 
-        // Use the simulator agent — match by phone (same as the seeded agent)
+        // Use the simulator agent — new agents start un-onboarded
         $agent = Agent::firstOrCreate(
             ['phone' => '263771234567'],
             [
-                'name' => 'Tinashe',
+                'name' => 'Agent',
                 'wa_id' => '263771234567',
-                'ecocash_number' => '0771234567',
+                'onboarded' => false,
             ]
         );
 
         $product = $agent->getProductOrDefault('zesa');
 
         return match ($action) {
-            'start', 'text' => $this->handleText($agent, $payload['text'] ?? 'hi', $product),
+            'start' => $this->handleStart($agent),
+            'text' => $this->handleText($agent, $payload['text'] ?? 'hi', $product),
             'button' => $this->handleButton($agent, $payload['button_id'] ?? '', $product),
             'flow_complete' => $this->handleFlowComplete($agent, $payload),
             'validate_meter' => $this->handleMeterValidation($payload['meter_number'] ?? ''),
@@ -50,9 +51,38 @@ class SimulatorController extends Controller
         };
     }
 
+    /**
+     * Handle the initial 'start' action — triggers onboarding for new agents.
+     */
+    protected function handleStart(Agent $agent): JsonResponse
+    {
+        if ($agent->needsOnboarding()) {
+            return response()->json([
+                'messages' => [
+                    [
+                        'type' => 'text',
+                        'text' => "👋 *Welcome to Magetsi Agents!*\n\nBefore we get started, I need a few details.\n\nPlease type your *first name*:",
+                    ],
+                ],
+                'onboarding' => true,
+                'onboarding_step' => 'name',
+            ]);
+        }
+
+        return response()->json([
+            'messages' => $this->welcomeMessages($agent),
+        ]);
+    }
+
     protected function handleText(Agent $agent, string $text, array $product): JsonResponse
     {
-        $normalized = strtolower(trim($text));
+        $text = trim($text);
+        $normalized = strtolower($text);
+
+        // ── Onboarding flow ──
+        if ($agent->needsOnboarding()) {
+            return $this->handleOnboardingInput($agent, $text);
+        }
 
         // Check if it looks like a meter number
         if (preg_match('/^\d{11}$/', $normalized)) {
@@ -69,17 +99,81 @@ class SimulatorController extends Controller
                 $messages[] = ['type' => 'text', 'text' => "❌ {$result['error']}"];
             }
 
-            $messages[] = $this->welcomeMessage($agent);
+            array_push($messages, ...$this->welcomeMessages($agent));
             return response()->json(['messages' => $messages]);
         }
 
         return response()->json([
-            'messages' => [$this->welcomeMessage($agent)],
+            'messages' => $this->welcomeMessages($agent),
+        ]);
+    }
+
+    /**
+     * Handle onboarding text input in the simulator.
+     *
+     * Step 1: Collect first name
+     * Step 2: Collect EcoCash number
+     */
+    protected function handleOnboardingInput(Agent $agent, string $text): JsonResponse
+    {
+        // Step 1: Name (agent still has default name)
+        if ($agent->name === 'Agent' || $agent->name === $agent->wa_id) {
+            if (! preg_match('/^[a-zA-Z\s\-]{2,30}$/', $text)) {
+                return response()->json([
+                    'messages' => [
+                        ['type' => 'text', 'text' => "❌ That doesn't look like a name. Please type your *first name* (letters only):"]
+                    ],
+                    'onboarding' => true,
+                    'onboarding_step' => 'name',
+                ]);
+            }
+
+            $agent->update(['name' => ucfirst(strtolower($text))]);
+
+            return response()->json([
+                'messages' => [
+                    ['type' => 'text', 'text' => "Nice to meet you, *{$agent->name}*! 😊\n\nNow, please type your *EcoCash number* (e.g. 0771234567):"]
+                ],
+                'onboarding' => true,
+                'onboarding_step' => 'ecocash',
+            ]);
+        }
+
+        // Step 2: EcoCash number
+        $digits = preg_replace('/\D/', '', $text);
+
+        if (strlen($digits) < 10 || strlen($digits) > 12) {
+            return response()->json([
+                'messages' => [
+                    ['type' => 'text', 'text' => "❌ That doesn't look like a valid phone number.\nPlease type your *EcoCash number* (e.g. 0771234567):"]
+                ],
+                'onboarding' => true,
+                'onboarding_step' => 'ecocash',
+            ]);
+        }
+
+        // Normalize to local format
+        if (str_starts_with($digits, '263') && strlen($digits) > 9) {
+            $digits = '0' . substr($digits, 3);
+        }
+
+        $agent->completeOnboarding($agent->name, $digits);
+
+        return response()->json([
+            'messages' => [
+                ['type' => 'text', 'text' => "✅ *You're all set, {$agent->name}!*\n\nEcoCash: {$digits}\n\nYou can change these anytime from ⚙️ Settings."],
+                ...$this->welcomeMessages($agent),
+            ],
         ]);
     }
 
     protected function handleButton(Agent $agent, string $buttonId, array $product): JsonResponse
     {
+        // Block actions until onboarded
+        if ($agent->needsOnboarding()) {
+            return $this->handleStart($agent);
+        }
+
         // Map button IDs to flow file names
         $flowMap = [
             'buy_zesa' => 'buy_zesa',
@@ -100,7 +194,7 @@ class SimulatorController extends Controller
         }
 
         return response()->json([
-            'messages' => [$this->welcomeMessage($agent)],
+            'messages' => $this->welcomeMessages($agent),
         ]);
     }
 
@@ -120,7 +214,7 @@ class SimulatorController extends Controller
         // Load agent data for initial values
         $agent = Agent::firstOrCreate(
             ['phone' => '263771234567'],
-            ['name' => 'Tinashe', 'wa_id' => '263771234567', 'ecocash_number' => '0771234567']
+            ['name' => 'Agent', 'wa_id' => '263771234567', 'onboarded' => false]
         );
         $product = $agent->getProductOrDefault('zesa');
 
@@ -161,7 +255,7 @@ class SimulatorController extends Controller
             return $this->handleSettingsSave($agent, $data);
         }
 
-        return response()->json(['messages' => [$this->welcomeMessage($agent)]]);
+        return response()->json(['messages' => $this->welcomeMessages($agent)]);
     }
 
     /**
@@ -191,7 +285,7 @@ class SimulatorController extends Controller
             return response()->json([
                 'messages' => [
                     ['type' => 'text', 'text' => "❌ *Meter Validation Failed*\n\n{$meterResult['error']}"],
-                    $this->welcomeMessage($agent),
+                    ...$this->welcomeMessages($agent),
                 ],
             ]);
         }
@@ -215,7 +309,7 @@ class SimulatorController extends Controller
             return response()->json([
                 'messages' => [
                     ['type' => 'text', 'text' => "❌ *Transaction Failed*\n\n{$result['error']}"],
-                    $this->welcomeMessage($agent),
+                    ...$this->welcomeMessages($agent),
                 ],
             ]);
         }
@@ -278,14 +372,7 @@ class SimulatorController extends Controller
                     'data' => $successData,
                     'sms_note' => $smsNote,
                 ],
-                [
-                    'type' => 'buttons',
-                    'text' => '',
-                    'buttons' => [
-                        ['id' => 'buy_zesa', 'title' => '⚡ New Transaction'],
-                        ['id' => 'settings', 'title' => '⚙️ Settings'],
-                    ],
-                ],
+                ...$this->welcomeMessages($agent),
             ],
         ]);
     }
@@ -319,7 +406,7 @@ class SimulatorController extends Controller
         return response()->json([
             'messages' => [
                 ['type' => 'text', 'text' => "✅ *Settings Saved!*\n\nYour preferences have been updated."],
-                $this->welcomeMessage($agent),
+                ...$this->welcomeMessages($agent),
             ],
         ]);
     }
@@ -330,16 +417,16 @@ class SimulatorController extends Controller
         return response()->json($service->validate($meter));
     }
 
-    protected function welcomeMessage(Agent $agent): array
+    /**
+     * Build the welcome menu as flow CTA messages.
+     * Returns an array of messages that directly open the flows.
+     */
+    protected function welcomeMessages(Agent $agent): array
     {
         return [
-            'type' => 'buttons',
-            'text' => "👋 Welcome back, *{$agent->name}*!\nUse the buttons below to buy ZESA or update your settings.",
-            'header' => 'Magetsi Agents',
-            'buttons' => [
-                ['id' => 'buy_zesa', 'title' => '⚡ Buy ZESA'],
-                ['id' => 'settings', 'title' => '⚙️ Settings'],
-            ],
+            ['type' => 'text', 'text' => "👋 Hi *{$agent->name}*! What would you like to do?"],
+            ['type' => 'flow', 'flow_id' => 'buy_zesa', 'cta' => '⚡ Buy ZESA', 'text' => 'Purchase ZESA electricity tokens'],
+            ['type' => 'flow', 'flow_id' => 'settings', 'cta' => '⚙️ Settings', 'text' => 'Update your preferences'],
         ];
     }
 }

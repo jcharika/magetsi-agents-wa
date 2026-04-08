@@ -12,7 +12,7 @@ return [
     'verify_token' => env('WHATSAPP_VERIFY_TOKEN', 'magetsi_verify_token'),
     'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),
 
-    'api_url' => 'https://graph.facebook.com/v21.0',
+    'api_url' => 'https://graph.facebook.com/v25.0',
 
     /*
     |--------------------------------------------------------------------------
@@ -38,6 +38,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Flow Delivery Mode
+    |--------------------------------------------------------------------------
+    |
+    | How flows are sent to the user:
+    |
+    |   "interactive" — sends an interactive flow message with a CTA button.
+    |                    Works inside user-initiated conversations (24h window).
+    |                    No template approval needed.
+    |
+    |   "template"    — sends a pre-approved message template with a FLOW
+    |                    button. Works for business-initiated conversations
+    |                    (outside 24h window). Requires template approval.
+    |
+    */
+
+    'flow_mode' => env('WHATSAPP_FLOW_MODE', 'interactive'),
+
+    /*
+    |--------------------------------------------------------------------------
     | WhatsApp Flow IDs
     |--------------------------------------------------------------------------
     |
@@ -50,6 +69,27 @@ return [
         'buy_zesa' => env('WHATSAPP_BUY_ZESA_FLOW_ID'),
         'settings' => env('WHATSAPP_SETTINGS_FLOW_ID'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Flow Template Names
+    |--------------------------------------------------------------------------
+    |
+    | When flow_mode = "template", these are the approved template names
+    | that have a FLOW button attached. Each template must be created in
+    | Meta Business Suite with a FLOW button pointing to the correct flow.
+    |
+    | See: docs/whatsapp-flows-setup.md
+    |
+    */
+
+    'flow_templates' => [
+        'buy_zesa' => env('WHATSAPP_BUY_ZESA_TEMPLATE', 'buy_zesa_flow'),
+        'settings' => env('WHATSAPP_SETTINGS_TEMPLATE', 'settings_flow'),
+    ],
+
+    // Language code for templates (must match template creation language)
+    'template_language' => env('WHATSAPP_TEMPLATE_LANGUAGE', 'en'),
 
     /*
     |--------------------------------------------------------------------------
