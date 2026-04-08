@@ -39,18 +39,19 @@ trait ZesaConversationHandler
                 'min_amount' => $product['min_amount'],
                 'ecocash_number' => $agent->ecocash_number ?? '',
             ],
-            '⚡ Buy ZESA'
+            'Continue',
+            '⚡ Buy ZESA - to continue tap the button below'
         );
     }
 
     /**
-     * Process a completed ZESA purchase flow via Magetsi API.
+     * Process a completed ZESA purchase flow via active backend.
      *
-     * Flow: validate → confirm → process → notify
+     * Flow: validate → process → notify
      */
     public function handleZesaPurchase(Agent $agent, array $data): void
     {
-        Log::info('Processing ZESA purchase via Magetsi API', ['agent' => $agent->id, 'data' => $data]);
+        Log::info('Processing ZESA purchase', ['agent' => $agent->id, 'data' => $data, 'backend' => $this->backend->getBackendName()]);
 
         $meterNumber = $data['meter_number'] ?? '';
         $amount = $data['amount'] ?? $data['custom_amount'] ?? 0;
@@ -61,7 +62,7 @@ trait ZesaConversationHandler
         $ecocashNumber = $data['ecocash_number'] ?? $agent->ecocash_number;
         $recipientPhone = $data['recipient_phone'] ?? null;
 
-        // Step 1: Validate meter
+        // Step 1: Validate meter (backend-agnostic)
         $meterResult = $this->meterService->validate($meterNumber);
 
         if (! $meterResult['valid']) {
@@ -73,75 +74,33 @@ trait ZesaConversationHandler
             return;
         }
 
-        $trace = $meterResult['trace'];
+        // Step 2: Process transaction (backend-agnostic)
+        $result = $this->backend->processTransaction([
+            'meter_number' => $meterResult['meter_number'] ?? $meterNumber,
+            'amount' => $amount,
+            'currency' => $meterResult['currency'] ?? 'USD',
+            'ecocash_number' => $ecocashNumber,
+            'recipient_name' => $meterResult['name'],
+            'recipient_address' => $meterResult['address'],
+            'recipient_currency' => $meterResult['recipient_currency'] ?? $meterResult['currency'] ?? 'USD',
+            'trace' => $meterResult['trace'] ?? null,
+            'debit' => $meterResult['debit'] ?? [],
+            'guest_id' => "Agent {$agent->id}",
+            'recipient_phone' => $recipientPhone,
+        ]);
+
+        if (! $result['success']) {
+            $this->whatsapp->sendTextMessage(
+                $agent->wa_id,
+                "❌ *Transaction Failed*\n\n{$result['error']}"
+            );
+            $this->sendWelcome($agent);
+            return;
+        }
+
+        $txn = $result['transaction'] ?? [];
+        $confirmation = $result['confirmation'] ?? [];
         $currency = $meterResult['currency'] ?? 'USD';
-        $recipientName = $meterResult['name'];
-        $recipientAddress = $meterResult['address'];
-        $recipientCurrency = $meterResult['recipient_currency'] ?? $currency;
-
-        // Find EcoCash debit config
-        $ecocashConfig = collect($meterResult['debit'] ?? [])
-            ->firstWhere('handler', 'ECOCASH');
-
-        if (! $ecocashConfig) {
-            $this->whatsapp->sendTextMessage(
-                $agent->wa_id,
-                "❌ *Payment Error*\n\nEcoCash payment is not available for this meter."
-            );
-            $this->sendWelcome($agent);
-            return;
-        }
-
-        $payment = [$this->magetsi->buildEcocashPayment($ecocashNumber, $amount, $currency, $ecocashConfig)];
-        $guestId = "Agent {$agent->id}";
-
-        // Step 2: Confirm
-        $confirmation = $this->magetsi->confirm(
-            'ZESA', $trace, $meterNumber, $amount, $currency,
-            $recipientName, $recipientAddress, $recipientCurrency,
-            $payment, $guestId,
-            $recipientPhone ? ['recipient_phone' => $recipientPhone] : []
-        );
-
-        if (! $confirmation['success']) {
-            $this->whatsapp->sendTextMessage(
-                $agent->wa_id,
-                "❌ *Confirmation Failed*\n\n{$confirmation['error']}"
-            );
-            $this->sendWelcome($agent);
-            return;
-        }
-
-        // Step 3: Process
-        $confirmedPayment = $confirmation['payment'] ?? $payment;
-        $processPayment = [];
-        foreach ($confirmedPayment as $p) {
-            $processPayment[] = $this->magetsi->buildEcocashPayment(
-                $p['account'] ?? $ecocashNumber,
-                $p['amount'] ?? $amount,
-                $p['currency'] ?? $currency,
-                $ecocashConfig
-            );
-        }
-
-        $processResult = $this->magetsi->process(
-            'ZESA', $trace, $meterNumber, $amount, $currency,
-            $recipientName, $recipientAddress, $recipientCurrency,
-            $processPayment, $guestId,
-            $recipientPhone ? ['recipient_phone' => $recipientPhone] : []
-        );
-
-        if (! $processResult['success']) {
-            $this->whatsapp->sendTextMessage(
-                $agent->wa_id,
-                "❌ *Transaction Failed*\n\n{$processResult['error']}"
-            );
-            $this->sendWelcome($agent);
-            return;
-        }
-
-        $txn = $processResult['transaction'] ?? [];
-        $payments = $processResult['payments'] ?? [];
 
         // Store in local DB
         $transaction = Transaction::create([
@@ -149,42 +108,44 @@ trait ZesaConversationHandler
             'product_id' => 'zesa',
             'handler' => 'ZESA',
             'meter_number' => $meterNumber,
-            'customer_name' => $recipientName,
-            'customer_address' => $recipientAddress,
+            'customer_name' => $meterResult['name'],
+            'customer_address' => $meterResult['address'],
             'amount' => $amount,
             'currency' => $currency,
             'ecocash_number' => $ecocashNumber,
             'recipient_phone' => $recipientPhone,
             'status' => strtolower($txn['status'] ?? 'pending'),
-            'trace' => $trace,
+            'trace' => $meterResult['trace'] ?? null,
             'uid' => $txn['uid'] ?? null,
             'external_uid' => $txn['external_uid'] ?? null,
             'biller_status' => $txn['biller_status'] ?? null,
             'payment_status' => $txn['payment_status'] ?? null,
             'payment_amount' => $txn['payment_amount'] ?? null,
             'customer_reference' => $txn['customer_reference'] ?? null,
-            'reference' => $payments[0]['reference'] ?? $txn['uid'] ?? null,
-            'api_response' => $processResult,
+            'reference' => $txn['reference'] ?? $txn['uid'] ?? null,
+            'api_response' => $result['raw_response'] ?? $result,
         ]);
 
-        // Build response text with fee breakdown
+        // Build response text
         $statusText = ucfirst($txn['status'] ?? 'Processing');
-        $ref = $txn['customer_reference'] ?? $transaction->reference ?? '—';
+        $ref = $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—';
 
         $feeLines = '';
         foreach ($confirmation['amounts'] ?? [] as $amountInfo) {
-            if ($amountInfo['type'] !== 'principal') {
+            if (($amountInfo['type'] ?? '') !== 'principal') {
                 $feeLines .= "{$amountInfo['name']}: ({$amountInfo['currency']}) {$amountInfo['amount']}\n";
             }
         }
 
         $smsNote = $recipientPhone ? "\n📱 Token SMS will be sent to {$recipientPhone}" : '';
+        $backendLabel = ucfirst($this->backend->getBackendName());
 
         $this->whatsapp->sendInteractiveButtons(
             $agent->wa_id,
             "✅ *Transaction {$statusText}*\n\n"
+            . "Backend: {$backendLabel}\n"
             . "Meter: {$meterNumber}\n"
-            . "Customer: {$recipientName}\n"
+            . "Customer: {$meterResult['name']}\n"
             . "Amount: ({$currency}) {$amount}\n"
             . ($feeLines ? "{$feeLines}" : '')
             . "Ref: {$ref}"

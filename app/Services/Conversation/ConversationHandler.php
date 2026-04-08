@@ -3,9 +3,10 @@
 namespace App\Services\Conversation;
 
 use App\Models\Agent;
-use App\Services\MagetsiApiService;
+use App\Services\BackendManager;
 use App\Services\MeterValidationService;
 use App\Services\WhatsAppService;
+use Illuminate\Support\Str;
 
 class ConversationHandler
 {
@@ -14,13 +15,13 @@ class ConversationHandler
 
     protected WhatsAppService $whatsapp;
     protected MeterValidationService $meterService;
-    protected MagetsiApiService $magetsi;
+    protected BackendManager $backend;
 
-    public function __construct(WhatsAppService $whatsapp, MeterValidationService $meterService, MagetsiApiService $magetsi)
+    public function __construct(WhatsAppService $whatsapp, MeterValidationService $meterService, BackendManager $backend)
     {
         $this->whatsapp = $whatsapp;
         $this->meterService = $meterService;
-        $this->magetsi = $magetsi;
+        $this->backend = $backend;
     }
 
     /**
@@ -62,6 +63,16 @@ class ConversationHandler
 
         if (in_array($normalized, ['hi', 'hello', 'hey', 'start', 'menu'])) {
             $this->sendWelcome($agent);
+            return;
+        }
+
+        if(in_array($normalized, ['zesa'])) {
+            $this->launchBuyZesaFlow($agent);
+            return;
+        }
+
+        if(in_array($normalized, ['settings'])) {
+            $this->launchSettingsFlow($agent);
             return;
         }
 

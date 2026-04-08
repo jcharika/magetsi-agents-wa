@@ -2,16 +2,17 @@
 
 namespace App\Services;
 
+use App\Contracts\TransactionBackend;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Client for the Magetsi backend API.
+ * Client for the Magetsi backend API (new platform).
  *
  * Wraps the prepare → validate → confirm → process transaction lifecycle
  * as documented in api.md.
  */
-class MagetsiApiService
+class MagetsiApiService implements TransactionBackend
 {
     protected string $baseUrl;
     protected string $channel;
@@ -23,6 +24,125 @@ class MagetsiApiService
         $this->channel = config('magetsi.channel', 'AGENTS');
         $this->timeout = config('magetsi.timeout', 30);
     }
+
+    public function getBackendName(): string
+    {
+        return 'new';
+    }
+
+    // ── TransactionBackend interface ─────────────────
+
+    public function validateMeter(string $meterNumber): array
+    {
+        Log::info('[NewBackend] Validating meter', ['meter' => $meterNumber]);
+
+        $digits = preg_replace('/\D/', '', $meterNumber);
+
+        if (strlen($digits) !== 11) {
+            return ['valid' => false, 'error' => 'Meter number must be exactly 11 digits.'];
+        }
+
+        $prepare = $this->prepare('ZESA');
+        if (! $prepare['success']) {
+            return ['valid' => false, 'error' => $prepare['error'] ?? 'Service temporarily unavailable.'];
+        }
+
+        $trace = $prepare['trace'];
+        $validation = $this->validate('ZESA', $trace, $digits);
+
+        if (! $validation['success']) {
+            return ['valid' => false, 'error' => $validation['error'] ?? 'Meter not found.'];
+        }
+
+        return [
+            'valid' => true,
+            'name' => $validation['recipient_name'],
+            'address' => $validation['recipient_address'],
+            'meter_number' => $validation['biller_account'],
+            'currency' => $validation['currency'],
+            'recipient_currency' => $validation['recipient_currency'],
+            'trace' => $trace,
+            'debit' => $validation['debit'],
+        ];
+    }
+
+    public function processTransaction(array $params): array
+    {
+        Log::info('[NewBackend] Processing transaction', $params);
+
+        $meterNumber = $params['meter_number'];
+        $amount = (float) $params['amount'];
+        $currency = $params['currency'];
+        $ecocashNumber = $params['ecocash_number'];
+        $recipientName = $params['recipient_name'];
+        $recipientAddress = $params['recipient_address'];
+        $recipientCurrency = $params['recipient_currency'] ?? $currency;
+        $trace = $params['trace'];
+        $debit = $params['debit'] ?? [];
+        $guestId = $params['guest_id'] ?? '';
+
+        // Find EcoCash config
+        $ecocashConfig = collect($debit)->firstWhere('handler', 'ECOCASH');
+        if (! $ecocashConfig) {
+            return ['success' => false, 'error' => 'EcoCash payment not available for this meter.'];
+        }
+
+        $payment = [$this->buildEcocashPayment($ecocashNumber, $amount, $currency, $ecocashConfig)];
+
+        // Confirm
+        $confirmation = $this->confirm(
+            'ZESA', $trace, $meterNumber, $amount, $currency,
+            $recipientName, $recipientAddress, $recipientCurrency,
+            $payment, $guestId
+        );
+
+        if (! $confirmation['success']) {
+            return ['success' => false, 'error' => $confirmation['error'] ?? 'Confirmation failed.'];
+        }
+
+        // Process
+        $confirmedPayment = $confirmation['payment'] ?? $payment;
+        $processPayment = [];
+        foreach ($confirmedPayment as $p) {
+            $processPayment[] = $this->buildEcocashPayment(
+                $p['account'] ?? $ecocashNumber,
+                $p['amount'] ?? $amount,
+                $p['currency'] ?? $currency,
+                $ecocashConfig
+            );
+        }
+
+        $processResult = $this->process(
+            'ZESA', $trace, $meterNumber, $amount, $currency,
+            $recipientName, $recipientAddress, $recipientCurrency,
+            $processPayment, $guestId
+        );
+
+        if (! $processResult['success']) {
+            return ['success' => false, 'error' => $processResult['error'] ?? 'Processing failed.'];
+        }
+
+        $txn = $processResult['transaction'] ?? [];
+        $payments = $processResult['payments'] ?? [];
+
+        return [
+            'success' => true,
+            'transaction' => [
+                'status' => $txn['status'] ?? 'PENDING',
+                'uid' => $txn['uid'] ?? null,
+                'external_uid' => $txn['external_uid'] ?? null,
+                'customer_reference' => $txn['customer_reference'] ?? null,
+                'payment_amount' => $txn['payment_amount'] ?? null,
+                'biller_status' => $txn['biller_status'] ?? null,
+                'payment_status' => $txn['payment_status'] ?? null,
+                'reference' => $payments[0]['reference'] ?? $txn['uid'] ?? null,
+            ],
+            'confirmation' => $confirmation,
+            'raw_response' => $processResult,
+        ];
+    }
+
+    // ── Low-level API methods (unchanged) ────────────
 
     /**
      * Step 1: Prepare — get transaction type info, payment methods, and a trace ID.

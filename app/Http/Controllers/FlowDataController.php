@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agent;
+use App\Services\BackendManager;
 use App\Services\FlowEncryptionService;
-use App\Services\MagetsiApiService;
 use App\Services\MeterValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -24,7 +24,7 @@ class FlowDataController extends Controller
     public function __construct(
         protected FlowEncryptionService $encryption,
         protected MeterValidationService $meterService,
-        protected MagetsiApiService $magetsi,
+        protected BackendManager $backend,
     ) {}
 
     /**
@@ -281,7 +281,7 @@ class FlowDataController extends Controller
         $ecocashNumber = $data['ecocash_number'] ?? $agent->ecocash_number;
         $recipientPhone = $data['recipient_phone'] ?? null;
 
-        // Step 1: Validate meter (also gets trace)
+        // Step 1: Validate meter
         $meterResult = $this->meterService->validate($meterNumber);
         if (! $meterResult['valid']) {
             return [
@@ -292,76 +292,39 @@ class FlowDataController extends Controller
             ];
         }
 
-        $trace = $meterResult['trace'];
-        $currency = $meterResult['currency'] ?? 'USD';
-        $recipientName = $meterResult['name'];
-        $recipientAddress = $meterResult['address'];
-        $recipientCurrency = $meterResult['recipient_currency'] ?? $currency;
+        // Step 2: Process transaction (backend-agnostic)
+        $result = $this->backend->processTransaction([
+            'meter_number' => $meterResult['meter_number'] ?? $meterNumber,
+            'amount' => $amount,
+            'currency' => $meterResult['currency'] ?? 'USD',
+            'ecocash_number' => $ecocashNumber,
+            'recipient_name' => $meterResult['name'],
+            'recipient_address' => $meterResult['address'],
+            'recipient_currency' => $meterResult['recipient_currency'] ?? $meterResult['currency'] ?? 'USD',
+            'trace' => $meterResult['trace'] ?? null,
+            'debit' => $meterResult['debit'] ?? [],
+            'guest_id' => "Agent {$agent->id}",
+            'recipient_phone' => $recipientPhone,
+        ]);
 
-        // Find EcoCash config
-        $ecocashConfig = collect($meterResult['debit'] ?? [])
-            ->firstWhere('handler', 'ECOCASH');
-
-        if (! $ecocashConfig) {
+        if (! $result['success']) {
             return [
                 'screen' => 'BUY_ZESA_SCREEN',
-                'data' => ['error_message' => 'EcoCash payment not available for this meter.'],
+                'data' => ['error_message' => $result['error'] ?? 'Transaction processing failed.'],
             ];
         }
 
-        $payment = [$this->magetsi->buildEcocashPayment($ecocashNumber, $amount, $currency, $ecocashConfig)];
-        $guestId = "Agent {$agent->id}";
-
-        // Step 2: Confirm
-        $confirmation = $this->magetsi->confirm(
-            'ZESA', $trace, $meterNumber, $amount, $currency,
-            $recipientName, $recipientAddress, $recipientCurrency,
-            $payment, $guestId
-        );
-
-        if (! $confirmation['success']) {
-            return [
-                'screen' => 'BUY_ZESA_SCREEN',
-                'data' => ['error_message' => $confirmation['error'] ?? 'Transaction confirmation failed.'],
-            ];
-        }
-
-        // Step 3: Process
-        $confirmedPayment = $confirmation['payment'] ?? $payment;
-        $processPayment = [];
-        foreach ($confirmedPayment as $p) {
-            $processPayment[] = $this->magetsi->buildEcocashPayment(
-                $p['account'] ?? $ecocashNumber,
-                $p['amount'] ?? $amount,
-                $p['currency'] ?? $currency,
-                $ecocashConfig
-            );
-        }
-
-        $processResult = $this->magetsi->process(
-            'ZESA', $trace, $meterNumber, $amount, $currency,
-            $recipientName, $recipientAddress, $recipientCurrency,
-            $processPayment, $guestId
-        );
-
-        if (! $processResult['success']) {
-            return [
-                'screen' => 'BUY_ZESA_SCREEN',
-                'data' => ['error_message' => $processResult['error'] ?? 'Transaction processing failed.'],
-            ];
-        }
-
-        $txn = $processResult['transaction'] ?? [];
+        $txn = $result['transaction'] ?? [];
 
         // Return SUCCESS to end the flow
         return $this->buildSuccessResponse($flowToken, [
             'meter_number' => $meterNumber,
-            'customer_name' => $recipientName,
+            'customer_name' => $meterResult['name'],
             'amount' => $amount,
-            'currency' => $currency,
+            'currency' => $meterResult['currency'] ?? 'USD',
             'status' => $txn['status'] ?? 'PENDING',
-            'reference' => $txn['customer_reference'] ?? $txn['uid'] ?? '',
-            'trace' => $trace,
+            'reference' => $txn['customer_reference'] ?? $txn['reference'] ?? $txn['uid'] ?? '',
+            'trace' => $meterResult['trace'] ?? null,
         ]);
     }
 

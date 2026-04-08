@@ -97,7 +97,7 @@ class WhatsAppService
      * fetches screen data from the configured endpoint.
      * If $screenId is set, uses flow_action=navigate with inline data.
      */
-    public function sendFlow(string $to, string $flowId, string $flowToken, ?string $screenId = null, ?array $data = null, string $ctaText = 'Open'): array
+    public function sendFlow(string $to, string $flowId, string $flowToken, ?string $screenId = null, ?array $data = null, string $ctaText = 'Open', $message = 'Tap the button below to continue.'): array
     {
         $flowAction = [
             'name' => 'flow',
@@ -129,7 +129,9 @@ class WhatsAppService
             'type' => 'interactive',
             'interactive' => [
                 'type' => 'flow',
-                'body' => ['text' => 'Tap the button below to continue.'],
+                'body' => [
+                    'text' => $message
+                ],
                 'action' => $flowAction,
             ],
         ]);

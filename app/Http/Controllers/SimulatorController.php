@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Agent;
 use App\Models\Transaction;
-use App\Services\MagetsiApiService;
 use App\Services\MeterValidationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -168,11 +167,12 @@ class SimulatorController extends Controller
     /**
      * Full ZESA transaction pipeline using Magetsi API.
      *
-     * Flow: validate meter → confirm pricing → process transaction → store result
+     * Flow: validate meter → process transaction → store result.
+     * The active backend (new or legacy) handles the specifics.
      */
     protected function handleZesaTransaction(Agent $agent, array $data): JsonResponse
     {
-        $magetsi = app(MagetsiApiService::class);
+        $backend = app(\App\Services\BackendManager::class);
         $meterService = app(MeterValidationService::class);
 
         $meterNumber = $data['meter_number'] ?? '';
@@ -184,7 +184,7 @@ class SimulatorController extends Controller
         $ecocashNumber = $data['ecocash_number'] ?? $agent->ecocash_number;
         $recipientPhone = $data['recipient_phone'] ?? null;
 
-        // Step 1: Validate meter (this also calls prepare to get a trace)
+        // Step 1: Validate meter (backend-agnostic)
         $meterResult = $meterService->validate($meterNumber);
 
         if (! $meterResult['valid']) {
@@ -196,83 +196,33 @@ class SimulatorController extends Controller
             ]);
         }
 
-        $trace = $meterResult['trace'];
+        // Step 2: Process transaction (backend-agnostic)
+        $result = $backend->processTransaction([
+            'meter_number' => $meterResult['meter_number'] ?? $meterNumber,
+            'amount' => $amount,
+            'currency' => $meterResult['currency'] ?? 'USD',
+            'ecocash_number' => $ecocashNumber,
+            'recipient_name' => $meterResult['name'],
+            'recipient_address' => $meterResult['address'],
+            'recipient_currency' => $meterResult['recipient_currency'] ?? $meterResult['currency'] ?? 'USD',
+            'trace' => $meterResult['trace'] ?? null,
+            'debit' => $meterResult['debit'] ?? [],
+            'guest_id' => "Agent {$agent->id}",
+            'recipient_phone' => $recipientPhone,
+        ]);
+
+        if (! $result['success']) {
+            return response()->json([
+                'messages' => [
+                    ['type' => 'text', 'text' => "❌ *Transaction Failed*\n\n{$result['error']}"],
+                    $this->welcomeMessage($agent),
+                ],
+            ]);
+        }
+
+        $txn = $result['transaction'] ?? [];
+        $confirmation = $result['confirmation'] ?? [];
         $currency = $meterResult['currency'] ?? 'USD';
-        $recipientName = $meterResult['name'];
-        $recipientAddress = $meterResult['address'];
-        $recipientCurrency = $meterResult['recipient_currency'] ?? $currency;
-
-        // Find the EcoCash debit configuration from the validation response
-        $ecocashConfig = collect($meterResult['debit'] ?? [])
-            ->firstWhere('handler', 'ECOCASH');
-
-        if (! $ecocashConfig) {
-            return response()->json([
-                'messages' => [
-                    ['type' => 'text', 'text' => "❌ *Payment Error*\n\nEcoCash payment is not available for this meter. Please try again."],
-                    $this->welcomeMessage($agent),
-                ],
-            ]);
-        }
-
-        // Build payment payload
-        $payment = [$magetsi->buildEcocashPayment(
-            $ecocashNumber,
-            $amount,
-            $currency,
-            $ecocashConfig
-        )];
-
-        $guestId = "Agent {$agent->id}";
-
-        // Step 2: Confirm — get pricing breakdown
-        $confirmation = $magetsi->confirm(
-            'ZESA', $trace, $meterNumber, $amount, $currency,
-            $recipientName, $recipientAddress, $recipientCurrency,
-            $payment, $guestId,
-            $recipientPhone ? ['recipient_phone' => $recipientPhone] : []
-        );
-
-        if (! $confirmation['success']) {
-            return response()->json([
-                'messages' => [
-                    ['type' => 'text', 'text' => "❌ *Confirmation Failed*\n\n{$confirmation['error']}"],
-                    $this->welcomeMessage($agent),
-                ],
-            ]);
-        }
-
-        // Step 3: Process — execute the transaction
-        // Use the confirmed payment details (amount may have adjusted for fees)
-        $confirmedPayment = $confirmation['payment'] ?? $payment;
-        $processPayment = [];
-        foreach ($confirmedPayment as $p) {
-            $processPayment[] = $magetsi->buildEcocashPayment(
-                $p['account'] ?? $ecocashNumber,
-                $p['amount'] ?? $amount,
-                $p['currency'] ?? $currency,
-                $ecocashConfig
-            );
-        }
-
-        $processResult = $magetsi->process(
-            'ZESA', $trace, $meterNumber, $amount, $currency,
-            $recipientName, $recipientAddress, $recipientCurrency,
-            $processPayment, $guestId,
-            $recipientPhone ? ['recipient_phone' => $recipientPhone] : []
-        );
-
-        if (! $processResult['success']) {
-            return response()->json([
-                'messages' => [
-                    ['type' => 'text', 'text' => "❌ *Transaction Failed*\n\n{$processResult['error']}"],
-                    $this->welcomeMessage($agent),
-                ],
-            ]);
-        }
-
-        $txn = $processResult['transaction'] ?? [];
-        $payments = $processResult['payments'] ?? [];
 
         // Store in local DB
         $transaction = Transaction::create([
@@ -280,53 +230,44 @@ class SimulatorController extends Controller
             'product_id' => 'zesa',
             'handler' => 'ZESA',
             'meter_number' => $meterNumber,
-            'customer_name' => $recipientName,
-            'customer_address' => $recipientAddress,
+            'customer_name' => $meterResult['name'],
+            'customer_address' => $meterResult['address'],
             'amount' => $amount,
             'currency' => $currency,
             'ecocash_number' => $ecocashNumber,
             'recipient_phone' => $recipientPhone,
             'status' => strtolower($txn['status'] ?? 'pending'),
-            'trace' => $trace,
+            'trace' => $meterResult['trace'] ?? null,
             'uid' => $txn['uid'] ?? null,
             'external_uid' => $txn['external_uid'] ?? null,
             'biller_status' => $txn['biller_status'] ?? null,
             'payment_status' => $txn['payment_status'] ?? null,
             'payment_amount' => $txn['payment_amount'] ?? null,
             'customer_reference' => $txn['customer_reference'] ?? null,
-            'reference' => $payments[0]['reference'] ?? $txn['uid'] ?? null,
-            'api_response' => $processResult,
+            'reference' => $txn['reference'] ?? $txn['uid'] ?? null,
+            'api_response' => $result['raw_response'] ?? $result,
         ]);
-
-        // Build confirmation details for the chat card
-        $confirmationRows = [];
-        foreach ($confirmation['confirmation'] ?? [] as $key => $item) {
-            $confirmationRows[] = [
-                'label' => $item['name'],
-                'value' => $item['value'],
-                'highlight' => false,
-            ];
-        }
 
         // Build the success card data
         $successData = [
+            ['label' => 'Backend', 'value' => ucfirst($backend->getBackendName())],
             ['label' => 'Meter', 'value' => $meterNumber],
-            ['label' => 'Customer', 'value' => $recipientName],
+            ['label' => 'Customer', 'value' => $meterResult['name']],
             ['label' => 'Amount', 'value' => "({$currency}) {$amount}"],
         ];
 
-        // Add fee breakdown from confirmation
+        // Add fee breakdown from confirmation (if available)
         foreach ($confirmation['amounts'] ?? [] as $amountInfo) {
-            if ($amountInfo['type'] !== 'principal') {
+            if (($amountInfo['type'] ?? '') !== 'principal') {
                 $successData[] = [
-                    'label' => $amountInfo['name'],
+                    'label' => $amountInfo['name'] ?? 'Fee',
                     'value' => "({$amountInfo['currency']}) {$amountInfo['amount']}",
                 ];
             }
         }
 
         $successData[] = ['label' => 'Status', 'value' => ucfirst($txn['status'] ?? 'Processing')];
-        $successData[] = ['label' => 'Reference', 'value' => $txn['customer_reference'] ?? $transaction->reference ?? '—'];
+        $successData[] = ['label' => 'Reference', 'value' => $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—'];
 
         $smsNote = $recipientPhone ? "\n📱 Token SMS will be sent to {$recipientPhone}" : '';
 
