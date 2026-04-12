@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Agent;
 use App\Models\Transaction;
+use App\Services\Conversation\ConversationSession;
+use App\Services\Conversation\FlowEngine;
+use App\Services\Conversation\SimulatorMessageCollector;
 use App\Services\MeterValidationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,6 +15,13 @@ use Illuminate\Support\Facades\Log;
 
 class SimulatorController extends Controller
 {
+    protected FlowEngine $engine;
+
+    public function __construct(FlowEngine $engine)
+    {
+        $this->engine = $engine;
+    }
+
     /**
      * Show the chat simulator landing page.
      */
@@ -51,38 +61,120 @@ class SimulatorController extends Controller
         };
     }
 
+    // ── Session-backed message collector ──────────
+
+    /**
+     * Create a message collector "handler" that the FlowEngine can use.
+     * It collects messages instead of sending them via WhatsApp.
+     */
+    protected function createCollectorHandler(Agent $agent): object
+    {
+        $collector = new SimulatorMessageCollector();
+
+        // Create a handler proxy that looks like ConversationHandler
+        // with a whatsapp property and sendWelcome method
+        return new class($collector, $agent) {
+            public SimulatorMessageCollector $whatsapp;
+            private Agent $agent;
+
+            public function __construct(SimulatorMessageCollector $collector, Agent $agent)
+            {
+                $this->whatsapp = $collector;
+                $this->agent = $agent;
+            }
+
+            public function sendWelcome(Agent $agent): void
+            {
+                $this->whatsapp->sendTextMessage(
+                    $agent->wa_id,
+                    "👋 Hi *{$agent->name}*! What would you like to do?"
+                );
+
+                // Add flow CTA messages
+                $this->whatsapp->messages[] = [
+                    'type' => 'flow',
+                    'flow_id' => 'buy_zesa',
+                    'cta' => '⚡ Buy ZESA',
+                    'text' => 'Purchase ZESA electricity tokens',
+                ];
+                $this->whatsapp->messages[] = [
+                    'type' => 'flow',
+                    'flow_id' => 'settings',
+                    'cta' => '⚙️ Settings',
+                    'text' => 'Update your preferences',
+                ];
+            }
+        };
+    }
+
+    // ── Action Handlers ─────────────────────────────
+
     /**
      * Handle the initial 'start' action — triggers onboarding for new agents.
      */
     protected function handleStart(Agent $agent): JsonResponse
     {
-        if ($agent->needsOnboarding()) {
+        $session = ConversationSession::load($agent->wa_id);
+
+        // Check if a flow should auto-activate (e.g., onboarding)
+        $flow = $this->engine->findActivatableFlow($agent);
+
+        if ($flow && ! $session->isActive()) {
+            $handler = $this->createCollectorHandler($agent);
+            $session = $this->engine->startFlow($agent, $flow, $handler);
+
             return response()->json([
-                'messages' => [
-                    [
-                        'type' => 'text',
-                        'text' => "👋 *Welcome to Magetsi Agents!*\n\nBefore we get started, I need a few details.\n\nPlease type your *first name*:",
-                    ],
-                ],
-                'onboarding' => true,
-                'onboarding_step' => 'name',
+                'messages' => $handler->whatsapp->flush(),
+                'session' => $this->sessionMeta($session),
             ]);
         }
 
         return response()->json([
             'messages' => $this->welcomeMessages($agent),
+            'session' => $this->sessionMeta($session),
         ]);
     }
 
+    /**
+     * Handle text input — delegates to FlowEngine if a session is active.
+     */
     protected function handleText(Agent $agent, string $text, array $product): JsonResponse
     {
         $text = trim($text);
-        $normalized = strtolower($text);
+        $session = ConversationSession::load($agent->wa_id);
 
-        // ── Onboarding flow ──
-        if ($agent->needsOnboarding()) {
-            return $this->handleOnboardingInput($agent, $text);
+        // 1. Active flow in progress — delegate to flow engine
+        if ($session->isActive()) {
+            $handler = $this->createCollectorHandler($agent);
+            $handled = $this->engine->processInput($agent, $session, $text, $handler);
+
+            if ($handled) {
+                // Reload session to get updated state
+                $session = ConversationSession::load($agent->wa_id);
+                // Refresh agent in case it was updated
+                $agent->refresh();
+
+                return response()->json([
+                    'messages' => $handler->whatsapp->flush(),
+                    'session' => $this->sessionMeta($session),
+                ]);
+            }
         }
+
+        // 2. Check auto-activation (e.g., onboarding)
+        $flow = $this->engine->findActivatableFlow($agent);
+        if ($flow) {
+            $handler = $this->createCollectorHandler($agent);
+            $session = $this->engine->startFlow($agent, $flow, $handler);
+
+            return response()->json([
+                'messages' => $handler->whatsapp->flush(),
+                'session' => $this->sessionMeta($session),
+            ]);
+        }
+
+        // 3. Normal message routing (onboarded, no active flow)
+        $normalized = strtolower($text);
 
         // Check if it looks like a meter number
         if (preg_match('/^\d{11}$/', $normalized)) {
@@ -100,75 +192,24 @@ class SimulatorController extends Controller
             }
 
             array_push($messages, ...$this->welcomeMessages($agent));
-            return response()->json(['messages' => $messages]);
+            return response()->json(['messages' => $messages, 'session' => $this->sessionMeta($session)]);
         }
 
         return response()->json([
             'messages' => $this->welcomeMessages($agent),
-        ]);
-    }
-
-    /**
-     * Handle onboarding text input in the simulator.
-     *
-     * Step 1: Collect first name
-     * Step 2: Collect EcoCash number
-     */
-    protected function handleOnboardingInput(Agent $agent, string $text): JsonResponse
-    {
-        // Step 1: Name (agent still has default name)
-        if ($agent->name === 'Agent' || $agent->name === $agent->wa_id) {
-            if (! preg_match('/^[a-zA-Z\s\-]{2,30}$/', $text)) {
-                return response()->json([
-                    'messages' => [
-                        ['type' => 'text', 'text' => "❌ That doesn't look like a name. Please type your *first name* (letters only):"]
-                    ],
-                    'onboarding' => true,
-                    'onboarding_step' => 'name',
-                ]);
-            }
-
-            $agent->update(['name' => ucfirst(strtolower($text))]);
-
-            return response()->json([
-                'messages' => [
-                    ['type' => 'text', 'text' => "Nice to meet you, *{$agent->name}*! 😊\n\nNow, please type your *EcoCash number* (e.g. 0771234567):"]
-                ],
-                'onboarding' => true,
-                'onboarding_step' => 'ecocash',
-            ]);
-        }
-
-        // Step 2: EcoCash number
-        $digits = preg_replace('/\D/', '', $text);
-
-        if (strlen($digits) < 10 || strlen($digits) > 12) {
-            return response()->json([
-                'messages' => [
-                    ['type' => 'text', 'text' => "❌ That doesn't look like a valid phone number.\nPlease type your *EcoCash number* (e.g. 0771234567):"]
-                ],
-                'onboarding' => true,
-                'onboarding_step' => 'ecocash',
-            ]);
-        }
-
-        // Normalize to local format
-        if (str_starts_with($digits, '263') && strlen($digits) > 9) {
-            $digits = '0' . substr($digits, 3);
-        }
-
-        $agent->completeOnboarding($agent->name, $digits);
-
-        return response()->json([
-            'messages' => [
-                ['type' => 'text', 'text' => "✅ *You're all set, {$agent->name}!*\n\nEcoCash: {$digits}\n\nYou can change these anytime from ⚙️ Settings."],
-                ...$this->welcomeMessages($agent),
-            ],
+            'session' => $this->sessionMeta($session),
         ]);
     }
 
     protected function handleButton(Agent $agent, string $buttonId, array $product): JsonResponse
     {
+        $session = ConversationSession::load($agent->wa_id);
+
+        // Block actions if an active flow is in progress
+        if ($session->isActive()) {
+            return $this->handleStart($agent);
+        }
+
         // Block actions until onboarded
         if ($agent->needsOnboarding()) {
             return $this->handleStart($agent);
@@ -190,11 +231,13 @@ class SimulatorController extends Controller
                         'flow_id' => $flowId,
                     ],
                 ],
+                'session' => $this->sessionMeta($session),
             ]);
         }
 
         return response()->json([
             'messages' => $this->welcomeMessages($agent),
+            'session' => $this->sessionMeta($session),
         ]);
     }
 
@@ -238,10 +281,6 @@ class SimulatorController extends Controller
 
     /**
      * Handle completed flow submission.
-     *
-     * For buy_zesa: runs the full Magetsi API pipeline (confirm → process).
-     * The meter was already validated in the flow (validate_meter action),
-     * so we use the cached trace + customer data.
      */
     protected function handleFlowComplete(Agent $agent, array $data): JsonResponse
     {
@@ -260,9 +299,6 @@ class SimulatorController extends Controller
 
     /**
      * Full ZESA transaction pipeline using Magetsi API.
-     *
-     * Flow: validate meter → process transaction → store result.
-     * The active backend (new or legacy) handles the specifics.
      */
     protected function handleZesaTransaction(Agent $agent, array $data): JsonResponse
     {
@@ -350,7 +386,6 @@ class SimulatorController extends Controller
             ['label' => 'Amount', 'value' => "({$currency}) {$amount}"],
         ];
 
-        // Add fee breakdown from confirmation (if available)
         foreach ($confirmation['amounts'] ?? [] as $amountInfo) {
             if (($amountInfo['type'] ?? '') !== 'principal') {
                 $successData[] = [
@@ -377,6 +412,9 @@ class SimulatorController extends Controller
         ]);
     }
 
+    /**
+     * Handle settings save from the flow.
+     */
     protected function handleSettingsSave(Agent $agent, array $data): JsonResponse
     {
         if (isset($data['ecocash_number']) && $data['ecocash_number']) {
@@ -417,9 +455,10 @@ class SimulatorController extends Controller
         return response()->json($service->validate($meter));
     }
 
+    // ── Helpers ─────────────────────────────────────
+
     /**
      * Build the welcome menu as flow CTA messages.
-     * Returns an array of messages that directly open the flows.
      */
     protected function welcomeMessages(Agent $agent): array
     {
@@ -427,6 +466,18 @@ class SimulatorController extends Controller
             ['type' => 'text', 'text' => "👋 Hi *{$agent->name}*! What would you like to do?"],
             ['type' => 'flow', 'flow_id' => 'buy_zesa', 'cta' => '⚡ Buy ZESA', 'text' => 'Purchase ZESA electricity tokens'],
             ['type' => 'flow', 'flow_id' => 'settings', 'cta' => '⚙️ Settings', 'text' => 'Update your preferences'],
+        ];
+    }
+
+    /**
+     * Build session metadata for JSON response.
+     */
+    protected function sessionMeta(ConversationSession $session): array
+    {
+        return [
+            'flow' => $session->flow,
+            'step' => $session->step,
+            'active' => $session->isActive(),
         ];
     }
 }

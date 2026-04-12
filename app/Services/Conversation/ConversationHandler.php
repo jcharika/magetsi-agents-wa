@@ -6,22 +6,28 @@ use App\Models\Agent;
 use App\Services\BackendManager;
 use App\Services\MeterValidationService;
 use App\Services\WhatsAppService;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class ConversationHandler
 {
     use ZesaConversationHandler;
     use SettingsConversationHandler;
 
-    protected WhatsAppService $whatsapp;
+    public WhatsAppService $whatsapp;
     protected MeterValidationService $meterService;
     protected BackendManager $backend;
+    protected FlowEngine $engine;
 
-    public function __construct(WhatsAppService $whatsapp, MeterValidationService $meterService, BackendManager $backend)
-    {
+    public function __construct(
+        WhatsAppService $whatsapp,
+        MeterValidationService $meterService,
+        BackendManager $backend,
+        FlowEngine $engine,
+    ) {
         $this->whatsapp = $whatsapp;
         $this->meterService = $meterService;
         $this->backend = $backend;
+        $this->engine = $engine;
     }
 
     /**
@@ -39,102 +45,36 @@ class ConversationHandler
         );
     }
 
-    // ── Onboarding ──────────────────────────────────
+    // ── Session ────────────────────────────────────
 
     /**
-     * Check if the agent needs onboarding and start the flow if so.
-     * Returns true if onboarding is in progress (caller should stop).
+     * Load the conversation session for this agent.
      */
-    public function checkOnboarding(Agent $agent): bool
+    public function loadSession(Agent $agent): ConversationSession
     {
-        if (! $agent->needsOnboarding()) {
-            return false;
-        }
-
-        $this->sendOnboardingPrompt($agent);
-        return true;
+        return ConversationSession::load($agent->wa_id);
     }
 
     /**
-     * Send the onboarding greeting and ask for the agent's first name.
+     * Check if a flow should auto-activate (e.g., onboarding)
+     * and start it if so. Returns true if a flow was started.
      */
-    protected function sendOnboardingPrompt(Agent $agent): void
+    public function checkAutoActivation(Agent $agent): bool
     {
-        $this->whatsapp->sendTextMessage(
-            $agent->wa_id,
-            "👋 *Welcome to Magetsi Agents!*\n\n"
-            . "Before we get started, I need a few details.\n\n"
-            . "Please type your *first name*:"
-        );
-    }
+        $flow = $this->engine->findActivatableFlow($agent);
 
-    /**
-     * Handle text input during the onboarding flow.
-     *
-     * Step 1: Collect first name  →  save, ask for EcoCash
-     * Step 2: Collect EcoCash number  →  save, complete onboarding
-     */
-    public function handleOnboardingInput(Agent $agent, string $text): void
-    {
-        $text = trim($text);
-
-        // Step 1: We don't have a real name yet (still default "Agent")
-        if ($agent->name === 'Agent' || $agent->name === $agent->wa_id) {
-            // Validate: must be letters only, 2-30 chars
-            if (! preg_match('/^[a-zA-Z\s\-]{2,30}$/', $text)) {
-                $this->whatsapp->sendTextMessage(
-                    $agent->wa_id,
-                    "❌ That doesn't look like a name. Please type your *first name* (letters only):"
-                );
-                return;
-            }
-
-            $agent->update(['name' => ucfirst(strtolower($text))]);
-
-            $this->whatsapp->sendTextMessage(
-                $agent->wa_id,
-                "Nice to meet you, *{$agent->name}*! 😊\n\n"
-                . "Now, please type your *EcoCash number* (e.g. 0771234567):"
-            );
-            return;
+        if ($flow) {
+            $this->engine->startFlow($agent, $flow, $this);
+            return true;
         }
 
-        // Step 2: EcoCash number
-        $digits = preg_replace('/\D/', '', $text);
-
-        if (strlen($digits) < 10 || strlen($digits) > 12) {
-            $this->whatsapp->sendTextMessage(
-                $agent->wa_id,
-                "❌ That doesn't look like a valid phone number.\n"
-                . "Please type your *EcoCash number* (e.g. 0771234567):"
-            );
-            return;
-        }
-
-        // Normalize to local format (0...)
-        if (str_starts_with($digits, '263') && strlen($digits) > 9) {
-            $digits = '0' . substr($digits, 3);
-        }
-
-        $agent->completeOnboarding($agent->name, $digits);
-
-        $this->whatsapp->sendTextMessage(
-            $agent->wa_id,
-            "✅ *You're all set, {$agent->name}!*\n\n"
-            . "EcoCash: {$digits}\n\n"
-            . "You can change these anytime from ⚙️ Settings."
-        );
-
-        $this->sendWelcome($agent);
+        return false;
     }
 
     // ── Welcome ─────────────────────────────────────
 
     /**
      * Send the welcome menu as flow CTA messages.
-     *
-     * Each action gets its own message with a CTA that directly opens the flow,
-     * reducing the interaction from 3 steps to 1 tap.
      */
     public function sendWelcome(Agent $agent): void
     {
@@ -151,28 +91,45 @@ class ConversationHandler
 
     /**
      * Handle a text message from the agent.
+     *
+     * Routing priority:
+     *   1. Active session flow (e.g., onboarding step in progress)
+     *   2. Auto-activatable flows (e.g., onboarding for new agents)
+     *   3. Keyword matching (hi, zesa, settings, meter numbers)
+     *   4. Default: show welcome menu
      */
     public function handleTextMessage(Agent $agent, string $text): void
     {
-        // If onboarding is in progress, route to onboarding handler
-        if ($agent->needsOnboarding()) {
-            $this->handleOnboardingInput($agent, $text);
+        $text = trim($text);
+        $session = $this->loadSession($agent);
+
+        // 1. Active flow in progress — delegate to flow engine
+        if ($session->isActive()) {
+            $handled = $this->engine->processInput($agent, $session, $text, $this);
+            if ($handled) {
+                return;
+            }
+        }
+
+        // 2. Auto-activate a flow if needed (e.g., new agent → onboarding)
+        if ($this->checkAutoActivation($agent)) {
             return;
         }
 
-        $normalized = strtolower(trim($text));
+        // 3. Normal keyword routing (agent is onboarded, no active flow)
+        $normalized = strtolower($text);
 
         if (in_array($normalized, ['hi', 'hello', 'hey', 'start', 'menu'])) {
             $this->sendWelcome($agent);
             return;
         }
 
-        if (in_array($normalized, ['zesa'])) {
+        if ($normalized === 'zesa') {
             $this->launchBuyZesaFlow($agent);
             return;
         }
 
-        if (in_array($normalized, ['settings'])) {
+        if ($normalized === 'settings') {
             $this->launchSettingsFlow($agent);
             return;
         }
@@ -201,7 +158,7 @@ class ConversationHandler
             return;
         }
 
-        // Default: show welcome
+        // 4. Default: show welcome
         $this->sendWelcome($agent);
     }
 
@@ -210,9 +167,16 @@ class ConversationHandler
      */
     public function handleButtonReply(Agent $agent, string $buttonId): void
     {
+        // If there's an active flow, a button tap shouldn't bypass it
+        $session = $this->loadSession($agent);
+        if ($session->isActive()) {
+            // Auto-activate check handles re-prompting
+            return;
+        }
+
         // Block actions until onboarded
         if ($agent->needsOnboarding()) {
-            $this->sendOnboardingPrompt($agent);
+            $this->checkAutoActivation($agent);
             return;
         }
 
