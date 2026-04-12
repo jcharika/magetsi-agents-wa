@@ -5,9 +5,11 @@ namespace Deployer;
 require 'recipe/laravel.php';
 
 // Config
+$token = file_get_contents(getcwd() . '/.token');
+
 set('bin/composer', '/usr/local/bin/composer');
 set('composer_options', '--ignore-platform-reqs --verbose --prefer-dist --no-progress --no-interaction --no-dev --optimize-autoloader');
-set('repository', 'https://jcharika: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@github.com/jcharika/magetsi-agents-wa.git');
+set('repository', "https://jcharika:$token@github.com/jcharika/magetsi-agents-wa.git");
 
 add('shared_files', ['database/database.sqlite']);
 add('shared_dirs', []);
