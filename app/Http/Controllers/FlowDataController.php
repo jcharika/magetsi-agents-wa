@@ -216,14 +216,14 @@ class FlowDataController extends Controller
     protected function handleBuyZesaExchange(Agent $agent, array $data, string $flowToken): array
     {
         // ── Radio button selected → show/hide custom amount field
-        if (array_key_exists('selected_amount', $data)) {
-            return [
-                'screen' => 'BUY_ZESA_SCREEN',
-                'data' => [
-                    'show_custom_amount' => $data['selected_amount'] === 'other',
-                ],
-            ];
-        }
+//        if (array_key_exists('selected_amount', $data)) {
+//            return [
+//                'screen' => 'BUY_ZESA_SCREEN',
+//                'data' => [
+//                    'show_custom_amount' => $data['selected_amount'] === 'other',
+//                ],
+//            ];
+//        }
 
         $meterNumber = $data['meter_number'] ?? '';
         $amount = $data['amount'] ?? null;
@@ -281,51 +281,60 @@ class FlowDataController extends Controller
         $ecocashNumber = $data['ecocash_number'] ?? $agent->ecocash_number;
         $recipientPhone = $data['recipient_phone'] ?? null;
 
-        // Step 1: Validate meter
-        $meterResult = $this->meterService->validate($meterNumber);
-        if (! $meterResult['valid']) {
+        try {
+            // Step 1: Validate meter
+            $meterResult = $this->meterService->validate($meterNumber);
+            if (! $meterResult['valid']) {
+                return [
+                    'screen' => 'BUY_ZESA_SCREEN',
+                    'data' => [
+                        'error_message' => $meterResult['error'] ?? 'Meter validation failed.',
+                    ],
+                ];
+            }
+
+            // Step 2: Process transaction (backend-agnostic)
+            $result = $this->backend->processTransaction([
+                'meter_number' => $meterResult['meter_number'] ?? $meterNumber,
+                'amount' => $amount,
+                'currency' => $meterResult['currency'] ?? 'USD',
+                'ecocash_number' => $ecocashNumber,
+                'recipient_name' => $meterResult['name'],
+                'recipient_address' => $meterResult['address'],
+                'recipient_currency' => $meterResult['recipient_currency'] ?? $meterResult['currency'] ?? 'USD',
+                'trace' => $meterResult['trace'] ?? null,
+                'debit' => $meterResult['debit'] ?? [],
+                'guest_id' => "Agent {$agent->id}",
+                'recipient_phone' => $recipientPhone,
+            ]);
+
+            if (! $result['success']) {
+                return [
+                    'screen' => 'BUY_ZESA_SCREEN',
+                    'data' => ['error_message' => $result['error'] ?? 'Transaction processing failed.'],
+                ];
+            }
+
+            $txn = $result['transaction'] ?? [];
+
+            // Return SUCCESS to end the flow
+            return $this->buildSuccessResponse($flowToken, [
+                'meter_number' => $meterNumber,
+                'customer_name' => $meterResult['name'],
+                'amount' => $amount,
+                'currency' => $meterResult['currency'] ?? 'USD',
+                'status' => $txn['status'] ?? 'PENDING',
+                'reference' => $txn['customer_reference'] ?? $txn['reference'] ?? $txn['uid'] ?? '',
+                'trace' => $meterResult['trace'] ?? null,
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error($exception->getMessage());
+
             return [
                 'screen' => 'BUY_ZESA_SCREEN',
-                'data' => [
-                    'error_message' => $meterResult['error'] ?? 'Meter validation failed.',
-                ],
+                'data' => ['error_message' => $exception->getMessage() ?: 'Transaction processing failed.'],
             ];
         }
-
-        // Step 2: Process transaction (backend-agnostic)
-        $result = $this->backend->processTransaction([
-            'meter_number' => $meterResult['meter_number'] ?? $meterNumber,
-            'amount' => $amount,
-            'currency' => $meterResult['currency'] ?? 'USD',
-            'ecocash_number' => $ecocashNumber,
-            'recipient_name' => $meterResult['name'],
-            'recipient_address' => $meterResult['address'],
-            'recipient_currency' => $meterResult['recipient_currency'] ?? $meterResult['currency'] ?? 'USD',
-            'trace' => $meterResult['trace'] ?? null,
-            'debit' => $meterResult['debit'] ?? [],
-            'guest_id' => "Agent {$agent->id}",
-            'recipient_phone' => $recipientPhone,
-        ]);
-
-        if (! $result['success']) {
-            return [
-                'screen' => 'BUY_ZESA_SCREEN',
-                'data' => ['error_message' => $result['error'] ?? 'Transaction processing failed.'],
-            ];
-        }
-
-        $txn = $result['transaction'] ?? [];
-
-        // Return SUCCESS to end the flow
-        return $this->buildSuccessResponse($flowToken, [
-            'meter_number' => $meterNumber,
-            'customer_name' => $meterResult['name'],
-            'amount' => $amount,
-            'currency' => $meterResult['currency'] ?? 'USD',
-            'status' => $txn['status'] ?? 'PENDING',
-            'reference' => $txn['customer_reference'] ?? $txn['reference'] ?? $txn['uid'] ?? '',
-            'trace' => $meterResult['trace'] ?? null,
-        ]);
     }
 
     // ── Settings Flow ────────────────────────────────────

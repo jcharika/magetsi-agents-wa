@@ -116,10 +116,12 @@ class WhatsAppWebhookController extends Controller
 
         Log::info('Flow completed', ['agent' => $agent->id, 'data' => $data]);
 
+        $trigger = $data['trigger'] ?? null;
+
         // Determine which flow based on the data keys present
-        if (isset($data['meter_number'])) {
+        if ($trigger === 'buy_zesa') {
             $this->handler->handleZesaPurchase($agent, $data);
-        } elseif (isset($data['amount_1']) || isset($data['ecocash_number'])) {
+        } elseif ($trigger === 'save_settings') {
             $this->handler->handleSettingsUpdate($agent, $data);
         } else {
             Log::warning('Unknown flow response', ['data' => $data]);
