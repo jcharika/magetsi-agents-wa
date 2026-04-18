@@ -75,8 +75,10 @@ class ConversationHandler
 
     /**
      * Send the welcome menu as flow CTA messages.
+     *
+     * @param bool $isFirstWelcome If true, shows Settings button (for new agents)
      */
-    public function sendWelcome(Agent $agent): void
+    public function sendWelcome(Agent $agent, bool $isFirstWelcome = false): void
     {
         $this->whatsapp->sendTextMessage(
             $agent->wa_id,
@@ -84,7 +86,148 @@ class ConversationHandler
         );
 
         $this->launchBuyZesaFlow($agent);
+
+        if ($isFirstWelcome) {
+            $this->launchSettingsFlow($agent);
+        }
+
+        $this->launchHelpButton($agent, $isFirstWelcome);
+    }
+
+    public function launchHelpButton(Agent $agent, bool $isFirstWelcome = false): void
+    {
+        $buttons = [
+            ['id' => 'help', 'title' => '❓ Help & Guide'],
+            ['id' => 'buy_zesa', 'title' => '⚡ Buy ZESA'],
+        ];
+
+        if ($isFirstWelcome) {
+            $buttons[] = ['id' => 'settings', 'title' => '⚙️ Settings'];
+        }
+
+        $this->whatsapp->sendInteractiveButtons(
+            $agent->wa_id,
+            "Need help? Here's what you can do:",
+            $buttons
+        );
+    }
+
+    public function sendHelp(Agent $agent, ConversationSession $session): void
+    {
+        if ($session->isActive()) {
+            $this->sendContextualHelp($agent, $session);
+            return;
+        }
+
+        $helpText = "❓ *Help Guide*\n\n"
+            . "*Quick Commands:*\n"
+            . "• `zesa` - Buy electricity tokens\n"
+            . "• `settings` - Manage your account\n"
+            . "• `help` - Show this help guide\n\n"
+            . "*Other Ways:*\n"
+            . "• Send an 11-digit meter number to look it up\n"
+            . "• Type `menu` to see the main menu\n"
+            . "• Type `stop` to cancel current action\n\n"
+            . "*Tips:*\n"
+            . "• Have your meter number ready\n"
+            . "• Ensure you have enough EcoCash balance\n"
+            . "• Reply `0` to go back to previous step";
+
+        $this->whatsapp->sendInteractiveButtons(
+            $agent->wa_id,
+            $helpText,
+            [
+                ['id' => 'support', 'title' => '📞 Contact Support'],
+                ['id' => 'buy_zesa', 'title' => '⚡ Buy ZESA'],
+                ['id' => 'main_menu', 'title' => '🏠 Main Menu'],
+            ]
+        );
+    }
+
+    public function sendSupport(Agent $agent): void
+    {
+        $supportText = "👋 To reach our customer support team open the link below:\n\n"
+            . "🔗 https://wa.me/263782004005";
+
+        $this->whatsapp->sendInteractiveButtons(
+            $agent->wa_id,
+            $supportText,
+            [
+                ['id' => 'main_menu', 'title' => '🏠 Main Menu'],
+            ]
+        );
+    }
+
+    protected function sendContextualHelp(Agent $agent, ConversationSession $session): void
+    {
+        $flowName = $session->flow;
+        $currentStep = $session->step;
+
+        $helpByFlow = [
+            'onboarding' => [
+                'step:name' => "We're setting up your account. What's your name?",
+                'step:ecocash' => "Enter your EcoCash number (e.g., 077...).",
+                'step:confirm' => "Reply YES to confirm or NO to redo.",
+            ],
+            'buy_zesa' => [
+                'step:meter' => "Enter the 11-digit meter number (e.g., 12345678901).",
+                'step:amount' => "Select a quick amount or enter a custom value.",
+                'step:phone' => "Enter a phone number for SMS delivery (optional).",
+                'step:confirm' => "Reply YES to confirm or NO to cancel.",
+            ],
+            'settings' => [
+                'step:profile' => "Reply with your name to update it.",
+                'step:ecocash' => "Enter your EcoCash number.",
+                'step:confirm' => "Reply YES to save or NO to cancel.",
+            ],
+        ];
+
+        $flowHelps = $helpByFlow[$flowName] ?? [];
+        $stepHelp = $flowHelps[$currentStep] ?? $flowHelps['step:' . $currentStep] ?? null;
+
+        if ($stepHelp) {
+            $hintText = "❓ *Current: " . ucfirst($flowName) . "*\n\n"
+                . "{$stepHelp}\n\n"
+                . "*Options:*\n"
+                . "• Reply with your answer\n"
+                . "• Type `0` to go back\n"
+                . "• Type `help` for full guide\n"
+                . "• Type `menu` to return to main menu";
+        } else {
+            $hintText = "❓ *Currently in: " . ucfirst($flowName) . "*\n\n"
+                . "You're in the middle of a flow.\n"
+                . "• Complete the current step\n"
+                . "• Type `0` to go back\n"
+                . "• Type `help` for more options";
+        }
+
+        $this->whatsapp->sendTextMessage($agent->wa_id, $hintText);
+    }
+
+    public function cancelFlow(Agent $agent, ConversationSession $session): void
+    {
+        if (!$session->isActive()) {
+            $this->whatsapp->sendTextMessage($agent->wa_id, "Nothing to cancel. You're at the main menu.");
+            return;
+        }
+
+        $flowName = ucfirst($session->flow);
+        $session->reset($agent->wa_id);
+
+        $this->whatsapp->sendTextMessage(
+            $agent->wa_id,
+            "❌ *Cancelled*\n\nThe {$flowName} flow has been cancelled.\n\nUse the buttons below to continue:"
+        );
+
+        $this->launchBuyZesaFlow($agent);
         $this->launchSettingsFlow($agent);
+        $this->launchHelpButton($agent);
+    }
+
+    public function addHelpHint(string $message): string
+    {
+        $hint = "\n\n💡 *Tip:* Reply `help` for assistance or `stop` to cancel.";
+        return $message . $hint;
     }
 
     // ── Message handlers ────────────────────────────
@@ -124,6 +267,11 @@ class ConversationHandler
             return;
         }
 
+        if ($normalized === 'stop' || $normalized === 'cancel') {
+            $this->cancelFlow($agent, $session);
+            return;
+        }
+
         if ($normalized === 'zesa') {
             $this->launchBuyZesaFlow($agent);
             return;
@@ -131,6 +279,11 @@ class ConversationHandler
 
         if ($normalized === 'settings') {
             $this->launchSettingsFlow($agent);
+            return;
+        }
+
+        if ($normalized === 'help') {
+            $this->sendHelp($agent, $session);
             return;
         }
 
@@ -183,6 +336,9 @@ class ConversationHandler
         match ($buttonId) {
             'buy_zesa' => $this->launchBuyZesaFlow($agent),
             'settings' => $this->launchSettingsFlow($agent),
+            'help' => $this->sendHelp($agent, $session),
+            'support' => $this->sendSupport($agent),
+            'main_menu' => $this->sendWelcome($agent),
             default => $this->sendWelcome($agent),
         };
     }

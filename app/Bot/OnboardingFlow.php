@@ -76,6 +76,6 @@ class OnboardingFlow extends BotFlow
             . "You can change these anytime from ⚙️ Settings."
         );
 
-        $handler->sendWelcome($agent);
+        $handler->sendWelcome($agent, true);
     }
 }
