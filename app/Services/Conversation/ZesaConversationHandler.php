@@ -68,6 +68,10 @@ trait ZesaConversationHandler
      */
     public function handleZesaPurchase(Agent $agent, array $data): void
     {
+        $this->sendWelcome($agent);
+
+        return;
+
         Log::info('Processing ZESA purchase', ['agent' => $agent->id, 'data' => $data, 'backend' => $this->backend->getBackendName()]);
 
         $meterNumber = $data['meter_number'] ?? '';

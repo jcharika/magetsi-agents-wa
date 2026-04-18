@@ -43,13 +43,13 @@ return [
     |
     | How flows are sent to the user:
     |
-    |   "interactive" — sends an interactive flow message with a CTA button.
-    |                    Works inside user-initiated conversations (24h window).
-    |                    No template approval needed.
+    | "interactive" — sends an interactive flow message with a CTA button.
+    | Works inside user-initiated conversations (24h window).
+    | No template approval needed.
     |
-    |   "template"    — sends a pre-approved message template with a FLOW
-    |                    button. Works for business-initiated conversations
-    |                    (outside 24h window). Requires template approval.
+    | "template" — sends a pre-approved message template with a FLOW
+    | button. Works for business-initiated conversations
+    | (outside 24h window). Requires template approval.
     |
     */
 

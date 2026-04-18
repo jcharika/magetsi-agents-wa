@@ -147,7 +147,7 @@ class WhatsAppConfigure extends Command
             $result = $response->json();
 
             if ($response->failed()) {
-                $this->error("    ✗ Failed: " . ($result['error']['message'] ?? json_encode($result)));
+                $this->error("    ✗ Failed: " . ($result['error']['error_description'] ?? json_encode($result)));
                 continue;
             }
 
