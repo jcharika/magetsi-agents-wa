@@ -98,7 +98,7 @@ class ConversationHandler
     {
         $buttons = [
             ['id' => 'help', 'title' => '❓ Help & Guide'],
-            ['id' => 'buy_zesa', 'title' => '⚡ Buy ZESA'],
+            ['id' => 'support', 'title' => '📞 Contact Support'],
         ];
 
         if ($isFirstWelcome) {
