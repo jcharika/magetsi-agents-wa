@@ -5,6 +5,7 @@ namespace App\Services\Conversation;
 use App\Models\Agent;
 use App\Services\BackendManager;
 use App\Services\MeterValidationService;
+use App\Services\MockState;
 use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\Log;
 
@@ -230,6 +231,61 @@ class ConversationHandler
         return $message . $hint;
     }
 
+    // ── Mock Backend Toggle ────────────────────────────
+
+    protected function handleMockCommand(Agent $agent, string $text): void
+    {
+        $password = config('magetsi.mock_password', 'mock123');
+        $allowedIds = config('magetsi.mock_allowed_wa_ids', []);
+
+        $isAdmin = in_array($agent->wa_id, $allowedIds);
+
+        $parts = explode(' ', trim($text), 3);
+        $command = strtolower($parts[1] ?? '');
+        $inputPassword = $parts[2] ?? '';
+
+        if (!$isAdmin) {
+            $this->whatsapp->sendTextMessage(
+                $agent->wa_id,
+                "❌ *Access Denied*\n\nYou're not authorized to use this command."
+            );
+            return;
+        }
+
+        if (!in_array($command, ['on', 'off', 'enable', 'disable'])) {
+            $this->whatsapp->sendTextMessage(
+                $agent->wa_id,
+                "📋 *Mock Backend Commands*\n\n"
+                . "Usage: `/mock on <password>` or `/mock off <password>`\n\n"
+                . "Example: `/mock on mock123`"
+            );
+            return;
+        }
+
+        if ($inputPassword !== $password) {
+            $this->whatsapp->sendTextMessage(
+                $agent->wa_id,
+                "❌ *Incorrect Password*\n\nPlease check the password and try again."
+            );
+            return;
+        }
+
+        $enable = in_array($command, ['on', 'enable']);
+
+        MockState::toggle($enable);
+        $this->backend->reset();
+
+        $status = $enable ? '🟢 ENABLED' : '🔴 DISABLED';
+        $currentBackend = MockState::isEnabled() ? 'Mock Backend' : 'Real Backend';
+
+        $this->whatsapp->sendTextMessage(
+            $agent->wa_id,
+            "✅ *Mock Backend {$status}*\n\n"
+            . "Active backend: *{$currentBackend}*\n\n"
+            . "Transactions will " . ($enable ? 'use the mock (always succeed with fake tokens).' : 'go to the real backend.')
+        );
+    }
+
     // ── Message handlers ────────────────────────────
 
     /**
@@ -261,6 +317,12 @@ class ConversationHandler
 
         // 3. Normal keyword routing (agent is onboarded, no active flow)
         $normalized = strtolower($text);
+
+        // Mock backend toggle command: /mock on <password> or /mock off <password>
+        if (str_starts_with($normalized, '/mock')) {
+            $this->handleMockCommand($agent, $text);
+            return;
+        }
 
         if (in_array($normalized, ['hi', 'hello', 'hey', 'start', 'menu'])) {
             $this->sendWelcome($agent);

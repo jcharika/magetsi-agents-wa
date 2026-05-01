@@ -8,10 +8,29 @@ return [
     |
     | "new"    → New API (magetsi.test) — 4-step: prepare → validate → confirm → process
     | "legacy" → Legacy API (magetsi.co.zw) — 2-step: check meter → init + poll
+    | "mock"   → Mock API (testing) — always succeeds with fake tokens
     |
     */
 
     'backend' => env('MAGETSI_BACKEND', 'legacy'),
+
+    // Default backend to use when mock is disabled
+    'default_backend' => env('MAGETSI_DEFAULT_BACKEND', 'legacy'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mock Backend Settings
+    |--------------------------------------------------------------------------
+    */
+
+    // Password required to toggle mock mode via WhatsApp
+    'mock_password' => env('MOCK_PASSWORD', 'magetsi'),
+
+    // WhatsApp IDs authorized to toggle mock mode (add your number here)
+    'mock_allowed_wa_ids' => explode(',', env('MOCK_ALLOWED_WA_IDS', '')),
+
+    // Runtime flag for mock mode (set via WhatsApp command)
+    'mock_enabled' => false,
 
     /*
     |--------------------------------------------------------------------------

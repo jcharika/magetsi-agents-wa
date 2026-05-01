@@ -156,10 +156,16 @@ trait CustomerFlowHandler
             ->onQueue('transactions');
 
         return [
-            'screen' => 'ZESA_SCREEN',
+            'screen' => 'SUCCESS',
             'data' => [
-                'success' => true,
-                'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                'extension_message_response' => [
+                    'params' => [
+                        'flow_token' => $flowToken,
+                        'success' => true,
+                        'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                        'reference' => 'queued',
+                    ],
+                ],
             ],
         ];
     }
@@ -207,10 +213,15 @@ trait CustomerFlowHandler
             ->onQueue('transactions');
 
         return [
-            'screen' => 'AIRTIME_SCREEN',
+            'screen' => 'SUCCESS',
             'data' => [
-                'success' => true,
-                'message' => "Your {$network} airtime purchase of {$amount} ZWG for {$phoneNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                'extension_message_response' => [
+                    'params' => [
+                        'flow_token' => $flowToken,
+                        'success' => true,
+                        'message' => "Your {$network} airtime purchase of {$amount} ZWG for {$phoneNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                    ],
+                ],
             ],
         ];
     }
@@ -258,10 +269,15 @@ trait CustomerFlowHandler
             ->onQueue('transactions');
 
         return [
-            'screen' => 'BUNDLES_SCREEN',
+            'screen' => 'SUCCESS',
             'data' => [
-                'success' => true,
-                'message' => "Your {$network} bundle purchase of {$bundleSize} for {$phoneNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                'extension_message_response' => [
+                    'params' => [
+                        'flow_token' => $flowToken,
+                        'success' => true,
+                        'message' => "Your {$network} bundle purchase of {$bundleSize} for {$phoneNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                    ],
+                ],
             ],
         ];
     }

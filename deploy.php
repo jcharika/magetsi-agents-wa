@@ -31,6 +31,7 @@ host('agents-test.magetsi.co.zw')
 
 after('deploy:failed', 'deploy:unlock');
 after('deploy:success', 'artisan:optimize');
+after('push', 'artisan:optimize');
 
 // ── Custom Tasks ────────────────────────────────────────────
 

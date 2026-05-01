@@ -107,10 +107,15 @@ trait BuyZesaFlowHandler
             ->onQueue('transactions');
 
         return [
-            'screen' => 'BUY_ZESA_SCREEN',
+            'screen' => 'SUCCESS',
             'data' => [
-                'success' => true,
-                'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                'extension_message_response' => [
+                    'params' => [
+                        'flow_token' => $flowToken,
+                        'success' => true,
+                        'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                    ],
+                ],
             ],
         ];
     }
