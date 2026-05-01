@@ -68,6 +68,7 @@ return [
     'flows' => [
         'buy_zesa' => env('WHATSAPP_BUY_ZESA_FLOW_ID'),
         'settings' => env('WHATSAPP_SETTINGS_FLOW_ID'),
+        'customer' => env('WHATSAPP_CUSTOMER_FLOW_ID'),
     ],
 
     /*
@@ -86,6 +87,7 @@ return [
     'flow_templates' => [
         'buy_zesa' => env('WHATSAPP_BUY_ZESA_TEMPLATE', 'buy_zesa_flow'),
         'settings' => env('WHATSAPP_SETTINGS_TEMPLATE', 'settings_flow'),
+        'customer' => env('WHATSAPP_CUSTOMER_TEMPLATE', 'customer_flow'),
     ],
 
     // Language code for templates (must match template creation language)

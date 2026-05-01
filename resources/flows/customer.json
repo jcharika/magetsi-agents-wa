@@ -1,0 +1,448 @@
+{
+    "version": "7.3",
+    "data_api_version": "3.0",
+    "routing_model": {
+        "HOME_SCREEN": ["ZESA_SCREEN", "AIRTIME_SCREEN", "BUNDLES_SCREEN"]
+    },
+    "screens": [
+        {
+            "id": "HOME_SCREEN",
+            "terminal": false,
+            "title": "Magetsi - Pay Your Bills Online",
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "NavigationList",
+                        "name": "main_nav",
+                        "label": "Magetsi Services",
+                        "list-items": [
+                            {
+                                "id": "ZESA_SCREEN",
+                                "main-content": {
+                                    "title": "Buy Electricity (ZESA)",
+                                    "description": "Prepaid tokens"
+                                },
+                                "on-click-action": {
+                                    "name": "navigate",
+                                    "next": {
+                                        "type": "screen",
+                                        "name": "ZESA_SCREEN"
+                                    }
+                                }
+                            },
+                            {
+                                "id": "AIRTIME_SCREEN",
+                                "main-content": {
+                                    "title": "Buy Airtime",
+                                    "description": "NetOne and Econet"
+                                },
+                                "on-click-action": {
+                                    "name": "navigate",
+                                    "next": {
+                                        "type": "screen",
+                                        "name": "AIRTIME_SCREEN"
+                                    }
+                                }
+                            },
+                            {
+                                "id": "BUNDLES_SCREEN",
+                                "main-content": {
+                                    "title": "Buy Bundles",
+                                    "description": "Data for all nets"
+                                },
+                                "on-click-action": {
+                                    "name": "navigate",
+                                    "next": {
+                                        "type": "screen",
+                                        "name": "BUNDLES_SCREEN"
+                                    }
+                                }
+                            }
+                        ],
+                        "on-click-action": {
+                            "name": "navigate",
+                            "next": {
+                                "type": "screen",
+                                "name": "${form.main_nav}"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "ZESA_SCREEN",
+            "terminal": true,
+            "title": "Buy ZESA Token",
+            "data": {
+                "meter_valid": {
+                    "type": "boolean",
+                    "__example__": false
+                },
+                "customer_name": {
+                    "type": "string",
+                    "__example__": ""
+                },
+                "customer_address": {
+                    "type": "string",
+                    "__example__": ""
+                },
+                "meter_currency": {
+                    "type": "string",
+                    "__example__": "ZWG"
+                },
+                "ecocash_number": {
+                    "type": "string",
+                    "__example__": "0771234567"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "TextHeading",
+                        "text": "Buy Electricity (ZESA)"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Purchase prepaid electricity tokens for your ZESA meter"
+                    },
+                    {
+"type": "Image",
+                        "src": "/img/zetdc-logo.webp",
+                        "width": 100,
+                        "height": 60
+                    },
+                    {
+                        "type": "Form",
+                        "name": "zesa_form",
+                        "init-values": {
+                            "ecocash_number": "${data.ecocash_number}"
+                        },
+                        "children": [
+                            {
+                                "type": "TextInput",
+                                "name": "meter_number",
+                                "label": "Meter Number",
+                                "input-type": "number",
+                                "required": true,
+                                "helper-text": "Enter your 11-digit ZESA meter number"
+                            },
+                            {
+                                "type": "EmbeddedLink",
+                                "text": "Verify meter number details",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "verify_meter_number",
+                                        "meter_number": "${form.meter_number}"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${data.customer_name} != ''",
+                                "then": [
+                                    {
+                                        "type": "TextSubheading",
+                                        "text": "${data.customer_name}"
+                                    },
+                                    {
+                                        "type": "TextBody",
+                                        "text": "${data.customer_address}"
+                                    },
+                                    {
+                                        "type": "TextCaption",
+                                        "text": "${data.meter_currency}"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${data.meter_valid}",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "amount",
+                                        "label": "Amount (ZWG)",
+                                        "input-type": "number",
+                                        "required": true
+                                    },
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    },
+                                    {
+                                        "type": "TextInput",
+                                        "name": "recipient_phone",
+                                        "label": "Send Token To",
+                                        "input-type": "phone",
+                                        "required": false,
+                                        "helper-text": "Customer phone for SMS token delivery"
+                                    }
+                                ],
+                                "else": [
+                                    {
+                                        "type": "TextCaption",
+                                        "text": "Please verify your meter number above before proceeding"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Footer",
+                        "label": "Buy ZESA Token",
+                        "enabled": "${data.meter_valid}",
+                        "on-click-action": {
+                            "name": "complete",
+                            "payload": {
+                                "trigger": "buy_zesa",
+                                "meter_number": "${form.meter_number}",
+                                "amount": "${form.amount}",
+                                "ecocash_number": "${form.ecocash_number}",
+                                "recipient_phone": "${form.recipient_phone}"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "AIRTIME_SCREEN",
+            "terminal": true,
+            "title": "Buy Airtime",
+            "data": {
+                "ecocash_number": {
+                    "type": "string",
+                    "__example__": "0771234567"
+                },
+                "networks": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": { "type": "string" },
+                            "title": { "type": "string" }
+                        }
+                    },
+                    "__example__": [
+                        { "id": "econet", "title": "Econet" },
+                        { "id": "netone", "title": "NetOne" }
+                    ]
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "TextHeading",
+                        "text": "Buy Airtime"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Purchase airtime for NetOne and Econet"
+                    },
+                    {
+                        "type": "Form",
+                        "name": "airtime_form",
+                        "init-values": {
+                            "ecocash_number": "${data.ecocash_number}"
+                        },
+                        "children": [
+                            {
+                                "type": "RadioButtonsGroup",
+                                "name": "network_select",
+                                "label": "Select Network",
+                                "required": true,
+                                "data-source": "${data.networks}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.network_select} == 'econet'",
+                                "then": [
+                                    {
+                                        "type": "Image",
+                                        "src": "/img/Econet%20Wireless.webp",
+                                        "width": 100,
+                                        "height": 50
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.network_select} == 'netone'",
+                                "then": [
+                                    {
+                                        "type": "Image",
+                                        "src": "/img/netone.svg",
+                                        "width": 100,
+                                        "height": 50
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "phone_number",
+                                "label": "Phone Number",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Enter the phone number to top up"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "amount",
+                                "label": "Amount (ZWG)",
+                                "input-type": "number",
+                                "required": true
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "ecocash_number",
+                                "label": "EcoCash Number",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Payment will be deducted from this number"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Buy Airtime",
+                                "on-click-action": {
+                                    "name": "complete",
+                                    "payload": {
+                                        "trigger": "buy_airtime",
+                                        "network": "${form.network_select}",
+                                        "phone_number": "${form.phone_number}",
+                                        "amount": "${form.amount}",
+                                        "ecocash_number": "${form.ecocash_number}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "BUNDLES_SCREEN",
+            "terminal": true,
+            "title": "Buy Bundles",
+            "data": {
+                "ecocash_number": {
+                    "type": "string",
+                    "__example__": "0771234567"
+                },
+                "networks": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": { "type": "string" },
+                            "title": { "type": "string" }
+                        }
+                    },
+                    "__example__": [
+                        { "id": "econet", "title": "Econet" },
+                        { "id": "netone", "title": "NetOne" }
+                    ]
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "TextHeading",
+                        "text": "Buy Bundles"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Purchase data bundles for NetOne and Econet"
+                    },
+                    {
+                        "type": "Form",
+                        "name": "bundles_form",
+                        "init-values": {
+                            "ecocash_number": "${data.ecocash_number}"
+                        },
+                        "children": [
+                            {
+                                "type": "RadioButtonsGroup",
+                                "name": "network_select",
+                                "label": "Select Network",
+                                "required": true,
+                                "data-source": "${data.networks}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.network_select} == 'econet'",
+                                "then": [
+                                    {
+                                        "type": "Image",
+                                        "src": "/img/Econet%20Wireless.webp",
+                                        "width": 100,
+                                        "height": 50
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.network_select} == 'netone'",
+                                "then": [
+                                    {
+                                        "type": "Image",
+                                        "src": "/img/netone.svg",
+                                        "width": 100,
+                                        "height": 50
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "phone_number",
+                                "label": "Phone Number",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Enter the phone number for the bundle"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "bundle_size",
+                                "label": "Bundle Size (MB/GB)",
+                                "input-type": "text",
+                                "required": true,
+                                "helper-text": "e.g., 1GB, 500MB, 5GB"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "ecocash_number",
+                                "label": "EcoCash Number",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Payment will be deducted from this number"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Buy Bundle",
+                                "on-click-action": {
+                                    "name": "complete",
+                                    "payload": {
+                                        "trigger": "buy_bundle",
+                                        "network": "${form.network_select}",
+                                        "phone_number": "${form.phone_number}",
+                                        "bundle_size": "${form.bundle_size}",
+                                        "ecocash_number": "${form.ecocash_number}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

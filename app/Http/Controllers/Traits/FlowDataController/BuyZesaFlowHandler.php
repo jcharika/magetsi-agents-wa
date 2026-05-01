@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Traits\FlowDataController;
 
+use App\Jobs\ProcessAgentZesaTransaction;
 use App\Models\Agent;
 use App\Services\BackendManager;
 use App\Services\MeterValidationService;
@@ -86,47 +87,31 @@ trait BuyZesaFlowHandler
         $ecocashNumber = $data['ecocash_number'] ?? $agent->ecocash_number;
         $recipientPhone = $data['recipient_phone'] ?? null;
 
-        try {
-            $meterResult = Cache::get("validation/$meterNumber");
-            $result = $this->backend()->processTransaction([
-                'meter_number' => $meterResult['meter_number'] ?? $meterNumber,
-                'amount' => $amount,
-                'currency' => $meterResult['currency'] ?? 'USD',
-                'ecocash_number' => $ecocashNumber,
-                'recipient_name' => $meterResult['name'],
-                'recipient_address' => $meterResult['address'],
-                'recipient_currency' => $meterResult['recipient_currency'] ?? $meterResult['currency'] ?? 'USD',
-                'trace' => $meterResult['trace'] ?? null,
-                'debit' => $meterResult['debit'] ?? [],
-                'guest_id' => "Agent {$agent->id}",
-                'recipient_phone' => $recipientPhone,
-            ]);
+        $meterResult = Cache::get("validation/$meterNumber");
 
-            if (!$result['success']) {
-                return [
-                    'screen' => 'BUY_ZESA_SCREEN',
-                    'data' => ['error_message' => $result['error'] ?? 'Transaction processing failed.'],
-                ];
-            }
+        $params = [
+            'meter_number' => $meterResult['meter_number'] ?? $meterNumber,
+            'amount' => $amount,
+            'currency' => $meterResult['currency'] ?? 'ZWG',
+            'ecocash_number' => $ecocashNumber,
+            'recipient_name' => $meterResult['name'] ?? '',
+            'recipient_address' => $meterResult['address'] ?? '',
+            'recipient_currency' => $meterResult['recipient_currency'] ?? $meterResult['currency'] ?? 'ZWG',
+            'trace' => $meterResult['trace'] ?? null,
+            'debit' => $meterResult['debit'] ?? [],
+            'guest_id' => "Agent {$agent->id}",
+            'recipient_phone' => $recipientPhone,
+        ];
 
-            $txn = $result['transaction'] ?? [];
+        ProcessAgentZesaTransaction::dispatch($params, $agent->id, $flowToken)
+            ->onQueue('transactions');
 
-            return $this->buildSuccessResponse($flowToken, [
-                'meter_number' => $meterNumber,
-                'customer_name' => $meterResult['name'],
-                'amount' => $amount,
-                'currency' => $meterResult['currency'] ?? 'USD',
-                'status' => $txn['status'] ?? 'PENDING',
-                'reference' => $txn['customer_reference'] ?? $txn['reference'] ?? $txn['uid'] ?? '',
-                'trace' => $meterResult['trace'] ?? null,
-            ]);
-        } catch (\Throwable $exception) {
-            Log::error($exception->getMessage());
-
-            return [
-                'screen' => 'BUY_ZESA_SCREEN',
-                'data' => ['error_message' => $exception->getMessage() ?: 'Transaction processing failed.'],
-            ];
-        }
+        return [
+            'screen' => 'BUY_ZESA_SCREEN',
+            'data' => [
+                'success' => true,
+                'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
+            ],
+        ];
     }
 }

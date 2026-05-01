@@ -46,6 +46,15 @@ class WhatsAppConfigure extends Command
                 'template_cta' => 'Settings',
                 'template_category' => 'UTILITY',
             ],
+            'customer' => [
+                'name' => 'customer',
+                'json_path' => resource_path('flows/customer.json'),
+                'categories' => ['OTHER'],
+                'template_name' => config('whatsapp.flow_templates.customer', 'customer_flow'),
+                'template_body' => 'Buy ZESA, airtime, and data bundles.',
+                'template_cta' => 'Shop Now',
+                'template_category' => 'MARKETING',
+            ],
         ];
     }
 

@@ -45,7 +45,7 @@ return [
     'legacy_poll_attempts' => env('MAGETSI_LEGACY_POLL_ATTEMPTS', 10),
 
     // Milliseconds between each poll attempt
-    'legacy_poll_interval' => env('MAGETSI_LEGACY_POLL_INTERVAL', 3000),
+    'legacy_poll_interval' => env('MAGETSI_LEGACY_POLL_INTERVAL', 1000),
 
     /*
     |--------------------------------------------------------------------------

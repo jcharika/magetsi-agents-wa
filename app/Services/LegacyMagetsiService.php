@@ -33,7 +33,7 @@ class LegacyMagetsiService implements TransactionBackend
         $this->apiToken = config('magetsi.legacy_token', '');
         $this->timeout = config('magetsi.timeout', 30);
         $this->pollAttempts = config('magetsi.legacy_poll_attempts', 10);
-        $this->pollIntervalMs = config('magetsi.legacy_poll_interval', 3000);
+        $this->pollIntervalMs = config('magetsi.legacy_poll_interval', 1000);
     }
 
     public function getBackendName(): string
@@ -142,6 +142,7 @@ class LegacyMagetsiService implements TransactionBackend
         $amount = (float) $params['amount'];
         $currency = strtoupper($params['currency'] ?? 'ZWG');
         $ecocashNumber = $params['ecocash_number'];
+        $customerPhone = $params['recipient_phone'] ?? $ecocashNumber;
         $email = $params['email'] ?? config('magetsi.legacy_email', 'agent@magetsi.co.zw');
 
         // Format phone number
@@ -155,6 +156,7 @@ class LegacyMagetsiService implements TransactionBackend
             'meter' => $meterNumber,
             'payment' => $paymentMethod,
             'phone' => $formattedPhone,
+            'notification_phone' => $customerPhone,
             'meter_currency' => $currency,
             'amount' => $amount,
             'email' => $email,
