@@ -90,14 +90,23 @@ class WhatsAppService
         ]);
     }
 
-    /**
-     * Send a WhatsApp Flow message (interactive CTA).
+/**
+     * Send a WhatsApp Flow message to a user.
      *
      * If $screenId is null, uses flow_action=data_exchange so WhatsApp
      * fetches screen data from the configured endpoint.
      * If $screenId is set, uses flow_action=navigate with inline data.
+     *
+     * @param string      $to           Recipient WhatsApp ID
+     * @param string      $flowId       WhatsApp Flow ID
+     * @param string     $flowToken    Flow token for session tracking
+     * @param string|null $screenId    Screen ID to navigate to (null for data exchange)
+     * @param array|null $data         Data to pass to the screen
+     * @param string     $ctaText     Button text
+     * @param string     $message     Body message
+     * @param string|null $endpoint    Custom endpoint URI (defaults to /flow-data)
      */
-    public function sendFlow(string $to, string $flowId, string $flowToken, ?string $screenId = null, ?array $data = null, string $ctaText = 'Open', $message = 'Tap the button below to continue.'): array
+    public function sendFlow(string $to, string $flowId, string $flowToken, ?string $screenId = null, ?array $data = null, string $ctaText = 'Open', string $message = 'Tap the button below to continue.'): array
     {
         $flowAction = [
             'name' => 'flow',

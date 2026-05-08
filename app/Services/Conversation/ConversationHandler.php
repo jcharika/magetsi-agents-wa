@@ -13,6 +13,7 @@ class ConversationHandler
 {
     use ZesaConversationHandler;
     use SettingsConversationHandler;
+    use CustomerConversationHandler;
 
     public WhatsAppService $whatsapp;
     protected MeterValidationService $meterService;
@@ -20,11 +21,12 @@ class ConversationHandler
     protected FlowEngine $engine;
 
     public function __construct(
-        WhatsAppService $whatsapp,
+        WhatsAppService        $whatsapp,
         MeterValidationService $meterService,
-        BackendManager $backend,
-        FlowEngine $engine,
-    ) {
+        BackendManager         $backend,
+        FlowEngine             $engine,
+    )
+    {
         $this->whatsapp = $whatsapp;
         $this->meterService = $meterService;
         $this->backend = $backend;
@@ -81,9 +83,18 @@ class ConversationHandler
      */
     public function sendWelcome(Agent $agent, bool $isFirstWelcome = false): void
     {
-        $this->whatsapp->sendTextMessage(
+        $message = "👋 Hi *{$agent->name}*! What would you like to do?\n";
+
+        $buttons = [
+            ['id' => 'help', 'title' => 'Help & Guide'],
+            ['id' => 'support', 'title' => 'Contact Support'],
+        ];
+
+        $this->whatsapp->sendInteractiveButtons(
             $agent->wa_id,
-            "👋 Hi *{$agent->name}*! What would you like to do?"
+            $message,
+            $buttons,
+            footer: "Tip: Just send a 11-digit meter number to look it up"
         );
 
         $this->launchBuyZesaFlow($agent);
@@ -91,26 +102,10 @@ class ConversationHandler
         if ($isFirstWelcome) {
             $this->launchSettingsFlow($agent);
         }
-
-        $this->launchHelpButton($agent, $isFirstWelcome);
     }
 
     public function launchHelpButton(Agent $agent, bool $isFirstWelcome = false): void
     {
-        $buttons = [
-            ['id' => 'help', 'title' => '❓ Help & Guide'],
-            ['id' => 'support', 'title' => '📞 Contact Support'],
-        ];
-
-        if ($isFirstWelcome) {
-            $buttons[] = ['id' => 'settings', 'title' => '⚙️ Settings'];
-        }
-
-        $this->whatsapp->sendInteractiveButtons(
-            $agent->wa_id,
-            "Need help? Here's what you can do:",
-            $buttons
-        );
     }
 
     public function sendHelp(Agent $agent, ConversationSession $session): void
@@ -324,8 +319,12 @@ class ConversationHandler
             return;
         }
 
-        if (in_array($normalized, ['hi', 'hello', 'hey', 'start', 'menu'])) {
-            $this->sendWelcome($agent);
+        if (in_array($normalized, ['customer', 'shop'])) {
+            if (config('flows.customer.enabled') && config('whatsapp.flows.customer')) {
+                $this->launchCustomerFlow($agent);
+            } else {
+                $this->sendWelcome($agent);
+            }
             return;
         }
 
@@ -351,25 +350,32 @@ class ConversationHandler
 
         // Check if it looks like a meter number (11 digits)
         if (preg_match('/^\d{11}$/', $normalized)) {
+            // Immediately tell agent we're validating
+            $this->whatsapp->sendTextMessage(
+                $agent->wa_id,
+                "🔄 *Validating meter number...*"
+            );
+
             $result = $this->meterService->validate($normalized);
 
             if ($result['valid']) {
-                $this->whatsapp->sendTextMessage(
-                    $agent->wa_id,
-                    "✅ *Meter Found*\n\n"
+                // Launch flow with meter number pre-filled, button says "Buy ZESA Token"
+                $this->launchBuyZesaFlow(
+                    $agent,
+                    $normalized,
+                    buttonText: 'Buy ZESA Token',
+                    message: "*ZESA Meter Found*\n\n"
                     . "Name: {$result['name']}\n"
                     . "Address: {$result['address']}\n"
-                    . "Currency: {$result['currency']}\n\n"
-                    . "Use the *Buy ZESA* button to purchase tokens."
+                    . "Currency: {$result['currency']}"
                 );
             } else {
                 $this->whatsapp->sendTextMessage(
                     $agent->wa_id,
-                    "❌ {$result['error']}"
+                    "❌ *Invalid Meter*\n\n{$result['error']}"
                 );
+                $this->sendWelcome($agent);
             }
-
-            $this->sendWelcome($agent);
             return;
         }
 
@@ -396,6 +402,7 @@ class ConversationHandler
         }
 
         match ($buttonId) {
+            'zesa' => $this->launchBuyZesaFlow($agent),
             'buy_zesa' => $this->launchBuyZesaFlow($agent),
             'settings' => $this->launchSettingsFlow($agent),
             'help' => $this->sendHelp($agent, $session),

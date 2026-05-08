@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Agent;
 use App\Models\Transaction;
+use App\Jobs\Traits\ProcessZesaTransactionTrait;
 use App\Services\BackendManager;
 use App\Services\WhatsAppService;
 use Illuminate\Bus\Queueable;
@@ -16,9 +17,9 @@ use Illuminate\Support\Facades\Log;
 class ProcessAgentZesaTransaction implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use ProcessZesaTransactionTrait;
 
     public int $tries = 3;
-
     public int $timeout = 120;
 
     protected array $params;
@@ -62,84 +63,7 @@ class ProcessAgentZesaTransaction implements ShouldQueue
             'amount' => $this->params['amount'],
         ]);
 
-        try {
-            $result = $backend->processTransaction($this->params);
-
-            if ($result['success']) {
-                $txn = $result['transaction'] ?? [];
-
-$txn = $result['transaction'] ?? [];
-            $rawResponse = $result['raw_response'] ?? [];
-            $pollResult = $rawResponse['poll_result'] ?? [];
-            $isFailed = $pollResult['failed'] ?? false;
-            $failureMessage = $pollResult['message'] ?? null;
-
-            $successStatuses = ['COMPLETED', 'SUCCESS', 'completed', 'success'];
-            $isCompleted = in_array($txn['status'] ?? '', $successStatuses, true);
-
-            if ($isCompleted && !$isFailed) {
-                $transaction->update([
-                    'status' => 'completed',
-                    'token' => $txn['token'] ?? null,
-                    'reference' => $txn['customer_reference'] ?? $txn['reference'] ?? $txn['uid'] ?? null,
-                    'uid' => $txn['uid'] ?? null,
-                    'external_uid' => $txn['external_uid'] ?? null,
-                    'trace' => $this->params['trace'] ?? null,
-                    'biller_status' => $txn['biller_status'] ?? null,
-                    'payment_status' => $txn['payment_status'] ?? null,
-                    'payment_amount' => $txn['payment_amount'] ?? null,
-                    'customer_reference' => $txn['customer_reference'] ?? null,
-                    'api_response' => $result,
-                ]);
-
-                $this->notifySuccess($whatsapp, $agent, $transaction, $txn);
-            } elseif ($isFailed) {
-                $transaction->update([
-                    'status' => 'failed',
-                    'api_response' => $result,
-                ]);
-
-                $this->notifyFailure($whatsapp, $agent, $transaction, $failureMessage ?? 'Transaction failed to complete');
-            } else {
-                $transaction->update([
-                    'status' => $txn['status'] ?? 'pending',
-                    'token' => $txn['token'] ?? null,
-                    'reference' => $txn['customer_reference'] ?? $txn['reference'] ?? $txn['uid'] ?? null,
-                    'uid' => $txn['uid'] ?? null,
-                    'external_uid' => $txn['external_uid'] ?? null,
-                    'trace' => $this->params['trace'] ?? null,
-                    'biller_status' => $txn['biller_status'] ?? null,
-                    'payment_status' => $txn['payment_status'] ?? null,
-                    'payment_amount' => $txn['payment_amount'] ?? null,
-                    'customer_reference' => $txn['customer_reference'] ?? null,
-                    'api_response' => $result,
-                ]);
-
-                $this->notifyPending($whatsapp, $agent, $transaction, $txn);
-            }
-            } else {
-                $transaction->update([
-                    'status' => 'failed',
-                    'api_response' => $result,
-                ]);
-
-                $this->notifyFailure($whatsapp, $agent, $transaction, $result['error'] ?? 'Transaction failed');
-            }
-        } catch (\Throwable $e) {
-            Log::error('Queue: Agent ZESA exception', [
-                'transaction_id' => $transaction->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            $transaction->update([
-                'status' => 'failed',
-                'api_response' => ['error' => $e->getMessage()],
-            ]);
-
-            $this->notifyFailure($whatsapp, $agent, $transaction, $e->getMessage());
-
-            throw $e;
-        }
+        $this->processZesaTransaction($backend, $whatsapp, $agent, $transaction, $this->params);
     }
 
     protected function notifySuccess(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn): void
@@ -147,20 +71,19 @@ $txn = $result['transaction'] ?? [];
         $ref = $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—';
         $token = $txn['token'] ?? $transaction->token ?? 'pending';
 
-$message = "✅ *ZESA Purchase Successful*\n\n"
+        $message = "✅ *ZESA Purchase Successful*\n\n"
             . "Meter: {$transaction->meter_number}\n"
             . "Amount: {$transaction->currency} {$transaction->amount}\n"
             . "Reference: {$ref}\n"
-            . "Status: {$transaction->status}\n"
-            . "Token: {$token}\n\n"
-            . "Your token has been sent to {$transaction->recipient_phone}.";
+            . ($token == 'pending' ? '' : "Token: {$token}\n\n")
+            . ($transaction->recipient_phone ? "Your token has been sent to {$transaction->recipient_phone}." : '');
 
         $whatsapp->sendTextMessage($agent->wa_id, $message);
     }
 
     protected function notifyFailure(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, string $reason): void
     {
-$message = "❌ *ZESA Purchase Failed*\n\n"
+        $message = "❌ *ZESA Purchase Failed*\n\n"
             . "Meter: {$transaction->meter_number}\n"
             . "Amount: {$transaction->currency} {$transaction->amount}\n"
             . "Reference: {$transaction->reference}\n"
@@ -175,12 +98,12 @@ $message = "❌ *ZESA Purchase Failed*\n\n"
     {
         $ref = $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—';
 
-$message = "⏳ *ZESA Purchase Pending*\n\n"
+        $message = "⏳ *ZESA Purchase Pending*\n\n"
             . "Meter: {$transaction->meter_number}\n"
             . "Amount: {$transaction->currency} {$transaction->amount}\n"
             . "Reference: {$ref}\n\n"
-            . "Your payment is being processed. You will receive another notification once completed.\n\n"
-            . "If you don't receive the token within a few minutes, please check your EcoCash balance.";
+            . "We have sent a request to your mobile, please check and confirm the payment to proceed.\n\n"
+            . "If you don't receive the request within a few minutes, please check your EcoCash balance.";
 
         $whatsapp->sendTextMessage($agent->wa_id, $message);
     }

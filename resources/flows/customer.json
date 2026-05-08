@@ -1,9 +1,13 @@
 {
-    "version": "7.3",
-    "data_api_version": "3.0",
     "routing_model": {
-        "HOME_SCREEN": ["ZESA_SCREEN", "AIRTIME_SCREEN", "BUNDLES_SCREEN"]
+        "HOME_SCREEN": [
+            "ZESA_SCREEN",
+            "AIRTIME_SCREEN",
+            "BUNDLES_SCREEN"
+        ]
     },
+    "data_api_version": "3.0",
+    "version": "7.3",
     "screens": [
         {
             "id": "HOME_SCREEN",
@@ -19,6 +23,10 @@
                         "list-items": [
                             {
                                 "id": "ZESA_SCREEN",
+                                "start": {
+                                    "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCABkAGQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4eLj5OXm5+jp6vDx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6KKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/2Q==",
+                                    "alt-text": "ZESA electricity"
+                                },
                                 "main-content": {
                                     "title": "Buy Electricity (ZESA)",
                                     "description": "Prepaid tokens"
@@ -28,11 +36,23 @@
                                     "next": {
                                         "type": "screen",
                                         "name": "ZESA_SCREEN"
+                                    },
+                                    "payload": {
+                                        "trigger": "init_zesa",
+                                        "meter_valid": false,
+                                        "customer_name": "",
+                                        "customer_address": "",
+                                        "meter_currency": "ZWG",
+                                        "ecocash_number": ""
                                     }
                                 }
                             },
                             {
                                 "id": "AIRTIME_SCREEN",
+                                "start": {
+                                    "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCABoAGQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4eLj5OXm5+jp6vDx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6KKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/2Q==",
+                                    "alt-text": "Airtime"
+                                },
                                 "main-content": {
                                     "title": "Buy Airtime",
                                     "description": "NetOne and Econet"
@@ -42,11 +62,29 @@
                                     "next": {
                                         "type": "screen",
                                         "name": "AIRTIME_SCREEN"
+                                    },
+                                    "payload": {
+                                        "trigger": "init_airtime",
+                                        "ecocash_number": "",
+                                        "networks": [
+                                            {
+                                                "id": "econet",
+                                                "title": "Econet"
+                                            },
+                                            {
+                                                "id": "netone",
+                                                "title": "NetOne"
+                                            }
+                                        ]
                                     }
                                 }
                             },
                             {
                                 "id": "BUNDLES_SCREEN",
+                                "start": {
+                                    "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCABsAGQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6KKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/2Q==",
+                                    "alt-text": "Data bundles"
+                                },
                                 "main-content": {
                                     "title": "Buy Bundles",
                                     "description": "Data for all nets"
@@ -56,17 +94,24 @@
                                     "next": {
                                         "type": "screen",
                                         "name": "BUNDLES_SCREEN"
+                                    },
+                                    "payload": {
+                                        "trigger": "init_bundles",
+                                        "ecocash_number": "",
+                                        "networks": [
+                                            {
+                                                "id": "econet",
+                                                "title": "Econet"
+                                            },
+                                            {
+                                                "id": "netone",
+                                                "title": "NetOne"
+                                            }
+                                        ]
                                     }
                                 }
                             }
-                        ],
-                        "on-click-action": {
-                            "name": "navigate",
-                            "next": {
-                                "type": "screen",
-                                "name": "${form.main_nav}"
-                            }
-                        }
+                        ]
                     }
                 ]
             }
@@ -74,6 +119,7 @@
         {
             "id": "ZESA_SCREEN",
             "terminal": true,
+            "success": true,
             "title": "Buy ZESA Token",
             "data": {
                 "meter_valid": {
@@ -107,12 +153,6 @@
                     {
                         "type": "TextBody",
                         "text": "Purchase prepaid electricity tokens for your ZESA meter"
-                    },
-                    {
-"type": "Image",
-                        "src": "/img/zetdc-logo.webp",
-                        "width": 100,
-                        "height": 60
                     },
                     {
                         "type": "Form",
@@ -216,6 +256,7 @@
         {
             "id": "AIRTIME_SCREEN",
             "terminal": true,
+            "success": true,
             "title": "Buy Airtime",
             "data": {
                 "ecocash_number": {
@@ -227,13 +268,23 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": { "type": "string" },
-                            "title": { "type": "string" }
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
-                        { "id": "econet", "title": "Econet" },
-                        { "id": "netone", "title": "NetOne" }
+                        {
+                            "id": "econet",
+                            "title": "Econet"
+                        },
+                        {
+                            "id": "netone",
+                            "title": "NetOne"
+                        }
                     ]
                 }
             },
@@ -263,30 +314,6 @@
                                 "data-source": "${data.networks}"
                             },
                             {
-                                "type": "If",
-                                "condition": "${form.network_select} == 'econet'",
-                                "then": [
-                                    {
-                                        "type": "Image",
-                                        "src": "/img/Econet%20Wireless.webp",
-                                        "width": 100,
-                                        "height": 50
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "If",
-                                "condition": "${form.network_select} == 'netone'",
-                                "then": [
-                                    {
-                                        "type": "Image",
-                                        "src": "/img/netone.svg",
-                                        "width": 100,
-                                        "height": 50
-                                    }
-                                ]
-                            },
-                            {
                                 "type": "TextInput",
                                 "name": "phone_number",
                                 "label": "Phone Number",
@@ -308,22 +335,22 @@
                                 "input-type": "phone",
                                 "required": true,
                                 "helper-text": "Payment will be deducted from this number"
-                            },
-                            {
-                                "type": "Footer",
-                                "label": "Buy Airtime",
-                                "on-click-action": {
-                                    "name": "complete",
-                                    "payload": {
-                                        "trigger": "buy_airtime",
-                                        "network": "${form.network_select}",
-                                        "phone_number": "${form.phone_number}",
-                                        "amount": "${form.amount}",
-                                        "ecocash_number": "${form.ecocash_number}"
-                                    }
-                                }
                             }
                         ]
+                    },
+                    {
+                        "type": "Footer",
+                        "label": "Buy Airtime",
+                        "on-click-action": {
+                            "name": "complete",
+                            "payload": {
+                                "trigger": "buy_airtime",
+                                "network": "${form.network_select}",
+                                "phone_number": "${form.phone_number}",
+                                "amount": "${form.amount}",
+                                "ecocash_number": "${form.ecocash_number}"
+                            }
+                        }
                     }
                 ]
             }
@@ -331,6 +358,7 @@
         {
             "id": "BUNDLES_SCREEN",
             "terminal": true,
+            "success": true,
             "title": "Buy Bundles",
             "data": {
                 "ecocash_number": {
@@ -342,13 +370,23 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": { "type": "string" },
-                            "title": { "type": "string" }
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
-                        { "id": "econet", "title": "Econet" },
-                        { "id": "netone", "title": "NetOne" }
+                        {
+                            "id": "econet",
+                            "title": "Econet"
+                        },
+                        {
+                            "id": "netone",
+                            "title": "NetOne"
+                        }
                     ]
                 }
             },
@@ -378,30 +416,6 @@
                                 "data-source": "${data.networks}"
                             },
                             {
-                                "type": "If",
-                                "condition": "${form.network_select} == 'econet'",
-                                "then": [
-                                    {
-                                        "type": "Image",
-                                        "src": "/img/Econet%20Wireless.webp",
-                                        "width": 100,
-                                        "height": 50
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "If",
-                                "condition": "${form.network_select} == 'netone'",
-                                "then": [
-                                    {
-                                        "type": "Image",
-                                        "src": "/img/netone.svg",
-                                        "width": 100,
-                                        "height": 50
-                                    }
-                                ]
-                            },
-                            {
                                 "type": "TextInput",
                                 "name": "phone_number",
                                 "label": "Phone Number",
@@ -424,22 +438,22 @@
                                 "input-type": "phone",
                                 "required": true,
                                 "helper-text": "Payment will be deducted from this number"
-                            },
-                            {
-                                "type": "Footer",
-                                "label": "Buy Bundle",
-                                "on-click-action": {
-                                    "name": "complete",
-                                    "payload": {
-                                        "trigger": "buy_bundle",
-                                        "network": "${form.network_select}",
-                                        "phone_number": "${form.phone_number}",
-                                        "bundle_size": "${form.bundle_size}",
-                                        "ecocash_number": "${form.ecocash_number}"
-                                    }
-                                }
                             }
                         ]
+                    },
+                    {
+                        "type": "Footer",
+                        "label": "Buy Bundle",
+                        "on-click-action": {
+                            "name": "complete",
+                            "payload": {
+                                "trigger": "buy_bundle",
+                                "network": "${form.network_select}",
+                                "phone_number": "${form.phone_number}",
+                                "bundle_size": "${form.bundle_size}",
+                                "ecocash_number": "${form.ecocash_number}"
+                            }
+                        }
                     }
                 ]
             }

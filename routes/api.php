@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CustomerFlowController;
 use App\Http\Controllers\FlowDataController;
 use App\Http\Controllers\WhatsAppVerifyWebhookController;
 use App\Http\Controllers\WhatsAppWebhookController;
@@ -18,3 +19,4 @@ use Illuminate\Support\Facades\Route;
 Route::get('webhook', WhatsAppVerifyWebhookController::class);
 Route::post('webhook', WhatsAppWebhookController::class);
 Route::post('flow-data', FlowDataController::class);
+Route::post('customer-flow', CustomerFlowController::class);

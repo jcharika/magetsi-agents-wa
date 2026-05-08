@@ -12,11 +12,12 @@ trait ZesaConversationHandler
     /**
      * Launch the Buy ZESA flow.
      *
-     * Respects the WHATSAPP_FLOW_MODE setting:
-     *   - "interactive" → sends an interactive flow message with CTA
-     *   - "template"    → sends an approved template with FLOW button
+     * @param Agent $agent
+     * @param string|null $meterNumber Pre-fill meter number if provided
+     * @param string|null $buttonText Custom button text (default: "Continue")
+     * @param string|null $message
      */
-    public function launchBuyZesaFlow(Agent $agent): void
+    public function launchBuyZesaFlow(Agent $agent, ?string $meterNumber = null, ?string $buttonText = null, ?string $message = null): void
     {
         $flowId = config('whatsapp.flows.buy_zesa');
 
@@ -37,6 +38,14 @@ trait ZesaConversationHandler
             'ecocash_number' => $agent->ecocash_number ?? '',
         ];
 
+        // Pre-fill meter number if provided
+        if ($meterNumber) {
+            $flowData['meter_number'] = $meterNumber;
+            $flowData['meter_valid'] = true;
+        }
+
+        $ctaText = $buttonText ?? 'Continue';
+
         if (config('whatsapp.flow_mode') === 'template') {
             // Template mode — business-initiated, requires approved template
             $this->whatsapp->sendFlowTemplate(
@@ -55,8 +64,8 @@ trait ZesaConversationHandler
                 $flowToken,
                 'BUY_ZESA_SCREEN',
                 $flowData,
-                'Continue',
-                '⚡ Buy ZESA — tap the button below'
+                $ctaText,
+                $message ?? '⚡ Buy ZESA — tap the button below'
             );
         }
     }

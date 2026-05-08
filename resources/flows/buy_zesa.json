@@ -41,6 +41,10 @@
                 "ecocash_number": {
                     "type": "string",
                     "__example__": "0771234567"
+                },
+                "meter_number": {
+                    "type": "string",
+                    "__example__": "12345678912"
                 }
             },
             "layout": {
@@ -59,6 +63,7 @@
                         "input-type": "number",
                         "label-variant": "large",
                         "required": true,
+                        "init-value": "${data.meter_number}",
                         "helper-text": "Enter your 11-digit ZESA meter number"
                     },
                     {

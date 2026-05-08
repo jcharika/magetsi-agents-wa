@@ -21,18 +21,13 @@ trait CustomerFlowHandler
 
     protected function handleCustomerInit(string $screen, array $data, Agent $agent): array
     {
+        // Normalize screen names
+        $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
+        Log::info('Flow: handleCustomerInit', ['screen' => $screen, 'hasData' => !empty($data)]);
+
         if (!$screen || $screen === 'HOME_SCREEN') {
             return [
                 'screen' => 'HOME_SCREEN',
-                'data' => [
-                    'ecocash_number' => $agent->ecocash_number ?? '',
-                ],
-            ];
-        }
-
-        if ($screen === 'ZESA_SCREEN') {
-            return [
-                'screen' => 'ZESA_SCREEN',
                 'data' => [
                     'ecocash_number' => $agent->ecocash_number ?? '',
                     'meter_valid' => false,
@@ -43,40 +38,67 @@ trait CustomerFlowHandler
             ];
         }
 
+        if ($screen === 'ZESA_SCREEN') {
+            $responseData = [
+                'ecocash_number' => $agent->ecocash_number ?? '',
+                'meter_valid' => false,
+                'customer_name' => '',
+                'customer_address' => '',
+                'meter_currency' => 'ZWG',
+            ];
+            Log::info('Flow: ZESA_SCREEN init data', $responseData);
+            return [
+                'screen' => 'ZESA_SCREEN',
+                'data' => $responseData,
+            ];
+        }
+
         if ($screen === 'AIRTIME_SCREEN') {
+            $responseData = [
+                'ecocash_number' => $agent->ecocash_number ?? '',
+                'networks' => [
+                    ['id' => 'econet', 'title' => 'Econet'],
+                    ['id' => 'netone', 'title' => 'NetOne'],
+                ],
+            ];
+            Log::info('Flow: AIRTIME_SCREEN init data', $responseData);
             return [
                 'screen' => 'AIRTIME_SCREEN',
-                'data' => [
-                    'ecocash_number' => $agent->ecocash_number ?? '',
-                    'networks' => [
-                        ['id' => 'econet', 'title' => 'Econet'],
-                        ['id' => 'netone', 'title' => 'NetOne'],
-                    ],
-                ],
+                'data' => $responseData,
             ];
         }
 
         if ($screen === 'BUNDLES_SCREEN') {
+            $responseData = [
+                'ecocash_number' => $agent->ecocash_number ?? '',
+                'networks' => [
+                    ['id' => 'econet', 'title' => 'Econet'],
+                    ['id' => 'netone', 'title' => 'NetOne'],
+                ],
+            ];
+            Log::info('Flow: BUNDLES_SCREEN init data', $responseData);
             return [
                 'screen' => 'BUNDLES_SCREEN',
-                'data' => [
-                    'ecocash_number' => $agent->ecocash_number ?? '',
-                    'networks' => [
-                        ['id' => 'econet', 'title' => 'Econet'],
-                        ['id' => 'netone', 'title' => 'NetOne'],
-                    ],
-                ],
+                'data' => $responseData,
             ];
         }
 
+        Log::warning('Flow: Unknown screen in init', ['screen' => $screen]);
         return [
             'screen' => 'HOME_SCREEN',
-            'data' => $data ?: (object)[],
+            'data' => [
+                'ecocash_number' => $agent->ecocash_number ?? '',
+            ],
         ];
     }
 
     protected function handleCustomerDataExchange(string $screen, array $data, Agent $agent, string $flowToken): array
     {
+        Log::info('Flow: handleCustomerDataExchange', ['screen' => $screen, 'data' => $data]);
+
+        // Normalize screen names
+        $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
+
         if ($screen === 'AIRTIME_SCREEN') {
             return $this->handleBuyAirtime($agent, $data, $flowToken);
         }

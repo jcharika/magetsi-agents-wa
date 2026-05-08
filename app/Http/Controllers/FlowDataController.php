@@ -107,6 +107,8 @@ class FlowDataController extends Controller
 
     protected function handleInit(string $screen, array $data, string $flowToken): array
     {
+        $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
+
         $tokenData = $this->parseFlowToken($flowToken);
         $agent = $this->resolveAgent($tokenData);
 
@@ -138,9 +140,11 @@ class FlowDataController extends Controller
     protected function handleDataExchange(string $screen, array $data, string $flowToken): array
     {
         $tokenData = $this->parseFlowToken($flowToken);
+        Log::info('Flow: handleDataExchange', ['screen' => $screen, 'data' => $data, 'tokenData' => $tokenData]);
         $agent = $this->resolveAgent($tokenData);
 
         if ($this->shouldUseCustomerFlow($tokenData['flow'] ?? '')) {
+            Log::info('Flow: using customer flow');
             return $this->handleCustomerDataExchange($screen, $data, $agent, $flowToken);
         }
 

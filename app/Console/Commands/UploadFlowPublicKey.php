@@ -23,6 +23,9 @@ class UploadFlowPublicKey extends Command
 
     public function handle(): int
     {
+        $apiVersion = $this->option('api-version')
+            ?? config('whatsapp.api_version', 'v21.0');
+        
         $phoneNumberId = $this->option('phone-number-id')
             ?? config('whatsapp.phone_number_id');
 
@@ -63,7 +66,7 @@ class UploadFlowPublicKey extends Command
 
         // --- Dry-run preview ------------------------------------------------
 
-        $url = "https://graph.facebook.com/v21.0/{$phoneNumberId}/whatsapp_business_encryption";
+        $url = "https://graph.facebook.com/$apiVersion/{$phoneNumberId}/whatsapp_business_encryption";
 
         if ($this->option('dry-run')) {
             $this->warn('Dry-run mode — request NOT sent.');

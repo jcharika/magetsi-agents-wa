@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\TransactionBackend;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Random\RandomException;
 
 class MockMagetsiService implements TransactionBackend
 {
@@ -37,6 +38,9 @@ class MockMagetsiService implements TransactionBackend
         ];
     }
 
+    /**
+     * @throws RandomException
+     */
     public function processTransaction(array $params): array
     {
         Log::info('[MockBackend] Processing transaction', $params);
@@ -74,6 +78,9 @@ class MockMagetsiService implements TransactionBackend
         ];
     }
 
+    /**
+     * @throws RandomException
+     */
     protected function generateZesaToken(int $amount): string
     {
         $segments = [];
