@@ -62,6 +62,11 @@ trait CustomerFlowHandler
                     ['id' => 'econet', 'title' => 'Econet'],
                     ['id' => 'netone', 'title' => 'NetOne'],
                 ],
+                'payment_methods' => [
+                    ['id' => 'ecocash', 'title' => 'EcoCash ZWG'],
+                    ['id' => 'ecocash-usd', 'title' => 'EcoCash USD'],
+                    ['id' => 'stripe', 'title' => 'International Card'],
+                ],
             ];
             Log::info('Flow: AIRTIME_SCREEN init data', $responseData);
             return [
@@ -83,6 +88,14 @@ trait CustomerFlowHandler
             return [
                 'screen' => 'BUNDLES_SCREEN',
                 'data' => $responseData,
+            ];
+        }
+
+        if ($screen === 'TELONE_HOME_SCREEN') {
+            Log::info('Flow: TELONE_HOME_SCREEN init data');
+            return [
+                'screen' => 'TELONE_HOME_SCREEN',
+                'data' => [],
             ];
         }
 
@@ -258,25 +271,37 @@ trait CustomerFlowHandler
             ];
         }
 
-        $network = $data['network'] ?? '';
-        $phoneNumber = $data['phone_number'] ?? '';
+        $receiver = $data['receiver'] ?? '';
+        $paymentMethod = $data['payment'] ?? 'ecocash';
+        $phone = $data['phone'] ?? $data['phone_usd'] ?? '';
         $amount = (float)($data['amount'] ?? 0);
-        $ecocashNumber = $data['ecocash_number'] ?? $agent->ecocash_number;
+        $email = $data['email'] ?? '';
 
-        if (!$network || !$phoneNumber || !$amount) {
+        $currency = match ($paymentMethod) {
+            'ecocash-usd', 'stripe' => 'USD',
+            default => 'ZWG',
+        };
+
+        if (!$receiver || !$amount) {
             return [
                 'screen' => 'AIRTIME_SCREEN',
                 'data' => ['error_message' => 'Please fill in all required fields.'],
             ];
         }
 
+        $network = $this->detectNetwork($receiver);
+
         $params = [
             'type' => 'airtime',
-            'network' => $network,
-            'phone_number' => $phoneNumber,
+            'handler' => 'AIRTIME',
+            'receiver' => $receiver,
+            'payment_method' => $paymentMethod,
+            'phone' => $phone,
             'amount' => $amount,
-            'currency' => 'ZWG',
-            'ecocash_number' => $ecocashNumber,
+            'email' => $email,
+            'currency' => $currency,
+            'network' => $network,
+            'ecocash_number' => $phone ?: $agent->ecocash_number,
             'guest_id' => "Agent {$agent->id}",
         ];
 
@@ -544,5 +569,20 @@ trait CustomerFlowHandler
                 ],
             ],
         ];
+    }
+
+    protected function detectNetwork(string $phoneNumber): string
+    {
+        $digits = preg_replace('/\D/', '', $phoneNumber);
+
+        if (str_starts_with($digits, '26371')) {
+            return 'netone';
+        }
+
+        if (str_starts_with($digits, '26377') || str_starts_with($digits, '26378') || str_starts_with($digits, '26379')) {
+            return 'econet';
+        }
+
+        return 'econet';
     }
 }

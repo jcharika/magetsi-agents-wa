@@ -127,6 +127,29 @@ class LegacyMagetsiService implements TransactionBackend
     }
 
     /**
+     * Process a transaction (ZESA, Airtime, Bundle, TelOne, Biller).
+     *
+     * POST /api/{service}/v1/init
+     *
+     * After init, polls /api/{service}/v1/transactions/check until complete.
+     */
+    public function processTransaction(array $params): array
+    {
+        Log::info('[LegacyBackend] Processing transaction', $params);
+
+        $type = $params['type'] ?? 'zesa';
+
+        return match ($type) {
+            'zesa' => $this->processZesaTransaction($params),
+            'airtime' => $this->processAirtime($params),
+            'bundle' => $this->processBundle($params),
+            'telone' => $this->processTelone($params),
+            'biller' => $this->processBillerPayment($params),
+            default => $this->processZesaTransaction($params),
+        };
+    }
+
+    /**
      * Process a ZESA transaction.
      *
      * POST /api/zesa/v1/init
@@ -134,9 +157,9 @@ class LegacyMagetsiService implements TransactionBackend
      *
      * After init, polls /api/zesa/v1/transactions/check until complete.
      */
-    public function processTransaction(array $params): array
+    protected function processZesaTransaction(array $params): array
     {
-        Log::info('[LegacyBackend] Processing transaction', $params);
+        Log::info('[LegacyBackend] Processing ZESA transaction', $params);
 
         $meterNumber = $params['meter_number'];
         $amount = (float) $params['amount'];
@@ -391,5 +414,223 @@ class LegacyMagetsiService implements TransactionBackend
             }
         }
         return implode(' ', $messages);
+    }
+
+    // ── Airtime Service Stubs ─────────────────────────────────
+
+    /**
+     * Initialize airtime purchase.
+     *
+     * POST /api/airtime/v1/init
+     */
+    public function initAirtime(array $params): array
+    {
+        Log::info('[LegacyBackend] Init airtime', $params);
+
+        return [
+            'success' => false,
+            'error' => 'Airtime service is not yet implemented via legacy API.',
+        ];
+    }
+
+    /**
+     * Process airtime purchase (after init).
+     */
+    public function processAirtime(array $params): array
+    {
+        Log::info('[LegacyBackend] Process airtime', $params);
+
+        $result = $this->initAirtime($params);
+        if (!$result['success']) {
+            return $result;
+        }
+
+        $ref = $result['body']['ref'] ?? null;
+        if ($ref) {
+            return $this->pollAirtimeStatus($ref);
+        }
+
+        return [
+            'success' => false,
+            'error' => 'Airtime purchase failed.',
+        ];
+    }
+
+    protected function pollAirtimeStatus(string $ref): array
+    {
+        Log::info('[LegacyBackend] Polling airtime status', ['ref' => $ref]);
+
+        return [
+            'success' => false,
+            'error' => 'Airtime polling not yet implemented.',
+        ];
+    }
+
+    // ── Bundles Service Stubs ────────────────────────────────
+
+    /**
+     * Initialize data bundle purchase.
+     *
+     * POST /api/bundles/v1/init
+     */
+    public function initBundle(array $params): array
+    {
+        Log::info('[LegacyBackend] Init bundle', $params);
+
+        return [
+            'success' => false,
+            'error' => 'Bundle service is not yet implemented via legacy API.',
+        ];
+    }
+
+    /**
+     * Process data bundle purchase.
+     */
+    public function processBundle(array $params): array
+    {
+        Log::info('[LegacyBackend] Process bundle', $params);
+
+        $result = $this->initBundle($params);
+        if (!$result['success']) {
+            return $result;
+        }
+
+        $ref = $result['body']['ref'] ?? null;
+        if ($ref) {
+            return $this->pollBundleStatus($ref);
+        }
+
+        return [
+            'success' => false,
+            'error' => 'Bundle purchase failed.',
+        ];
+    }
+
+    protected function pollBundleStatus(string $ref): array
+    {
+        Log::info('[LegacyBackend] Polling bundle status', ['ref' => $ref]);
+
+        return [
+            'success' => false,
+            'error' => 'Bundle polling not yet implemented.',
+        ];
+    }
+
+    // ── TelOne Service Stubs ─────────────────────────────────
+
+    /**
+     * Validate TelOne account.
+     *
+     * POST /api/telone/v1/validate
+     */
+    public function validateTelone(string $accountNumber, string $currency = 'ZWG'): array
+    {
+        Log::info('[LegacyBackend] Validate TelOne account', [
+            'account' => $accountNumber,
+            'currency' => $currency,
+        ]);
+
+        return [
+            'success' => false,
+            'error' => 'TelOne validation not yet implemented via legacy API.',
+        ];
+    }
+
+    /**
+     * Initialize TelOne WiFi purchase.
+     *
+     * POST /api/telone/v1/init
+     */
+    public function initTelone(array $params): array
+    {
+        Log::info('[LegacyBackend] Init TelOne', $params);
+
+        return [
+            'success' => false,
+            'error' => 'TelOne service is not yet implemented via legacy API.',
+        ];
+    }
+
+    /**
+     * Process TelOne WiFi purchase.
+     */
+    public function processTelone(array $params): array
+    {
+        Log::info('[LegacyBackend] Process TelOne', $params);
+
+        $result = $this->initTelone($params);
+        if (!$result['success']) {
+            return $result;
+        }
+
+        $ref = $result['body']['ref'] ?? null;
+        if ($ref) {
+            return $this->pollTeloneStatus($ref);
+        }
+
+        return [
+            'success' => false,
+            'error' => 'TelOne purchase failed.',
+        ];
+    }
+
+    protected function pollTeloneStatus(string $ref): array
+    {
+        Log::info('[LegacyBackend] Polling TelOne status', ['ref' => $ref]);
+
+        return [
+            'success' => false,
+            'error' => 'TelOne polling not yet implemented.',
+        ];
+    }
+
+    // ── Billers Service Stubs ────────────────────────────────
+
+    /**
+     * Get list of available billers.
+     *
+     * GET /api/billers/v1/list
+     */
+    public function getBillers(): array
+    {
+        Log::info('[LegacyBackend] Get billers');
+
+        return [
+            'success' => false,
+            'error' => 'Billers service is not yet implemented via legacy API.',
+        ];
+    }
+
+    /**
+     * Validate biller account.
+     *
+     * POST /api/billers/v1/validate
+     */
+    public function validateBiller(string $billerName, string $accountNumber): array
+    {
+        Log::info('[LegacyBackend] Validate biller account', [
+            'biller' => $billerName,
+            'account' => $accountNumber,
+        ]);
+
+        return [
+            'success' => false,
+            'error' => 'Biller validation not yet implemented via legacy API.',
+        ];
+    }
+
+    /**
+     * Process biller payment.
+     *
+     * POST /api/billers/v1/init
+     */
+    public function processBillerPayment(array $params): array
+    {
+        Log::info('[LegacyBackend] Process biller payment', $params);
+
+        return [
+            'success' => false,
+            'error' => 'Biller payment service is not yet implemented via legacy API.',
+        ];
     }
 }
