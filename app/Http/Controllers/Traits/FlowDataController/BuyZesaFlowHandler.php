@@ -114,6 +114,7 @@ trait BuyZesaFlowHandler
                         'flow_token' => $flowToken,
                         'success' => true,
                         'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                        'close_flow' => true,
                     ],
                 ],
             ],

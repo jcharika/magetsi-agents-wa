@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Traits\FlowDataController;
 use App\Jobs\ProcessAirtimeTransaction;
 use App\Jobs\ProcessBundleTransaction;
 use App\Jobs\ProcessZesaTransaction;
+use App\Jobs\ProcessTeloneTransaction;
+use App\Jobs\ProcessBillerTransaction;
 use App\Models\Agent;
 use App\Services\BackendManager;
 use App\Services\MeterValidationService;
@@ -74,12 +76,56 @@ trait CustomerFlowHandler
                 'networks' => [
                     ['id' => 'econet', 'title' => 'Econet'],
                     ['id' => 'netone', 'title' => 'NetOne'],
+                    ['id' => 'smartsuite', 'title' => 'SmartSuite'],
                 ],
             ];
             Log::info('Flow: BUNDLES_SCREEN init data', $responseData);
             return [
                 'screen' => 'BUNDLES_SCREEN',
                 'data' => $responseData,
+            ];
+        }
+
+        if ($screen === 'TELONE_SCREEN') {
+            $responseData = [
+                'ecocash_number' => $agent->ecocash_number ?? '',
+                'currency' => 'ZWG',
+            ];
+            Log::info('Flow: TELONE_SCREEN init data', $responseData);
+            return [
+                'screen' => 'TELONE_SCREEN',
+                'data' => $responseData,
+            ];
+        }
+
+        if ($screen === 'TELONE_USD_SCREEN') {
+            $responseData = [
+                'ecocash_number' => $agent->ecocash_number ?? '',
+                'currency' => 'USD',
+            ];
+            Log::info('Flow: TELONE_USD_SCREEN init data', $responseData);
+            return [
+                'screen' => 'TELONE_USD_SCREEN',
+                'data' => $responseData,
+            ];
+        }
+
+        if ($screen === 'BILLERS_SCREEN') {
+            $responseData = [
+                'ecocash_number' => $agent->ecocash_number ?? '',
+            ];
+            Log::info('Flow: BILLERS_SCREEN init data', $responseData);
+            return [
+                'screen' => 'BILLERS_SCREEN',
+                'data' => $responseData,
+            ];
+        }
+
+        if ($screen === 'SUPPORT_SCREEN') {
+            Log::info('Flow: SUPPORT_SCREEN init data');
+            return [
+                'screen' => 'SUPPORT_SCREEN',
+                'data' => [],
             ];
         }
 
@@ -109,6 +155,14 @@ trait CustomerFlowHandler
 
         if ($screen === 'ZESA_SCREEN') {
             return $this->handleBuyZesaDataExchange($agent, $data, $flowToken);
+        }
+
+        if ($screen === 'TELONE_SCREEN' || $screen === 'TELONE_USD_SCREEN') {
+            return $this->handleTeloneDataExchange($agent, $data, $flowToken);
+        }
+
+        if ($screen === 'BILLERS_SCREEN') {
+            return $this->handleBillerDataExchange($agent, $data, $flowToken);
         }
 
         return $this->buildSuccessResponse($flowToken);
@@ -186,6 +240,7 @@ trait CustomerFlowHandler
                         'success' => true,
                         'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
                         'reference' => 'queued',
+                        'close_flow' => true,
                     ],
                 ],
             ],
@@ -242,6 +297,7 @@ trait CustomerFlowHandler
                         'flow_token' => $flowToken,
                         'success' => true,
                         'message' => "Your {$network} airtime purchase of {$amount} ZWG for {$phoneNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                        'close_flow' => true,
                     ],
                 ],
             ],
@@ -298,6 +354,192 @@ trait CustomerFlowHandler
                         'flow_token' => $flowToken,
                         'success' => true,
                         'message' => "Your {$network} bundle purchase of {$bundleSize} for {$phoneNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                        'close_flow' => true,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    protected function handleTeloneDataExchange(Agent $agent, array $data, string $flowToken): array
+    {
+        $trigger = $data['trigger'] ?? null;
+
+        if ($trigger === 'verify_telone_account') {
+            return $this->verifyTeloneAccount($data);
+        }
+
+        if ($trigger === 'buy_telone' || $trigger === 'buy_telone_usd') {
+            return $this->processTelonePurchase($agent, $data, $flowToken);
+        }
+
+        return [
+            'screen' => 'TELONE_SCREEN',
+            'data' => ['error_message' => 'Invalid action.'],
+        ];
+    }
+
+    protected function verifyTeloneAccount(array $data): array
+    {
+        $accountNumber = $data['account_number'] ?? '';
+        $currency = $data['currency'] ?? 'ZWG';
+
+        $result = Cache::remember("telone_validation/$accountNumber/$currency", 360, function () use ($accountNumber, $currency) {
+            return $this->backend()->validate([
+                'handler' => $currency === 'USD' ? 'TELONE_USD' : 'TELONE',
+                'biller_account' => $accountNumber,
+            ]);
+        });
+
+        return [
+            'screen' => $currency === 'USD' ? 'TELONE_USD_SCREEN' : 'TELONE_SCREEN',
+            'data' => [
+                'account_valid' => $result['valid'] ?? false,
+                'customer_name' => $result['name'] ?? '',
+                'customer_address' => $result['address'] ?? '',
+                'error_message' => ($result['valid'] ?? false) ? '' : 'Invalid TelOne account number.',
+            ],
+        ];
+    }
+
+    protected function processTelonePurchase(Agent $agent, array $data, string $flowToken): array
+    {
+        $accountNumber = $data['biller_account'] ?? '';
+        $phoneNumber = $data['phone_number'] ?? '';
+        $package = $data['package'] ?? '';
+        $currency = $data['currency'] ?? 'ZWG';
+        $ecocashNumber = $data['payment_account'] ?? $agent->ecocash_number;
+
+        if (!$accountNumber || !$phoneNumber || !$package) {
+            $screen = $currency === 'USD' ? 'TELONE_USD_SCREEN' : 'TELONE_SCREEN';
+            return [
+                'screen' => $screen,
+                'data' => ['error_message' => 'Please fill in all required fields.'],
+            ];
+        }
+
+        $params = [
+            'type' => 'telone',
+            'handler' => $currency === 'USD' ? 'TELONE_USD' : 'TELONE',
+            'biller_account' => $accountNumber,
+            'phone_number' => $phoneNumber,
+            'package' => $package,
+            'currency' => $currency,
+            'ecocash_number' => $ecocashNumber,
+            'guest_id' => "Agent {$agent->id}",
+        ];
+
+        $agentData = [
+            'wa_id' => $agent->wa_id,
+            'name' => $agent->name,
+            'ecocash_number' => $agent->ecocash_number,
+        ];
+
+        ProcessTeloneTransaction::dispatch($params, $agentData, $flowToken)
+            ->onQueue('transactions');
+
+        $currencyLabel = $currency === 'USD' ? 'USD' : 'ZWG';
+        return [
+            'screen' => 'SUCCESS',
+            'data' => [
+                'extension_message_response' => [
+                    'params' => [
+                        'flow_token' => $flowToken,
+                        'success' => true,
+                        'message' => "Your TelOne WiFi purchase of {$package} for account {$accountNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                        'close_flow' => true,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    protected function handleBillerDataExchange(Agent $agent, array $data, string $flowToken): array
+    {
+        $trigger = $data['trigger'] ?? null;
+
+        if ($trigger === 'verify_biller_account') {
+            return $this->verifyBillerAccount($data);
+        }
+
+        if ($trigger === 'pay_biller') {
+            return $this->processBillerPayment($agent, $data, $flowToken);
+        }
+
+        return [
+            'screen' => 'BILLERS_SCREEN',
+            'data' => ['error_message' => 'Invalid action.'],
+        ];
+    }
+
+    protected function verifyBillerAccount(array $data): array
+    {
+        $billerName = $data['biller_name'] ?? '';
+        $accountNumber = $data['account_number'] ?? '';
+
+        $result = Cache::remember("biller_validation/$billerName/$accountNumber", 360, function () use ($billerName, $accountNumber) {
+            return $this->backend()->validate([
+                'handler' => 'BILLERS',
+                'biller_name' => $billerName,
+                'biller_account' => $accountNumber,
+            ]);
+        });
+
+        return [
+            'screen' => 'BILLERS_SCREEN',
+            'data' => [
+                'account_valid' => $result['valid'] ?? false,
+                'customer_name' => $result['name'] ?? '',
+                'customer_address' => $result['address'] ?? '',
+                'error_message' => ($result['valid'] ?? false) ? '' : 'Invalid biller account.',
+            ],
+        ];
+    }
+
+    protected function processBillerPayment(Agent $agent, array $data, string $flowToken): array
+    {
+        $billerName = $data['biller_name'] ?? '';
+        $accountNumber = $data['biller_account'] ?? '';
+        $amount = (float)($data['amount'] ?? 0);
+        $currency = $data['currency'] ?? 'ZWG';
+        $ecocashNumber = $data['payment_account'] ?? $agent->ecocash_number;
+
+        if (!$billerName || !$accountNumber || !$amount) {
+            return [
+                'screen' => 'BILLERS_SCREEN',
+                'data' => ['error_message' => 'Please fill in all required fields.'],
+            ];
+        }
+
+        $params = [
+            'type' => 'biller',
+            'handler' => 'BILLERS',
+            'biller_name' => $billerName,
+            'biller_account' => $accountNumber,
+            'amount' => $amount,
+            'currency' => $currency,
+            'ecocash_number' => $ecocashNumber,
+            'guest_id' => "Agent {$agent->id}",
+        ];
+
+        $agentData = [
+            'wa_id' => $agent->wa_id,
+            'name' => $agent->name,
+            'ecocash_number' => $agent->ecocash_number,
+        ];
+
+        ProcessBillerTransaction::dispatch($params, $agentData, $flowToken)
+            ->onQueue('transactions');
+
+        return [
+            'screen' => 'SUCCESS',
+            'data' => [
+                'extension_message_response' => [
+                    'params' => [
+                        'flow_token' => $flowToken,
+                        'success' => true,
+                        'message' => "Your payment of {$amount} {$currency} to {$billerName} (Account: {$accountNumber}) is being processed. You will receive a WhatsApp notification once complete.",
+                        'close_flow' => true,
                     ],
                 ],
             ],
