@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Traits\FlowDataController;
 
-use App\Models\Agent;
+use Magetsi\Common\Models\Agent;
 
 trait SettingsFlowHandler
 {

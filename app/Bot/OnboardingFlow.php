@@ -2,7 +2,7 @@
 
 namespace App\Bot;
 
-use App\Models\Agent;
+use Magetsi\Common\Models\Agent;
 
 class OnboardingFlow extends BotFlow
 {

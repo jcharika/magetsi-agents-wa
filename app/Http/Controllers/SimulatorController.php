@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agent;
-use App\Models\Transaction;
+use Magetsi\Common\Models\Agent;
+use Magetsi\Common\Models\Transaction;
 use App\Services\Conversation\ConversationSession;
 use App\Services\Conversation\FlowEngine;
 use App\Services\Conversation\SimulatorMessageCollector;
-use App\Services\MeterValidationService;
+use Magetsi\Common\Services\MeterValidationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -302,7 +302,7 @@ class SimulatorController extends Controller
      */
     protected function handleZesaTransaction(Agent $agent, array $data): JsonResponse
     {
-        $backend = app(\App\Services\BackendManager::class);
+        $backend = app(\Magetsi\Common\Services\BackendManager::class);
         $meterService = app(MeterValidationService::class);
 
         $meterNumber = $data['meter_number'] ?? '';

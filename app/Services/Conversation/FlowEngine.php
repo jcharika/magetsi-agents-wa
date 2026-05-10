@@ -3,7 +3,7 @@
 namespace App\Services\Conversation;
 
 use App\Bot\BotFlow;
-use App\Models\Agent;
+use Magetsi\Common\Models\Agent;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;

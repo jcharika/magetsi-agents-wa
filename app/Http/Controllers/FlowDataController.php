@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agent;
-use App\Services\BackendManager;
-use App\Services\FlowEncryptionService;
-use App\Services\MeterValidationService;
+use Magetsi\Common\Models\Agent;
+use Magetsi\Common\Services\BackendManager;
+use Magetsi\Common\Services\FlowEncryptionService;
+use Magetsi\Common\Services\MeterValidationService;
 use App\Http\Controllers\Traits\FlowDataController\BuyZesaFlowHandler;
 use App\Http\Controllers\Traits\FlowDataController\SettingsFlowHandler;
-use App\Http\Controllers\Traits\FlowDataController\FlowDataControllerShared;
+use Magetsi\Common\Traits\FlowDataControllerShared;
 use App\Http\Controllers\Traits\FlowDataController\CustomerFlowHandler;
-use App\Http\Controllers\Traits\UsesCustomerFlow;
+use Magetsi\Common\Traits\UsesCustomerFlow;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;

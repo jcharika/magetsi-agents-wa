@@ -2,9 +2,9 @@
 
 namespace App\Services\Conversation;
 
-use App\Models\Agent;
-use App\Models\Transaction;
-use App\Http\Controllers\Traits\UsesCustomerFlow;
+use Magetsi\Common\Models\Agent;
+use Magetsi\Common\Models\Transaction;
+use Magetsi\Common\Traits\UsesCustomerFlow;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 

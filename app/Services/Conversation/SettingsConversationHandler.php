@@ -2,7 +2,7 @@
 
 namespace App\Services\Conversation;
 
-use App\Models\Agent;
+use Magetsi\Common\Models\Agent;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 

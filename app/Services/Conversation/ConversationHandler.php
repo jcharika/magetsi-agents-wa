@@ -2,11 +2,11 @@
 
 namespace App\Services\Conversation;
 
-use App\Models\Agent;
-use App\Services\BackendManager;
-use App\Services\MeterValidationService;
-use App\Services\MockState;
-use App\Services\WhatsAppService;
+use Magetsi\Common\Models\Agent;
+use Magetsi\Common\Services\BackendManager;
+use Magetsi\Common\Services\MeterValidationService;
+use Magetsi\Common\Services\MockState;
+use Magetsi\Common\Services\WhatsAppService;
 use Illuminate\Support\Facades\Log;
 
 class ConversationHandler

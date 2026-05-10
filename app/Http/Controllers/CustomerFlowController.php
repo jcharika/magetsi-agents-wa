@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Traits\FlowDataController\CustomerFlowHandler;
-use App\Http\Controllers\Traits\FlowDataController\FlowDataControllerShared;
-use App\Http\Controllers\Traits\UsesCustomerFlow;
-use App\Models\Agent;
-use App\Services\BackendManager;
-use App\Services\FlowEncryptionService;
-use App\Services\MeterValidationService;
+use Magetsi\Common\Traits\FlowDataControllerShared;
+use Magetsi\Common\Traits\UsesCustomerFlow;
+use Magetsi\Common\Models\Agent;
+use Magetsi\Common\Services\BackendManager;
+use Magetsi\Common\Services\FlowEncryptionService;
+use Magetsi\Common\Services\MeterValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;

@@ -2,7 +2,7 @@
 
 namespace App\Bot;
 
-use App\Models\Agent;
+use Magetsi\Common\Models\Agent;
 
 /**
  * Base class for conversational bot flows.

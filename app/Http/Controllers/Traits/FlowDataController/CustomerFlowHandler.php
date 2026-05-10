@@ -7,9 +7,9 @@ use App\Jobs\ProcessBundleTransaction;
 use App\Jobs\ProcessZesaTransaction;
 use App\Jobs\ProcessTeloneTransaction;
 use App\Jobs\ProcessBillerTransaction;
-use App\Models\Agent;
-use App\Services\BackendManager;
-use App\Services\MeterValidationService;
+use Magetsi\Common\Models\Agent;
+use Magetsi\Common\Services\BackendManager;
+use Magetsi\Common\Services\MeterValidationService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 

@@ -2,11 +2,11 @@
 
 namespace App\Jobs;
 
-use App\Models\Agent;
-use App\Models\Transaction;
-use App\Jobs\Traits\ProcessZesaTransactionTrait;
-use App\Services\BackendManager;
-use App\Services\WhatsAppService;
+use Magetsi\Common\Models\Agent;
+use Magetsi\Common\Models\Transaction;
+use Magetsi\Common\Traits\ProcessZesaTransactionTrait;
+use Magetsi\Common\Services\BackendManager;
+use Magetsi\Common\Services\WhatsAppService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

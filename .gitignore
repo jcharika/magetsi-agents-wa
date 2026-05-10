@@ -24,3 +24,14 @@ Homestead.yaml
 Thumbs.db
 /scratch.md
 .token
+
+# Monorepo: ignore vendor in sub-projects
+apps/*/vendor
+apps/*/node_modules
+apps/*/public/build
+apps/*/public/hot
+apps/*/storage/*.key
+apps/*/.env
+
+# Ignore package lock in common package (managed by consuming apps)
+packages/common/composer.lock

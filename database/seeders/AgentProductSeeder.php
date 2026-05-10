@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Agent;
+use Magetsi\Common\Models\Agent;
 use Illuminate\Database\Seeder;
 
 class AgentProductSeeder extends Seeder

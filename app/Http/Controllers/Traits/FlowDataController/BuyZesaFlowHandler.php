@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Traits\FlowDataController;
 
 use App\Jobs\ProcessAgentZesaTransaction;
-use App\Models\Agent;
-use App\Services\BackendManager;
-use App\Services\MeterValidationService;
+use Magetsi\Common\Models\Agent;
+use Magetsi\Common\Services\BackendManager;
+use Magetsi\Common\Services\MeterValidationService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
