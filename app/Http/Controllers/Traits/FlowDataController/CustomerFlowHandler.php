@@ -321,7 +321,7 @@ trait CustomerFlowHandler
                     'params' => [
                         'flow_token' => $flowToken,
                         'success' => true,
-                        'message' => "Your {$network} airtime purchase of {$amount} ZWG for {$phoneNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                        'message' => "Your {$network} airtime purchase of {$amount} ZWG for {$phone} is being processed. You will receive a WhatsApp notification once complete.",
                         'close_flow' => true,
                     ],
                 ],

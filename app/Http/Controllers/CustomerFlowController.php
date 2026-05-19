@@ -67,8 +67,8 @@ class CustomerFlowController extends Controller
             Log::info('CustomerFlow: request', ['action' => $action, 'screen' => $screen, 'data' => $data, 'flowToken' => $flowToken]);
 
             $responsePayload = match ($action) {
-                'ping' => $this->handlePing(),
                 'INIT' => $this->handleCustomerInit($screen, $data, $this->resolveCustomerAgent($flowToken)),
+                'ping' => $this->handlePing(),
                 'navigate' => $this->handleCustomerNavigate($screen, $this->resolveCustomerAgent($flowToken)),
                 'data_exchange' => $this->handleCustomerDataExchange($screen, $data, $this->resolveCustomerAgent($flowToken), $flowToken),
                 'BACK' => $this->handleCustomerBack($screen, $data, $flowToken),
@@ -98,8 +98,9 @@ class CustomerFlowController extends Controller
 
     protected function resolveCustomerAgent(string $flowToken): Agent
     {
-        $tokenData = $this->parseFlowToken($flowToken);
-        return $this->resolveAgent($tokenData);
+        return $this->resolveAgent(
+            $this->parseFlowToken($flowToken)
+        );
     }
 
     protected function backend(): BackendManager
@@ -134,8 +135,6 @@ class CustomerFlowController extends Controller
 
     protected function handleCustomerBack(string $screen, array $data, string $flowToken): array
     {
-        $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
-
         return [
             'screen' => 'HOME_SCREEN',
             'data' => $data,
