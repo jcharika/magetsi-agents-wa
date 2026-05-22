@@ -33,6 +33,9 @@ class ProcessZesaTransaction implements ShouldQueue
         $this->flowToken = $flowToken;
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function handle(BackendManager $backend, WhatsAppService $whatsapp): void
     {
         $agent = Agent::firstOrNew(['wa_id' => $this->agentData['wa_id']], [

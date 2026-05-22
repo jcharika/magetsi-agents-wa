@@ -2,14 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\FlowDataController\BuyZesaFlowHandler;
+use App\Http\Controllers\Traits\FlowDataController\CustomerFlowHandler;
+use App\Http\Controllers\Traits\FlowDataController\FlowDataControllerShared;
+use App\Http\Controllers\Traits\FlowDataController\SettingsFlowHandler;
+use App\Http\Controllers\Traits\UsesCustomerFlow;
+use App\Services\BackendManager;
 use App\Services\Conversation\ConversationHandler;
+use App\Services\FlowEncryptionService;
+use App\Services\MeterValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 
 class WhatsAppWebhookController extends Controller
 {
-    public function __construct(protected ConversationHandler $handler)
+    use FlowDataControllerShared;
+    use BuyZesaFlowHandler;
+    use SettingsFlowHandler;
+    use CustomerFlowHandler;
+    use UsesCustomerFlow;
+
+    public function __construct(
+        protected ConversationHandler    $handler,
+        protected FlowEncryptionService  $encryption,
+        protected MeterValidationService $meterService,
+        protected BackendManager         $backend,
+    )
     {
     }
 
@@ -113,6 +132,20 @@ class WhatsAppWebhookController extends Controller
 
         Log::info('Flow completed', ['agent' => $agent->id, 'data' => $data]);
 
+        if (($data['trigger'] ?? null) == 'buy_zesa') {
+            $this->handleBuyZesaExchange($agent, $data, $data['flow_token']);
+        }
+
         $this->handler->sendWelcome($agent);
+    }
+
+    protected function meterService(): MeterValidationService
+    {
+        return $this->meterService;
+    }
+
+    protected function backend(): BackendManager
+    {
+        return $this->backend;
     }
 }

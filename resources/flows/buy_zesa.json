@@ -59,8 +59,8 @@
                     {
                         "type": "TextInput",
                         "name": "meter_number",
-                        "label": "Meter Number",
-                        "input-type": "number",
+                        "label": "What's your meter number",
+                        "input-type": "text",
                         "label-variant": "large",
                         "required": true,
                         "init-value": "${data.meter_number}",
@@ -71,32 +71,42 @@
                         "condition": "${data.customer_name} != ''",
                         "then": [
                             {
-                                "type": "TextSubheading",
+                                "type": "If",
+                                "condition": "${data.meter_number} != ${form.meter_number}",
+                                "then": [
+                                    {
+                                        "type": "EmbeddedLink",
+                                        "text": "Verify meter number details",
+                                        "on-click-action": {
+                                            "name": "data_exchange",
+                                            "payload": {
+                                                "trigger": "verify_meter_number",
+                                                "meter_number": "${form.meter_number}"
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "TextCaption",
+                                "markdown": true,
+                                "font-weight": "bold",
                                 "text": "${data.customer_name}"
                             },
                             {
-                                "type": "TextBody",
+                                "type": "TextCaption",
+                                "markdown": true,
                                 "text": "${data.customer_address}"
                             },
                             {
                                 "type": "TextCaption",
-                                "font-weight": "bold",
+                                "markdown": true,
                                 "text": "${data.meter_currency}"
                             }
+
                         ]
                     },
 
-                    {
-                        "type": "EmbeddedLink",
-                        "text": "Verify meter number details",
-                        "on-click-action": {
-                            "name": "data_exchange",
-                            "payload": {
-                                "trigger": "verify_meter_number",
-                                "meter_number": "${form.meter_number}"
-                            }
-                        }
-                    },
                     {
                         "type": "If",
                         "condition": "${data.meter_valid}",
@@ -128,10 +138,9 @@
                                 "required": false,
                                 "helper-text": "Customer phone for SMS token delivery"
                             },
-
                             {
                                 "type": "Footer",
-                                "label": "⚡ Submit Transaction",
+                                "label": "Confirm ZESA Transaction",
                                 "enabled": "${data.meter_valid}",
                                 "on-click-action": {
                                     "name": "data_exchange",
@@ -144,11 +153,20 @@
                                     }
                                 }
                             }
+
+
                         ],
                         "else": [
                             {
-                                "type": "TextCaption",
-                                "text": "⚠️ Please verify your meter number above before proceeding."
+                                "type": "Footer",
+                                "label": "Verify ZESA Meter",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "verify_meter_number",
+                                        "meter_number": "${form.meter_number}"
+                                    }
+                                }
                             }
                         ]
                     }

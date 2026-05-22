@@ -33,6 +33,9 @@ class ProcessAgentZesaTransaction implements ShouldQueue
         $this->flowToken = $flowToken;
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function handle(BackendManager $backend, WhatsAppService $whatsapp): void
     {
         $agent = Agent::find($this->agentId);
@@ -70,13 +73,14 @@ class ProcessAgentZesaTransaction implements ShouldQueue
     {
         $ref = $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—';
         $token = $txn['token'] ?? $transaction->token ?? 'pending';
+        $phone = $transaction->recipient_phone  ?? $transaction->ecocash_number;
 
         $message = "✅ *ZESA Purchase Successful*\n\n"
             . "Meter: {$transaction->meter_number}\n"
             . "Amount: {$transaction->currency} {$transaction->amount}\n"
             . "Reference: {$ref}\n"
             . ($token == 'pending' ? '' : "Token: {$token}\n\n")
-            . ($transaction->recipient_phone ? "Your token has been sent to {$transaction->recipient_phone}." : '');
+            . "Your token has been sent to {$phone}.";
 
         $whatsapp->sendTextMessage($agent->wa_id, $message);
     }

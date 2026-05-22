@@ -9,13 +9,16 @@ trait FlowDataControllerShared
     protected function buildSuccessResponse(string $flowToken, array $extraParams = []): array
     {
         return [
-            'screen' => 'SUCCESS',
-            'data' => [
-                'extension_message_response' => [
-                    'params' => array_merge(
-                        ['flow_token' => $flowToken],
-                        $extraParams
-                    ),
+            'screen' => [
+                "type" => "success",
+                "title" => "Thank You",
+                'data' => [
+                    'extension_message_response' => [
+                        'params' => array_merge(
+                            ['flow_token' => $flowToken],
+                            $extraParams
+                        ),
+                    ],
                 ],
             ],
         ];

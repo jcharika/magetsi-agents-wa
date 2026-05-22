@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Log;
 
 trait ProcessZesaTransactionTrait
 {
+    /**
+     * @throws \Throwable
+     */
     protected function processZesaTransaction(
         BackendManager $backend,
         WhatsAppService $whatsapp,
@@ -50,6 +53,7 @@ trait ProcessZesaTransactionTrait
                     $transaction->update([
                         'status' => 'failed',
                         'api_response' => $result,
+                        'reference' => $txn['customer_reference'] ?? $txn['reference'] ?? $txn['uid'] ?? null,
                     ]);
 
                     $this->notifyFailure($whatsapp, $agent, $transaction, $failureMessage ?? 'Transaction failed to complete');

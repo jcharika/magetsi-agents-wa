@@ -12,9 +12,13 @@ use Illuminate\Support\Facades\Log;
 trait BuyZesaFlowHandler
 {
     abstract protected function meterService(): MeterValidationService;
+
     abstract protected function backend(): BackendManager;
+
     abstract protected function buildSuccessResponse(string $flowToken, array $extraParams = []): array;
+
     abstract protected function parseFlowToken(string $flowToken): array;
+
     abstract protected function resolveAgent(array $tokenData): Agent;
 
     protected function initBuyZesa(Agent $agent): array
@@ -50,6 +54,7 @@ trait BuyZesaFlowHandler
                 return [
                     'screen' => 'BUY_ZESA_SCREEN',
                     'data' => [
+                        'meter_number' => $meterNumber,
                         'meter_valid' => true,
                         'customer_name' => 'Meter Name: **' . ($result['name'] ?? '') . '**',
                         'customer_address' => 'Address: **' . ($result['address'] ?? '') . '**',
@@ -107,16 +112,19 @@ trait BuyZesaFlowHandler
             ->onQueue('transactions');
 
         return [
-            'screen' => 'SUCCESS',
-            'data' => [
-                'extension_message_response' => [
-                    'params' => [
-                        'flow_token' => $flowToken,
-                        'success' => true,
-                        'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
-                        'close_flow' => true,
+            'screen' => [
+                "type" => "success",
+                "title" => "Thank You",
+                "data" => [
+                    'extension_message_response' => [
+                        'params' => [
+                            'flow_token' => $flowToken,
+                            'success' => true,
+                            'close_flow' => true,
+                            'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                        ],
                     ],
-                ],
+                ]
             ],
         ];
     }
