@@ -48,7 +48,7 @@ WHATSAPP_SETTINGS_FLOW_ID=
 
 # Magetsi Backend
 MAGETSI_BACKEND=legacy
-MAGETSI_API_URL=https://magetsi.test
+MAGETSI_API_URL=https://magetsi.co.zw
 MAGETSI_CHANNEL=AGENTS
 ```
 
@@ -281,7 +281,7 @@ The project supports two backends for transaction processing:
 
 | `.env` Setting | `MAGETSI_BACKEND=legacy` | `MAGETSI_BACKEND=new` |
 |---|---|---|
-| API Base | `magetsi.co.zw` (live) | `magetsi.test` (test) |
+| API Base | `legacy.magetsi.co.zw` (live) | `magetsi.co.zw` (live) |
 | Lifecycle | check meter → init + poll | prepare → validate → confirm → process |
 | Auth | Token + email | Channel + handler |
 

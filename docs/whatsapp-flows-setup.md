@@ -22,7 +22,7 @@ WhatsApp Client
      │
      ▼ (calls Magetsi API)
 ┌──────────────────────────────┐
-│  magetsi.test                │
+│  magetsi.co.zw               │
 │  prepare → validate →        │
 │  confirm → process           │
 └──────────────────────────────┘

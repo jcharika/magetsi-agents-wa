@@ -5,7 +5,7 @@ namespace App\Contracts;
 /**
  * Contract for Magetsi transaction backends.
  *
- * Both the new API (magetsi.test) and the legacy website (magetsi.co.zw)
+ * Both the new API (magetsi.co.zw) and the legacy website (legacy.magetsi.co.zw)
  * must implement this interface so they can be swapped via config.
  */
 interface TransactionBackend

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Legacy backend — connects to magetsi.co.zw API v1.
+ * Legacy backend — connects to legacy.magetsi.co.zw API v1.
  *
  * Endpoints:
  *  - Check meter:       POST /api/zesa/v1/meters/check
@@ -29,7 +29,7 @@ class LegacyMagetsiService implements TransactionBackend
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('magetsi.legacy_url', 'https://magetsi.co.zw'), '/');
+        $this->baseUrl = rtrim(config('magetsi.legacy_url', 'https://legacy.magetsi.co.zw'), '/');
         $this->apiToken = config('magetsi.legacy_token', '');
         $this->timeout = config('magetsi.timeout', 30);
         $this->pollAttempts = config('magetsi.legacy_poll_attempts', 10);
@@ -142,7 +142,7 @@ class LegacyMagetsiService implements TransactionBackend
         $amount = (float) $params['amount'];
         $currency = strtoupper($params['currency'] ?? 'ZWG');
         $ecocashNumber = $params['ecocash_number'];
-        $email = $params['email'] ?? config('magetsi.legacy_email', 'agent@magetsi.co.zw');
+        $email = $params['email'] ?? config('magetsi.legacy_email', 'agent@legacy.magetsi.co.zw');
 
         // Format phone number
         $formattedPhone = $this->formatPhoneNumber($ecocashNumber);

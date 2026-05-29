@@ -20,7 +20,7 @@ class MagetsiApiService implements TransactionBackend
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('magetsi.url', 'https://magetsi.test'), '/');
+        $this->baseUrl = rtrim(config('magetsi.url', 'https://magetsi.co.zw'), '/');
         $this->channel = config('magetsi.channel', 'AGENTS');
         $this->timeout = config('magetsi.timeout', 30);
     }

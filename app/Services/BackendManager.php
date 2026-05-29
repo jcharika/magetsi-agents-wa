@@ -10,8 +10,8 @@ use InvalidArgumentException;
  * Factory that resolves the active transaction backend.
  *
  * Switch between backends via MAGETSI_BACKEND env var:
- *  - "new"    → MagetsiApiService (magetsi.test, 4-step API)
- *  - "legacy" → LegacyMagetsiService (magetsi.co.zw, 2-step web)
+ *  - "new"    → MagetsiApiService (magetsi.co.zw, 4-step API)
+ *  - "legacy" → LegacyMagetsiService (legacy.magetsi.co.zw, 2-step web)
  */
 class BackendManager
 {

@@ -93,7 +93,7 @@ Validates ZESA meter numbers against the active backend before proceeding with a
 
 Supports two backend implementations switchable via `MAGETSI_BACKEND`.
 
-### New API (`magetsi.test`) — 4-step lifecycle
+### New API (`magetsi.co.zw`) — 4-step lifecycle
 ```
 prepare → validate → confirm → process
 ```
@@ -102,7 +102,7 @@ prepare → validate → confirm → process
 3. **confirm** — Get fee breakdown (discounts, service fees, loyalty)
 4. **process** — Execute transaction, get reference and token
 
-### Legacy API (`magetsi.co.zw`) — 2-step lifecycle
+### Legacy API (`legacy.magetsi.co.zw`) — 2-step lifecycle
 ```
 check meter → init + poll
 ```
@@ -201,7 +201,7 @@ Flags: `--flows`, `--templates`, `--publish`, `--endpoint=`, `--dry-run`
 
 | Aspect | New API | Legacy API |
 |---|---|---|
-| Base URL | `magetsi.test` | `magetsi.co.zw` |
+| Base URL | `magetsi.co.zw` | `legacy.magetsi.co.zw` |
 | Steps | 4 (prepare, validate, confirm, process) | 2 (check, init + poll) |
 | Auth | Channel + handler | Token + email |
 | Polling | Synchronous (single call) | Asynchronous (poll for completion) |

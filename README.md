@@ -6,7 +6,7 @@ A Laravel 13-based WhatsApp chatbot that enables agents (resellers) to purchase 
 
 - **WhatsApp Webhook** — Receive and process incoming text, button, and flow completion messages
 - **WhatsApp Flows** — Rich native forms for Buy ZESA and Settings with end-to-end encryption (RSA + AES-128-GCM)
-- **Dual Backend Support** — Swappable between new API (`magetsi.test`) and legacy API (`magetsi.co.zw`)
+- **Dual Backend Support** — Swappable between new API (`magetsi.co.zw`) and legacy API (`legacy.magetsi.co.zw`)
 - **Text Onboarding** — Multi-step conversational flow for new agents with auto-activation
 - **Meter Validation** — Live ZESA meter number validation against the active backend
 - **Browser Simulator** — Full WhatsApp-like UI for local development without Meta setup
