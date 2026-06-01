@@ -30,7 +30,7 @@ trait BuyZesaFlowHandler
             'data' => [
                 'ecocash_number' => $agent->ecocash_number ?? '',
                 'currency' => $product['currency'] ?? 'ZWG',
-                'min_amount' => $product['min_amount'] ?? 100,
+                'min_amount' => 'Minimum amount is ZWG'  . ($product['min_amount'] ?? 100),
                 'quick_amounts' => $product['quick_amounts'] ?? [100, 200, 300, 500],
             ],
         ];
