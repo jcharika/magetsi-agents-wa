@@ -54,7 +54,7 @@ class LegacyMagetsiService implements TransactionBackend
      */
     public function validateMeter(string $meterNumber): array
     {
-        Log::info('[LegacyBackend] Validating meter', ['meter' => $meterNumber]);
+        Log::debug('[LegacyBackend] Validating meter', ['meter' => $meterNumber]);
 
         $digits = preg_replace('/\D/', '', $meterNumber);
 
@@ -72,7 +72,7 @@ class LegacyMagetsiService implements TransactionBackend
 
             $json = $response->json() ?? [];
 
-            Log::info('[LegacyBackend] Meter check response', [
+            Log::debug('[LegacyBackend] Meter check response', [
                 'status' => $response->status(),
                 'body' => $json,
             ]);
@@ -140,7 +140,7 @@ class LegacyMagetsiService implements TransactionBackend
      */
     public function processTransaction(array $params): array
     {
-        Log::info('[LegacyBackend] Processing transaction', $params);
+        Log::debug('[LegacyBackend] Processing transaction', $params);
 
         $meterNumber = $params['meter_number'];
         $amount = (float) $params['amount'];
@@ -172,7 +172,7 @@ class LegacyMagetsiService implements TransactionBackend
 
             $json = $response->json() ?? [];
 
-            Log::info('[LegacyBackend] Init response', [
+            Log::debug('[LegacyBackend] Init response', [
                 'status' => $response->status(),
                 'body' => $json,
             ]);
@@ -276,7 +276,7 @@ class LegacyMagetsiService implements TransactionBackend
      */
     protected function pollTransactionStatus(string $ref): array
     {
-        Log::info('[LegacyBackend] Polling transaction status', ['ref' => $ref]);
+        Log::debug('[LegacyBackend] Polling transaction status', ['ref' => $ref]);
 
         for ($i = 0; $i < $this->pollAttempts; $i++) {
             // Wait between polls (skip the first wait)
@@ -294,7 +294,7 @@ class LegacyMagetsiService implements TransactionBackend
 
                 $json = $response->json() ?? [];
 
-                Log::info('[LegacyBackend] Poll response', [
+                Log::debug('[LegacyBackend] Poll response', [
                     'attempt' => $i + 1,
                     'body' => $json,
                 ]);

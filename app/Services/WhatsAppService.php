@@ -222,14 +222,14 @@ class WhatsAppService
 
         $url = "{$this->apiUrl}/{$this->phoneNumberId}/messages";
 
-        Log::info('WhatsApp API request', ['url' => $url, 'payload' => $payload]);
+        Log::debug('WhatsApp API request', ['url' => $url, 'payload' => $payload]);
 
         $response = Http::withToken($this->token)
             ->post($url, $payload);
 
         $result = $response->json();
 
-        Log::info('WhatsApp API response', ['status' => $response->status(), 'body' => $result]);
+        Log::debug('WhatsApp API response', ['status' => $response->status(), 'body' => $result]);
 
         if ($response->failed()) {
             Log::error('WhatsApp API error', ['status' => $response->status(), 'body' => $result]);

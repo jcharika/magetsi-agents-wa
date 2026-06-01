@@ -16,7 +16,7 @@ class MockMagetsiService implements TransactionBackend
 
     public function validateMeter(string $meterNumber): array
     {
-        Log::info('[MockBackend] Validating meter', ['meter' => $meterNumber]);
+        Log::debug('[MockBackend] Validating meter', ['meter' => $meterNumber]);
 
         return [
             'valid' => true,
@@ -43,7 +43,7 @@ class MockMagetsiService implements TransactionBackend
      */
     public function processTransaction(array $params): array
     {
-        Log::info('[MockBackend] Processing transaction', $params);
+        Log::debug('[MockBackend] Processing transaction', $params);
 
         $type = $params['type'] ?? 'zesa';
         $amount = $params['amount'] ?? 100;

@@ -64,7 +64,7 @@ class CustomerFlowController extends Controller
             $data = $decryptedData['data'] ?? [];
             $flowToken = $decryptedData['flow_token'] ?? '';
 
-            Log::info('CustomerFlow: request', ['action' => $action, 'screen' => $screen, 'data' => $data, 'flowToken' => $flowToken]);
+            Log::debug('CustomerFlow: request', ['action' => $action, 'screen' => $screen, 'data' => $data, 'flowToken' => $flowToken]);
 
             $responsePayload = match ($action) {
                 'INIT' => $this->handleCustomerInit($screen, $data, $this->resolveCustomerAgent($flowToken)),
@@ -79,7 +79,7 @@ class CustomerFlowController extends Controller
                 throw new \RuntimeException('Invalid response payload');
             }
 
-            Log::info('CustomerFlow: response payload', ['screen' => $responsePayload['screen'] ?? '?', 'data_keys' => array_keys($responsePayload['data'] ?? [])]);
+            Log::debug('CustomerFlow: response payload', ['screen' => $responsePayload['screen'] ?? '?', 'data_keys' => array_keys($responsePayload['data'] ?? [])]);
 
             $encryptedResponse = $this->encryption->encryptResponse($responsePayload, $aesKey, $iv);
 
@@ -117,7 +117,7 @@ class CustomerFlowController extends Controller
     {
         // Normalize screen names
         $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
-        Log::info('CustomerFlow: navigate', ['screen' => $screen]);
+        Log::debug('CustomerFlow: navigate', ['screen' => $screen]);
 
         return $this->handleCustomerInit($screen, [], $agent);
     }

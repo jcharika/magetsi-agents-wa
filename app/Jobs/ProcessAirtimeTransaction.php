@@ -54,7 +54,7 @@ class ProcessAirtimeTransaction implements ShouldQueue
             'api_response' => [],
         ]);
 
-        Log::info('Queue: Processing airtime purchase', [
+        Log::debug('Queue: Processing airtime purchase', [
             'transaction_id' => $transaction->id,
             'network' => $this->params['network'],
             'phone' => $this->params['phone_number'],

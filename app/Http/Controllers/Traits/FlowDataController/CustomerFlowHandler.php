@@ -25,7 +25,7 @@ trait CustomerFlowHandler
     {
         // Normalize screen names
         $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
-        Log::info('Flow: handleCustomerInit', ['screen' => $screen, 'hasData' => !empty($data)]);
+        Log::debug('Flow: handleCustomerInit', ['screen' => $screen, 'hasData' => !empty($data)]);
 
         if (!$screen || $screen === 'HOME_SCREEN') {
             return [
@@ -48,7 +48,7 @@ trait CustomerFlowHandler
                 'customer_address' => '',
                 'meter_currency' => 'ZWG',
             ];
-            Log::info('Flow: ZESA_SCREEN init data', $responseData);
+            Log::debug('Flow: ZESA_SCREEN init data', $responseData);
             return [
                 'screen' => 'ZESA_SCREEN',
                 'data' => $responseData,
@@ -68,7 +68,7 @@ trait CustomerFlowHandler
                     ['id' => 'stripe', 'title' => 'International Card'],
                 ],
             ];
-            Log::info('Flow: AIRTIME_SCREEN init data', $responseData);
+            Log::debug('Flow: AIRTIME_SCREEN init data', $responseData);
             return [
                 'screen' => 'AIRTIME_SCREEN',
                 'data' => $responseData,
@@ -84,7 +84,7 @@ trait CustomerFlowHandler
                     ['id' => 'smartsuite', 'title' => 'SmartSuite'],
                 ],
             ];
-            Log::info('Flow: BUNDLES_SCREEN init data', $responseData);
+            Log::debug('Flow: BUNDLES_SCREEN init data', $responseData);
             return [
                 'screen' => 'BUNDLES_SCREEN',
                 'data' => $responseData,
@@ -92,7 +92,7 @@ trait CustomerFlowHandler
         }
 
         if ($screen === 'TELONE_HOME_SCREEN') {
-            Log::info('Flow: TELONE_HOME_SCREEN init data');
+            Log::debug('Flow: TELONE_HOME_SCREEN init data');
             return [
                 'screen' => 'TELONE_HOME_SCREEN',
                 'data' => [],
@@ -104,7 +104,7 @@ trait CustomerFlowHandler
                 'ecocash_number' => $agent->ecocash_number ?? '',
                 'currency' => 'ZWG',
             ];
-            Log::info('Flow: TELONE_SCREEN init data', $responseData);
+            Log::debug('Flow: TELONE_SCREEN init data', $responseData);
             return [
                 'screen' => 'TELONE_SCREEN',
                 'data' => $responseData,
@@ -116,7 +116,7 @@ trait CustomerFlowHandler
                 'ecocash_number' => $agent->ecocash_number ?? '',
                 'currency' => 'USD',
             ];
-            Log::info('Flow: TELONE_USD_SCREEN init data', $responseData);
+            Log::debug('Flow: TELONE_USD_SCREEN init data', $responseData);
             return [
                 'screen' => 'TELONE_USD_SCREEN',
                 'data' => $responseData,
@@ -127,7 +127,7 @@ trait CustomerFlowHandler
             $responseData = [
                 'ecocash_number' => $agent->ecocash_number ?? '',
             ];
-            Log::info('Flow: BILLERS_SCREEN init data', $responseData);
+            Log::debug('Flow: BILLERS_SCREEN init data', $responseData);
             return [
                 'screen' => 'BILLERS_SCREEN',
                 'data' => $responseData,
@@ -135,7 +135,7 @@ trait CustomerFlowHandler
         }
 
         if ($screen === 'SUPPORT_SCREEN') {
-            Log::info('Flow: SUPPORT_SCREEN init data');
+            Log::debug('Flow: SUPPORT_SCREEN init data');
             return [
                 'screen' => 'SUPPORT_SCREEN',
                 'data' => [],
@@ -153,7 +153,7 @@ trait CustomerFlowHandler
 
     protected function handleCustomerDataExchange(string $screen, array $data, Agent $agent, string $flowToken): array
     {
-        Log::info('Flow: handleCustomerDataExchange', ['screen' => $screen, 'data' => $data]);
+        Log::debug('Flow: handleCustomerDataExchange', ['screen' => $screen, 'data' => $data]);
 
         // Normalize screen names
         $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);

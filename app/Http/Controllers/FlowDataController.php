@@ -68,7 +68,7 @@ class FlowDataController extends Controller
             $aesKey = $result['aes_key'];
             $iv = $result['iv'];
 
-            Log::info('Flow endpoint: decrypted request', ['data' => $decryptedData]);
+            Log::debug('Flow endpoint: decrypted request', ['data' => $decryptedData]);
 
             $action = $decryptedData['action'] ?? '';
             $screen = $decryptedData['screen'] ?? '';
@@ -87,7 +87,7 @@ class FlowDataController extends Controller
                 throw new \RuntimeException('Invalid response payload - not an array');
             }
 
-            Log::info('Flow endpoint: response payload', ['payload' => $responsePayload]);
+            Log::debug('Flow endpoint: response payload', ['payload' => $responsePayload]);
 
             $encryptedResponse = $this->encryption->encryptResponse($responsePayload, $aesKey, $iv);
 
@@ -140,11 +140,11 @@ class FlowDataController extends Controller
     protected function handleDataExchange(string $screen, array $data, string $flowToken): array
     {
         $tokenData = $this->parseFlowToken($flowToken);
-        Log::info('Flow: handleDataExchange', ['screen' => $screen, 'data' => $data, 'tokenData' => $tokenData]);
+        Log::debug('Flow: handleDataExchange', ['screen' => $screen, 'data' => $data, 'tokenData' => $tokenData]);
         $agent = $this->resolveAgent($tokenData);
 
         if ($this->shouldUseCustomerFlow($tokenData['flow'] ?? '')) {
-            Log::info('Flow: using customer flow');
+            Log::debug('Flow: using customer flow');
             return $this->handleCustomerDataExchange($screen, $data, $agent, $flowToken);
         }
 

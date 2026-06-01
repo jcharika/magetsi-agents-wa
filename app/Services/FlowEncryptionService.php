@@ -206,7 +206,7 @@ class FlowEncryptionService
                 );
             }
 
-            Log::info("Loading WhatsApp Flow private key from file: {$keyPath}");
+            Log::debug("Loading WhatsApp Flow private key from file: {$keyPath}");
             return file_get_contents($keyPath);
         }
 

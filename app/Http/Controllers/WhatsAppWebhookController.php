@@ -37,29 +37,33 @@ class WhatsAppWebhookController extends Controller
      */
     public function __invoke(Request $request): Response
     {
-        $body = $request->all();
+        try {
+            $body = $request->all();
 
-        Log::info('Webhook received', ['body' => $body]);
+            Log::debug('Webhook received', ['body' => json_encode($body, depth: 1024)]);
 
-        // WhatsApp Cloud API sends notifications in this structure
-        $entries = $body['entry'] ?? [];
+            // WhatsApp Cloud API sends notifications in this structure
+            $entries = $body['entry'] ?? [];
 
-        foreach ($entries as $entry) {
-            $changes = $entry['changes'] ?? [];
+            foreach ($entries as $entry) {
+                $changes = $entry['changes'] ?? [];
 
-            foreach ($changes as $change) {
-                if (($change['field'] ?? '') !== 'messages') {
-                    continue;
-                }
+                foreach ($changes as $change) {
+                    if (($change['field'] ?? '') !== 'messages') {
+                        continue;
+                    }
 
-                $value = $change['value'] ?? [];
-                $messages = $value['messages'] ?? [];
-                $contacts = $value['contacts'] ?? [];
+                    $value = $change['value'] ?? [];
+                    $messages = $value['messages'] ?? [];
+                    $contacts = $value['contacts'] ?? [];
 
-                foreach ($messages as $message) {
-                    $this->processMessage($message, $contacts);
+                    foreach ($messages as $message) {
+                        $this->processMessage($message, $contacts);
+                    }
                 }
             }
+        } catch (\Throwable $exception) {
+            Log::error('Webhook error', ['error' => $exception->getMessage(), 'trace' => $exception->getTraceAsString()]);
         }
 
         return response('OK', 200);
@@ -96,7 +100,7 @@ class WhatsAppWebhookController extends Controller
         match ($type) {
             'text' => $this->handleText($agent, $message),
             'interactive' => $this->handleInteractive($agent, $message),
-            default => Log::info("Unhandled message type: {$type}"),
+            default => Log::debug("Unhandled message type: {$type}"),
         };
     }
 
@@ -127,7 +131,7 @@ class WhatsAppWebhookController extends Controller
                 $interactive['list_reply']['id'] ?? ''
             ),
             'nfm_reply' => $this->handleFlowReply($agent, $interactive),
-            default => Log::info("Unhandled interactive type: {$type}"),
+            default => Log::debug("Unhandled interactive type: {$type}"),
         };
     }
 
@@ -139,7 +143,7 @@ class WhatsAppWebhookController extends Controller
         $responseJson = $interactive['nfm_reply']['response_json'] ?? '{}';
         $data = json_decode($responseJson, true, 1024) ?? [];
 
-        Log::info('Flow completed', ['agent' => $agent->id, 'data' => $data]);
+        Log::debug('Flow completed', ['agent' => $agent->id, 'data' => $data]);
 
         if (($data['trigger'] ?? null) == 'buy_zesa') {
             $this->handleBuyZesaExchange($agent, $data, $data['flow_token']);

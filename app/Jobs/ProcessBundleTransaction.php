@@ -54,7 +54,7 @@ class ProcessBundleTransaction implements ShouldQueue
             'api_response' => [],
         ]);
 
-        Log::info('Queue: Processing bundle purchase', [
+        Log::debug('Queue: Processing bundle purchase', [
             'transaction_id' => $transaction->id,
             'network' => $this->params['network'],
             'phone' => $this->params['phone_number'],

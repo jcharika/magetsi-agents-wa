@@ -81,7 +81,7 @@ trait ZesaConversationHandler
 
         return;
 
-        Log::info('Processing ZESA purchase', ['agent' => $agent->id, 'data' => $data, 'backend' => $this->backend->getBackendName()]);
+        Log::debug('Processing ZESA purchase', ['agent' => $agent->id, 'data' => $data, 'backend' => $this->backend->getBackendName()]);
 
         $meterNumber = $data['meter_number'] ?? '';
         $amount = $data['amount'] ?? $data['custom_amount'] ?? 0;

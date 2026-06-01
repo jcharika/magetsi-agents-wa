@@ -72,7 +72,7 @@ trait SettingsConversationHandler
      */
     public function handleSettingsUpdate(Agent $agent, array $data): void
     {
-        Log::info('Updating settings', ['agent' => $agent->id, 'data' => $data]);
+        Log::debug('Updating settings', ['agent' => $agent->id, 'data' => $data]);
 
         if (isset($data['ecocash_number']) && $data['ecocash_number']) {
             $agent->update(['ecocash_number' => $data['ecocash_number']]);

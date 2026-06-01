@@ -27,7 +27,7 @@ class MeterValidationService
      */
     public function validate(string $meterNumber): array
     {
-        Log::info('Validating meter', [
+        Log::debug('Validating meter', [
             'meter' => $meterNumber,
             'backend' => $this->backend->getBackendName(),
         ]);

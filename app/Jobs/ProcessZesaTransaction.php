@@ -58,7 +58,7 @@ class ProcessZesaTransaction implements ShouldQueue
             'api_response' => [],
         ]);
 
-        Log::info('Queue: Processing ZESA transaction', [
+        Log::debug('Queue: Processing ZESA transaction', [
             'transaction_id' => $transaction->id,
             'meter_number' => $this->params['meter_number'],
             'amount' => $this->params['amount'],

@@ -34,7 +34,7 @@ class MagetsiApiService implements TransactionBackend
 
     public function validateMeter(string $meterNumber): array
     {
-        Log::info('[NewBackend] Validating meter', ['meter' => $meterNumber]);
+        Log::debug('[NewBackend] Validating meter', ['meter' => $meterNumber]);
 
         $digits = preg_replace('/\D/', '', $meterNumber);
 
@@ -68,7 +68,7 @@ class MagetsiApiService implements TransactionBackend
 
     public function processTransaction(array $params): array
     {
-        Log::info('[NewBackend] Processing transaction', $params);
+        Log::debug('[NewBackend] Processing transaction', $params);
 
         $meterNumber = $params['meter_number'];
         $amount = (float) $params['amount'];

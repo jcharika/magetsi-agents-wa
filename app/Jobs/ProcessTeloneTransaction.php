@@ -57,7 +57,7 @@ class ProcessTeloneTransaction implements ShouldQueue
             'api_response' => [],
         ]);
 
-        Log::info('Queue: Processing TelOne purchase', [
+        Log::debug('Queue: Processing TelOne purchase', [
             'transaction_id' => $transaction->id,
             'handler' => $handler,
             'account' => $this->params['biller_account'],

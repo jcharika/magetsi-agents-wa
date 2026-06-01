@@ -118,7 +118,7 @@ class FlowEngine
             $handler->whatsapp->sendTextMessage($agent->wa_id, $message);
         }
 
-        Log::info('Flow started', [
+        Log::debug('Flow started', [
             'agent' => $agent->id,
             'flow' => $flow->name(),
             'step' => $firstStep,
@@ -215,7 +215,7 @@ class FlowEngine
                 $handler->whatsapp->sendTextMessage($agent->wa_id, $message);
             }
 
-            Log::info('Flow step advanced', [
+            Log::debug('Flow step advanced', [
                 'agent' => $agent->id,
                 'flow' => $session->flow,
                 'step' => $nextStep,
@@ -224,7 +224,7 @@ class FlowEngine
             // Terminal step — complete the flow
             $session->reset($agent->wa_id);
 
-            Log::info('Flow completed', [
+            Log::debug('Flow completed', [
                 'agent' => $agent->id,
                 'flow' => $flow->name(),
                 'data' => $sessionData,

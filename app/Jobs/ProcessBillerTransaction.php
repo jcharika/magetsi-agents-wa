@@ -56,7 +56,7 @@ class ProcessBillerTransaction implements ShouldQueue
             'api_response' => [],
         ]);
 
-        Log::info('Queue: Processing biller payment', [
+        Log::debug('Queue: Processing biller payment', [
             'transaction_id' => $transaction->id,
             'biller' => $this->params['biller_name'],
             'account' => $this->params['biller_account'],
