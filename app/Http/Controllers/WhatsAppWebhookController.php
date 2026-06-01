@@ -137,7 +137,7 @@ class WhatsAppWebhookController extends Controller
     protected function handleFlowReply($agent, array $interactive): void
     {
         $responseJson = $interactive['nfm_reply']['response_json'] ?? '{}';
-        $data = json_decode($responseJson, true) ?? [];
+        $data = json_decode($responseJson, true, 1024) ?? [];
 
         Log::info('Flow completed', ['agent' => $agent->id, 'data' => $data]);
 

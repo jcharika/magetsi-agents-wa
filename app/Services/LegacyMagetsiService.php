@@ -103,18 +103,22 @@ class LegacyMagetsiService implements TransactionBackend
                 ];
             }
 
+            $meterCurrency = strtoupper($meter['currency'] ?? 'ZWG');
+
             return [
                 'valid' => true,
                 'name' => $meter['name'] ?? '',
                 'address' => $meter['address'] ?? '',
                 'meter_number' => $digits,
-                'currency' => 'ZWG', // default; the meter check doesn't return currency
-                'recipient_currency' => 'ZWG',
+                'currency' => $meterCurrency,
+                'recipient_currency' => $meterCurrency,
                 'trace' => null,
                 'debit' => [],
                 // Extra legacy-specific data for transaction processing
                 'legacy_meta' => [
                     'premium' => $body['premium'] ?? null,
+                    'minZWG' => $body['minZWG'] ?? null,
+                    'minUSD' => $body['minUSD'] ?? null,
                     'limitZWG' => $body['limitZWG'] ?? null,
                     'limitUSD' => $body['limitUSD'] ?? null,
                     'disableUsdForZwgMeters' => $body['disableUsdForZwgMeters'] ?? false,

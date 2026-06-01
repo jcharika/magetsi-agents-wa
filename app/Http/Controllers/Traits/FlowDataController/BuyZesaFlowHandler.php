@@ -51,6 +51,12 @@ trait BuyZesaFlowHandler
             });
 
             if ($result['valid']) {
+                $currency = $result['currency'] ?? 'ZWG';
+                $legacy = $result['legacy_meta'] ?? [];
+                $minAmount = $currency === 'USD'
+                    ? ($legacy['minUSD'] ?? 1)
+                    : ($legacy['minZWG'] ?? 100);
+
                 return [
                     'screen' => 'BUY_ZESA_SCREEN',
                     'data' => [
@@ -58,8 +64,9 @@ trait BuyZesaFlowHandler
                         'meter_valid' => true,
                         'customer_name' => 'Meter Name: **' . ($result['name'] ?? '') . '**',
                         'customer_address' => 'Address: **' . ($result['address'] ?? '') . '**',
-                        'meter_currency' => 'Meter Currency: **' . ($result['currency'] ?? '') . '**',
+                        'meter_currency' => 'Meter Currency: **' . $currency . '**',
                         'error_message' => '',
+                        'min_amount' => "Minimum amount is $currency $minAmount",
                     ],
                 ];
             }
