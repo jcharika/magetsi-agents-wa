@@ -68,6 +68,15 @@ class WhatsAppWebhookController extends Controller
 
         $agent = $this->handler->resolveAgent($waId, $contactName);
 
+        if ($agent->blocked) {
+            Log::info('Blocked agent attempted interaction', ['wa_id' => $waId]);
+            $this->handler->whatsapp->sendTextMessage(
+                $waId,
+                "❌ *Account Suspended*\n\nYour access to Magetsi Agents has been suspended. Please contact support for assistance."
+            );
+            return;
+        }
+
         match ($type) {
             'text' => $this->handleText($agent, $message),
             'interactive' => $this->handleInteractive($agent, $message),

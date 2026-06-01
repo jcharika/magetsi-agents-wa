@@ -16,6 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'simulate',
             'simulate/*',
         ]);
+
+        $middleware->redirectGuestsTo('/admin/login');
+
+        $middleware->alias([
+            'guest' => \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

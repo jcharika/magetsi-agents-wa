@@ -13,11 +13,18 @@ class Agent extends Model
         'ecocash_number',
         'wa_id',
         'onboarded',
+        'blocked',
     ];
 
     protected $casts = [
         'onboarded' => 'boolean',
+        'blocked' => 'boolean',
     ];
+
+    public function scopeActive($q)
+    {
+        $q->where('blocked', false);
+    }
 
     /**
      * Check if the agent still needs onboarding (name + ecocash).
