@@ -11,7 +11,7 @@ Route::get('/simulate/flow/{flowId}', [SimulatorController::class, 'flowSchema']
 
 Route::prefix('admin')->name('admin.')->middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
