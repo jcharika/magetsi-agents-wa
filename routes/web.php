@@ -5,9 +5,13 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\SimulatorController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [SimulatorController::class, 'index']);
-Route::post('/simulate', [SimulatorController::class, 'simulate']);
-Route::get('/simulate/flow/{flowId}', [SimulatorController::class, 'flowSchema']);
+Route::redirect('/', '/admin');
+
+Route::prefix('simulate')->middleware('auth')->group(function () {
+    Route::get('/', [SimulatorController::class, 'index']);
+    Route::post('/', [SimulatorController::class, 'simulate']);
+    Route::get('/flow/{flowId}', [SimulatorController::class, 'flowSchema']);
+});
 
 Route::prefix('admin')->name('admin.')->middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
