@@ -67,6 +67,7 @@ trait BuyZesaFlowHandler
                         'meter_currency' => 'Meter Currency: **' . $currency . '**',
                         'error_message' => '',
                         'min_amount' => $minAmount,
+                        'min_amount_error' => "Minimum amount is $currency $minAmount",
                     ],
                 ];
             }
