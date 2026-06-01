@@ -23,4 +23,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 /scratch.md
-.token
+/.token
+/nginx
+/nginx-new

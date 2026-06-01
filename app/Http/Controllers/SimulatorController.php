@@ -46,8 +46,13 @@ class SimulatorController extends Controller
                 'name' => 'Agent',
                 'wa_id' => '263771234567',
                 'onboarded' => false,
+                'blocked' => false,
             ]
         );
+
+        if ($agent->blocked && $action !== 'start') {
+            return response()->json(['messages' => [['type' => 'text', 'text' => "❌ *Account Suspended*\n\nYour access has been suspended. Contact support."]]]);
+        }
 
         $product = $agent->getProductOrDefault('zesa');
 

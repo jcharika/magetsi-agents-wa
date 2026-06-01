@@ -10,9 +10,8 @@ use InvalidArgumentException;
  * Factory that resolves the active transaction backend.
  *
  * Switch between backends via MAGETSI_BACKEND env var:
- *  - "new"    → MagetsiApiService (magetsi.test, 4-step API)
- *  - "legacy" → LegacyMagetsiService (magetsi.co.zw, 2-step web)
- *  - "mock"   → MockMagetsiService (testing - always succeeds)
+ *  - "new"    → MagetsiApiService (magetsi.co.zw, 4-step API)
+ *  - "legacy" → LegacyMagetsiService (legacy.magetsi.co.zw, 2-step web)
  */
 class BackendManager
 {
@@ -27,13 +26,6 @@ class BackendManager
             return $this->resolved;
         }
 
-        // Check mock state first (runtime toggle)
-        if (MockState::isEnabled()) {
-            Log::debug('[BackendManager] Using mock backend (runtime toggle)');
-            $this->resolved = app(MockMagetsiService::class);
-            return $this->resolved;
-        }
-
         $backend = config('magetsi.backend', 'new');
 
         Log::debug('[BackendManager] Resolving backend', ['backend' => $backend]);
@@ -41,7 +33,6 @@ class BackendManager
         $this->resolved = match ($backend) {
             'new', 'api' => app(MagetsiApiService::class),
             'legacy', 'website' => app(LegacyMagetsiService::class),
-            'mock', 'testing' => app(MockMagetsiService::class),
             default => throw new InvalidArgumentException("Unknown backend: {$backend}"),
         };
 

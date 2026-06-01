@@ -23,9 +23,11 @@ host('agents-test.magetsi.co.zw')
     ->set('remote_user', 'agents-test')
     ->set('deploy_path', '/var/www/agents-test.magetsi.co.zw');
 
-//host('agents.magetsi.co.zw')
-//    ->set('remote_user', 'deployer')
-//    ->set('deploy_path', '~/magetsi-agents');
+host('wa.magetsi.co.zw')
+    ->setHostname('44.194.102.193')
+    ->set('http_user', 'wa')
+    ->set('remote_user', 'wa') // hf79DoTGOkfm4VxTBtFwJ2HCTf8QiUPZwt6oPPhp
+    ->set('deploy_path', '/var/www/wa.magetsi.co.zw');
 
 // Hooks
 

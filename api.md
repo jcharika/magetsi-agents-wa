@@ -1,4 +1,4 @@
-# Channels - https://magetsi.test/channel/list
+# Channels - https://magetsi.co.zw/channel/list
 
 Response 
 ```json
@@ -49,7 +49,7 @@ Response
 ```
 
 # Prepare - Request URL
-https://magetsi.test/transactions/prepare
+https://magetsi.co.zw/transactions/prepare
 Request Method POST
 
 Request 
@@ -166,7 +166,7 @@ Response
 }
 ```
 
-# Currencies api - https://magetsi.test/currency/list
+# Currencies api - https://magetsi.co.zw/currency/list
 
 Response 
 ```json
@@ -213,7 +213,7 @@ Response
 }
 ```
 
-# Transaction validation - POST https://magetsi.test/transactions/validate
+# Transaction validation - POST https://magetsi.co.zw/transactions/validate
 
 
 Request
@@ -305,7 +305,7 @@ Response
 }
 ```
 
-# Confirm transaction - POST https://magetsi.test/transactions/confirm
+# Confirm transaction - POST https://magetsi.co.zw/transactions/confirm
 
 Request
 ```json
@@ -440,7 +440,7 @@ Response
 ```
 
 # Process Transaction - 
-https://magetsi.test/transactions/process
+https://magetsi.co.zw/transactions/process
 
 Request
 ```json

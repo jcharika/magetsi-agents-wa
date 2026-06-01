@@ -51,7 +51,7 @@ WHATSAPP_BUY_ZESA_FLOW_ID=
 WHATSAPP_SETTINGS_FLOW_ID=
 
 # Magetsi Backend
-MAGETSI_API_URL=https://magetsi.test
+MAGETSI_API_URL=https://magetsi.co.zw
 MAGETSI_CHANNEL=AGENTS
 ```
 
@@ -136,7 +136,7 @@ prepare → validate → confirm → process
 ### Configuration
 
 ```env
-MAGETSI_API_URL=https://magetsi.test
+MAGETSI_API_URL=https://magetsi.co.zw
 MAGETSI_CHANNEL=AGENTS
 MAGETSI_API_TIMEOUT=30
 ```
