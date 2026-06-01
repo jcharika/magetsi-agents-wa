@@ -35,8 +35,8 @@
                     "__example__": "ZWG"
                 },
                 "min_amount": {
-                    "type": "number",
-                    "__example__": 100
+                    "type": "string",
+                    "__example__": "Minimum amount is ZWG 100.00"
                 },
                 "ecocash_number": {
                     "type": "string",
@@ -117,6 +117,7 @@
                                 "label": "Amount (ZWG)",
                                 "label-variant": "large",
                                 "input-type": "number",
+                                "helper-text": "${data.min_amount}",
                                 "required": true
                             },
                             {
@@ -143,7 +144,7 @@
                                 "label": "Confirm ZESA Transaction",
                                 "enabled": "${data.meter_valid}",
                                 "on-click-action": {
-                                    "name": "data_exchange",
+                                    "name": "complete",
                                     "payload": {
                                         "trigger": "buy_zesa",
                                         "meter_number": "${form.meter_number}",

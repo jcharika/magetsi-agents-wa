@@ -7,11 +7,12 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "ext-openssl": "*",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "phpseclib/phpseclib": "^3.0",
-        "ext-openssl": "*"
+        "sentry/sentry-laravel": "^4.25"
     },
     "require-dev": {
         "deployer/deployer": "^7.5",

@@ -73,6 +73,13 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'sentry_logs' => [
+            'driver' => 'sentry_logs',
+            // The minimum logging level at which this handler will be triggered
+            // Available levels: debug, info, notice, warning, error, critical, alert, emergency
+            'level' => env('LOG_LEVEL', 'info'), // defaults to `debug` if not set
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
