@@ -40,7 +40,7 @@ class WhatsAppWebhookController extends Controller
         try {
             $body = $request->all();
 
-            Log::info('Webhook received', ['body' => json_encode($body, depth: 1024)]);
+            Log::debug('Webhook received', ['body' => json_encode($body, depth: 1024)]);
 
             // WhatsApp Cloud API sends notifications in this structure
             $entries = $body['entry'] ?? [];
