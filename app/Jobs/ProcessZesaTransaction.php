@@ -69,16 +69,40 @@ class ProcessZesaTransaction implements ShouldQueue
 
     protected function notifySuccess(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn): void
     {
-        $ref = $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—';
-        $token = $txn['token'] ?? $transaction->token ?? 'pending';
+        $details = $transaction->api_response['raw_response']['body']['details'] ?? [];
 
-        $message = "✅ *ZESA Purchase Successful*\n\n"
-            . "Meter: {$transaction->meter_number}\n"
-            . "Amount: {$transaction->currency} {$transaction->amount}\n"
-            . "Reference: {$ref}\n"
-            . "Status: {$transaction->status}\n"
-            . "Token: {$token}\n\n"
-            . "Your token has been sent to {$transaction->recipient_phone}.";
+        if ($details) {
+            $currency = $details['currency'] ?? $transaction->currency ?? 'ZWG';
+            $token = trim($details['token'] ?? '');
+            $meter = $details['meter'] ?? $transaction->meter_number ?? '';
+            $kwh = $details['energyBought'] ?? '0.00';
+            $amount = (float)($details['amount'] ?? $transaction->amount ?? 0);
+            $levy = (float)($details['levy'] ?? 0);
+            $ratedAmount = (float)($details['rated_amount'] ?? $amount);
+            $debt = 0.00;
+            $energy = max($amount - $levy - $debt, 0);
+            $date = now()->format('d/m/y H:i');
+
+            $message = "Token: {$token}\n"
+                . "Meter: {$meter}\n"
+                . "KwH: {$kwh}\n"
+                . "Energy: {$currency}" . number_format($energy, 2) . "\n"
+                . "Debt: {$currency}" . number_format($debt, 2) . "\n"
+                . "REA: {$currency}" . number_format($levy, 2) . "\n"
+                . "Total Amt: {$currency}" . number_format($amount, 2) . "\n"
+                . "Tendered: {$currency}" . number_format($ratedAmount, 2) . "\n"
+                . "{$date}";
+        } else {
+            $ref = $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—';
+            $token = $txn['token'] ?? $transaction->token ?? 'pending';
+
+            $message = "✅ *ZESA Purchase Successful*\n\n"
+                . "Meter: {$transaction->meter_number}\n"
+                . "Amount: {$transaction->currency} {$transaction->amount}\n"
+                . "Reference: {$ref}\n"
+                . "Token: {$token}\n\n"
+                . "Your token has been sent to {$transaction->recipient_phone}.";
+        }
 
         $whatsapp->sendTextMessage($agent->wa_id, $message);
     }
