@@ -13,6 +13,7 @@ use App\Services\FlowEncryptionService;
 use App\Services\MeterValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class WhatsAppWebhookController extends Controller
@@ -74,6 +75,13 @@ class WhatsAppWebhookController extends Controller
      */
     protected function processMessage(array $message, array $contacts): void
     {
+        // Deduplicate — WhatsApp Cloud API may send the same webhook multiple times
+        $messageId = $message['id'] ?? '';
+        if ($messageId && !Cache::add("processed_msg:{$messageId}", true, 3600)) {
+            Log::debug('Duplicate message skipped', ['message_id' => $messageId]);
+            return;
+        }
+
         $waId = $message['from'] ?? '';
         $type = $message['type'] ?? '';
 
