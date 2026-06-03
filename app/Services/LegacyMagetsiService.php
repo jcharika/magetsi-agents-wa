@@ -146,6 +146,7 @@ class LegacyMagetsiService implements TransactionBackend
         $amount = (float) $params['amount'];
         $currency = strtoupper($params['currency'] ?? 'ZWG');
         $ecocashNumber = $params['ecocash_number'];
+        $recipientNumber = $this->formatPhoneNumber($params['recipient_phone'] ?? $params['ecocash_number']);
         $email = $params['email'] ?? config('magetsi.legacy_email', 'agent@legacy.magetsi.co.zw');
 
         // Format phone number
@@ -162,6 +163,7 @@ class LegacyMagetsiService implements TransactionBackend
             'meter_currency' => $currency,
             'amount' => $amount,
             'email' => $email,
+            'notification_phone' => $recipientNumber,
         ];
 
         try {
