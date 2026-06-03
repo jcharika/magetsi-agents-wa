@@ -85,7 +85,7 @@ class LegacyMagetsiService implements TransactionBackend
             }
 
             // API-level failure
-            if (! ($json['success'] ?? false)) {
+            if (!($json['success'] ?? false)) {
                 return [
                     'valid' => false,
                     'error' => $json['message'] ?? 'Meter validation failed.',
@@ -96,7 +96,7 @@ class LegacyMagetsiService implements TransactionBackend
             $meter = $body['meter'] ?? [];
 
             // Meter lookup failed inside the API
-            if (! ($meter['success'] ?? false)) {
+            if (!($meter['success'] ?? false)) {
                 return [
                     'valid' => false,
                     'error' => 'Meter number not found. Please check and try again.',
@@ -143,7 +143,7 @@ class LegacyMagetsiService implements TransactionBackend
         Log::debug('[LegacyBackend] Processing transaction', $params);
 
         $meterNumber = $params['meter_number'];
-        $amount = (float) $params['amount'];
+        $amount = (float)$params['amount'];
         $currency = strtoupper($params['currency'] ?? 'ZWG');
         $ecocashNumber = $params['ecocash_number'];
         $recipientNumber = $this->formatPhoneNumber($params['recipient_phone'] ?? $params['ecocash_number']);
@@ -185,7 +185,7 @@ class LegacyMagetsiService implements TransactionBackend
             }
 
             // API-level failure
-            if (! ($json['success'] ?? false)) {
+            if (!($json['success'] ?? false)) {
                 return [
                     'success' => false,
                     'error' => $json['message'] ?? 'Transaction initiation failed.',
@@ -301,7 +301,7 @@ class LegacyMagetsiService implements TransactionBackend
                 ]);
 
                 // Failed transaction
-                if (! ($json['success'] ?? true)) {
+                if (!($json['success'] ?? true)) {
                     return [
                         'completed' => false,
                         'failed' => true,
@@ -312,15 +312,16 @@ class LegacyMagetsiService implements TransactionBackend
 
                 $body = $json['body'] ?? [];
                 $pending = $body['pending'] ?? true;
+                $details = $body['details'] ?? [];
 
                 // Transaction completed
-                if (! $pending) {
+                if (!$pending & !empty($details)) {
                     return [
                         'completed' => true,
                         'failed' => false,
                         'message' => 'Transaction completed.',
                         'attempts' => $i + 1,
-                        'details' => $body['details'] ?? []
+                        'details' => $details
                     ];
                 }
             } catch (\Throwable $e) {
@@ -358,7 +359,7 @@ class LegacyMagetsiService implements TransactionBackend
         }
 
         // If doesn't start with 0, prepend it
-        if (! str_starts_with($digits, '0') && strlen($digits) <= 9) {
+        if (!str_starts_with($digits, '0') && strlen($digits) <= 9) {
             $digits = '0' . $digits;
         }
 
@@ -390,7 +391,7 @@ class LegacyMagetsiService implements TransactionBackend
     {
         $messages = [];
         foreach ($errors as $field => $fieldErrors) {
-            foreach ((array) $fieldErrors as $msg) {
+            foreach ((array)$fieldErrors as $msg) {
                 $messages[] = $msg;
             }
         }
