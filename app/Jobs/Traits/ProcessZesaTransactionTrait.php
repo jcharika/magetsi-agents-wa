@@ -71,7 +71,7 @@ trait ProcessZesaTransactionTrait
                         'api_response' => $result,
                     ]);
 
-                    $this->notifyPending($whatsapp, $agent, $transaction, $txn);
+//                    $this->notifyPending($whatsapp, $agent, $transaction, $txn);
                 }
             } else {
                 $transaction->update([

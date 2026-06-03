@@ -162,7 +162,7 @@ class LegacyMagetsiService implements TransactionBackend
             'phone' => $formattedPhone,
             'meter_currency' => $currency,
             'amount' => $amount,
-            'email' => $email,
+//            'email' => $email,
             'notification_phone' => $recipientNumber,
         ];
 
