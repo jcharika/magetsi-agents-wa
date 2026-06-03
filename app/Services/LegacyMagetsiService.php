@@ -147,7 +147,6 @@ class LegacyMagetsiService implements TransactionBackend
         $currency = strtoupper($params['currency'] ?? 'ZWG');
         $ecocashNumber = $params['ecocash_number'];
         $recipientNumber = $this->formatPhoneNumber($params['recipient_phone'] ?? $params['ecocash_number']);
-        $email = $params['email'] ?? config('magetsi.legacy_email', 'agent@legacy.magetsi.co.zw');
 
         // Format phone number
         $formattedPhone = $this->formatPhoneNumber($ecocashNumber);
@@ -162,7 +161,6 @@ class LegacyMagetsiService implements TransactionBackend
             'phone' => $formattedPhone,
             'meter_currency' => $currency,
             'amount' => $amount,
-//            'email' => $email,
             'notification_phone' => $recipientNumber,
         ];
 
@@ -227,6 +225,7 @@ class LegacyMagetsiService implements TransactionBackend
                 return [
                     'success' => true,
                     'transaction' => [
+                        'token' => $pollResult['details']['token'] ?? null,
                         'status' => $pollResult['completed'] ? 'COMPLETED' : 'PENDING',
                         'uid' => $ref,
                         'external_uid' => $ref,
@@ -321,6 +320,7 @@ class LegacyMagetsiService implements TransactionBackend
                         'failed' => false,
                         'message' => 'Transaction completed.',
                         'attempts' => $i + 1,
+                        'details' => $body['details'] ?? []
                     ];
                 }
             } catch (\Throwable $e) {
