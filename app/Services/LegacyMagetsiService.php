@@ -221,6 +221,7 @@ class LegacyMagetsiService implements TransactionBackend
             // ── Step 2: Poll for completion (EcoCash) ──
             if ($ref) {
                 $pollResult = $this->pollTransactionStatus($ref);
+                $pollResponse = $pollResult['full_response'] ?? $json;
 
                 return [
                     'success' => true,
@@ -236,7 +237,7 @@ class LegacyMagetsiService implements TransactionBackend
                         'reference' => $ref,
                     ],
                     'confirmation' => [],
-                    'raw_response' => array_merge($json, ['poll_result' => $pollResult]),
+                    'raw_response' => array_merge($pollResponse, ['poll_result' => $pollResult]),
                 ];
             }
 
@@ -313,15 +314,17 @@ class LegacyMagetsiService implements TransactionBackend
                 $body = $json['body'] ?? [];
                 $pending = $body['pending'] ?? true;
                 $details = $body['details'] ?? [];
+                $token = trim($details['token'] ?? '');
 
-                // Transaction completed
-                if (!$pending & !empty($details)) {
+                // Transaction completed — only stop when we have the token
+                if (!$pending && $token) {
                     return [
                         'completed' => true,
                         'failed' => false,
                         'message' => 'Transaction completed.',
                         'attempts' => $i + 1,
-                        'details' => $details
+                        'details' => $details,
+                        'full_response' => $json,
                     ];
                 }
             } catch (\Throwable $e) {

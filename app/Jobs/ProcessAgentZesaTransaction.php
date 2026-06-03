@@ -71,7 +71,8 @@ class ProcessAgentZesaTransaction implements ShouldQueue
 
     protected function notifySuccess(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn): void
     {
-        $details = $transaction->api_response['raw_response']['body']['poll_result']['details'] ?? [];
+        $rawResponse = $transaction->api_response['raw_response'] ?? [];
+        $details = $rawResponse['body']['details'] ?? $rawResponse['poll_result']['details'] ?? [];
 
         if ($details) {
             $currency = $details['currency'] ?? $transaction->currency ?? 'ZWG';
