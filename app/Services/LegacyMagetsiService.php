@@ -303,11 +303,20 @@ class LegacyMagetsiService implements TransactionBackend
 
                 // Failed transaction
                 if (!($json['success'] ?? true)) {
+                    $details = $json['body']['details'] ?? [];
+                    $state = $details['state'] ?? '';
+                    $message = match ($state) {
+                        'PENDING-PAYMENT' => 'Transaction failed because the payment was not completed. Please try again.',
+                        default => $json['message'] ?? 'Transaction failed.',
+                    };
+
                     return [
                         'completed' => false,
                         'failed' => true,
-                        'message' => $json['message'] ?? 'Transaction failed.',
+                        'message' => $message,
                         'attempts' => $i + 1,
+                        'state' => $state,
+                        'details' => $details,
                     ];
                 }
 
