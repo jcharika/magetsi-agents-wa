@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Traits\FlowDataController;
 
 use App\Models\Agent;
+use App\Models\Customer;
 
 trait FlowDataControllerShared
 {
@@ -47,6 +48,16 @@ trait FlowDataControllerShared
         return Agent::firstOrCreate(
             ['phone' => $tokenData['wa_id']],
             ['name' => 'Tinashe', 'wa_id' => '263771234567', 'ecocash_number' => '0771234567']
+        );
+    }
+
+    protected function resolveCustomerFromToken(array $tokenData): Customer
+    {
+        $waId = $tokenData['wa_id'] ?? '';
+
+        return Customer::firstOrCreate(
+            ['wa_id' => $waId],
+            ['name' => null, 'phone' => null],
         );
     }
 }

@@ -11,11 +11,22 @@ class WhatsAppService
     protected string $token;
     protected string $phoneNumberId;
 
-    public function __construct()
+    public function __construct(?string $token = null, ?string $phoneNumberId = null)
     {
         $this->apiUrl = config('whatsapp.api_url');
-        $this->token = config('whatsapp.token');
-        $this->phoneNumberId = config('whatsapp.phone_number_id');
+        $this->token = $token ?? config('whatsapp.token');
+        $this->phoneNumberId = $phoneNumberId ?? config('whatsapp.phone_number_id');
+    }
+
+    /**
+     * Create a WhatsAppService instance configured for the customer bot.
+     */
+    public static function forCustomer(): self
+    {
+        return new self(
+            token: config('whatsapp.customer_token'),
+            phoneNumberId: config('whatsapp.customer_phone_number_id'),
+        );
     }
 
     /**

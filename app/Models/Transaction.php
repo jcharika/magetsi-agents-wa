@@ -9,6 +9,7 @@ class Transaction extends Model
 {
     protected $fillable = [
         'agent_id',
+        'customer_id',
         'product_id',
         'handler',
         'meter_number',
@@ -40,5 +41,24 @@ class Transaction extends Model
     public function agent(): BelongsTo
     {
         return $this->belongsTo(Agent::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function failureReason(): ?string
+    {
+        $resp = $this->api_response;
+        if (!is_array($resp)) return null;
+
+        $reason = $resp['error'] ?? $resp['poll_result']['message'] ?? $resp['message'] ?? null;
+
+        if ($reason && is_string($reason) && trim($reason) !== '') {
+            return trim($reason);
+        }
+
+        return null;
     }
 }

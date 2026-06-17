@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agent;
+use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
+use Dompdf\Dompdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 
@@ -23,11 +25,17 @@ class AdminController extends Controller
             : 0;
         $totalRevenue = Transaction::where('status', 'completed')
             ->sum('amount');
+
+        $txnSort = in_array(request('txn_sort'), ['amount', 'status', 'created_at']) ? request('txn_sort') : 'created_at';
+        $txnDir = request('txn_dir') === 'asc' ? 'asc' : 'desc';
         $recentTransactions = Transaction::with('agent')
-            ->latest()
+            ->orderBy($txnSort, $txnDir)
             ->take(10)
             ->get();
-        $recentAgents = Agent::latest()->take(5)->get();
+
+        $agentSort = in_array(request('agent_sort'), ['name', 'created_at']) ? request('agent_sort') : 'created_at';
+        $agentDir = request('agent_dir') === 'asc' ? 'asc' : 'desc';
+        $recentAgents = Agent::orderBy($agentSort, $agentDir)->take(5)->get();
 
         return view('admin.dashboard', compact(
             'totalAgents', 'onboardedAgents',
@@ -43,28 +51,16 @@ class AdminController extends Controller
         $envPath = base_path('.env');
         $envContent = File::exists($envPath) ? File::get($envPath) : '';
 
-        $groups = [
+        $parsed = $this->parseEnv($envContent);
+
+        $tab = request('tab', 'global');
+
+        $globalGroups = [
             'App' => [
                 'APP_NAME' => ['label' => 'App Name', 'type' => 'text'],
                 'APP_ENV' => ['label' => 'Environment', 'type' => 'select', 'options' => ['local', 'production', 'testing']],
                 'APP_DEBUG' => ['label' => 'Debug Mode', 'type' => 'select', 'options' => ['true', 'false']],
                 'APP_URL' => ['label' => 'App URL', 'type' => 'text'],
-            ],
-            'WhatsApp Cloud API' => [
-                'WHATSAPP_TOKEN' => ['label' => 'Access Token', 'type' => 'password'],
-                'WHATSAPP_PHONE_NUMBER_ID' => ['label' => 'Phone Number ID', 'type' => 'text'],
-                'WHATSAPP_VERIFY_TOKEN' => ['label' => 'Verify Token', 'type' => 'text'],
-                'WHATSAPP_BUSINESS_ACCOUNT_ID' => ['label' => 'Business Account ID', 'type' => 'text'],
-            ],
-            'WhatsApp Flows' => [
-                'WHATSAPP_BUY_ZESA_FLOW_ID' => ['label' => 'Buy ZESA Flow ID', 'type' => 'text'],
-                'WHATSAPP_SETTINGS_FLOW_ID' => ['label' => 'Settings Flow ID', 'type' => 'text'],
-                'WHATSAPP_FLOW_MODE' => ['label' => 'Flow Mode', 'type' => 'select', 'options' => ['interactive', 'template']],
-                'WHATSAPP_BUY_ZESA_TEMPLATE' => ['label' => 'Buy ZESA Template', 'type' => 'text'],
-                'WHATSAPP_SETTINGS_TEMPLATE' => ['label' => 'Settings Template', 'type' => 'text'],
-                'WHATSAPP_TEMPLATE_LANGUAGE' => ['label' => 'Template Language', 'type' => 'text'],
-                'META_APP_SECRET' => ['label' => 'Meta App Secret', 'type' => 'password'],
-                'WHATSAPP_FLOW_PRIVATE_KEY_PATH' => ['label' => 'Private Key Path', 'type' => 'text'],
             ],
             'New Backend' => [
                 'MAGETSI_BACKEND' => ['label' => 'Backend', 'type' => 'select', 'options' => ['legacy', 'new']],
@@ -81,9 +77,42 @@ class AdminController extends Controller
             ],
         ];
 
-        $parsed = $this->parseEnv($envContent);
+        $agentGroups = [
+            'WhatsApp Cloud API' => [
+                'WHATSAPP_TOKEN' => ['label' => 'Access Token', 'type' => 'password'],
+                'WHATSAPP_PHONE_NUMBER_ID' => ['label' => 'Phone Number ID', 'type' => 'text'],
+                'WHATSAPP_VERIFY_TOKEN' => ['label' => 'Verify Token', 'type' => 'text'],
+                'WHATSAPP_BUSINESS_ACCOUNT_ID' => ['label' => 'Business Account ID', 'type' => 'text'],
+            ],
+            'WhatsApp Flows' => [
+                'WHATSAPP_BUY_ZESA_FLOW_ID' => ['label' => 'Buy ZESA Flow ID', 'type' => 'text'],
+                'WHATSAPP_SETTINGS_FLOW_ID' => ['label' => 'Settings Flow ID', 'type' => 'text'],
+                'WHATSAPP_FLOW_MODE' => ['label' => 'Flow Mode', 'type' => 'select', 'options' => ['interactive', 'template']],
+                'WHATSAPP_BUY_ZESA_TEMPLATE' => ['label' => 'Buy ZESA Template', 'type' => 'text'],
+                'WHATSAPP_SETTINGS_TEMPLATE' => ['label' => 'Settings Template', 'type' => 'text'],
+                'WHATSAPP_TEMPLATE_LANGUAGE' => ['label' => 'Template Language', 'type' => 'text'],
+                'META_APP_SECRET' => ['label' => 'Meta App Secret', 'type' => 'password'],
+                'WHATSAPP_FLOW_PRIVATE_KEY_PATH' => ['label' => 'Private Key Path', 'type' => 'text'],
+            ],
+        ];
 
-        return view('admin.config', compact('groups', 'parsed'));
+        $customerGroups = [
+            'WhatsApp Cloud API' => [
+                'WHATSAPP_CUSTOMER_TOKEN' => ['label' => 'Access Token', 'type' => 'password'],
+                'WHATSAPP_CUSTOMER_PHONE_NUMBER_ID' => ['label' => 'Phone Number ID', 'type' => 'text'],
+                'WHATSAPP_CUSTOMER_VERIFY_TOKEN' => ['label' => 'Verify Token', 'type' => 'text'],
+            ],
+            'WhatsApp Flows' => [
+                'WHATSAPP_CUSTOMER_BUY_ZESA_FLOW_ID' => ['label' => 'Buy ZESA Flow ID', 'type' => 'text'],
+                'WHATSAPP_CUSTOMER_SETTINGS_FLOW_ID' => ['label' => 'Settings Flow ID', 'type' => 'text'],
+                'WHATSAPP_CUSTOMER_FLOW_MODE' => ['label' => 'Flow Mode', 'type' => 'select', 'options' => ['interactive', 'template']],
+                'WHATSAPP_CUSTOMER_BUY_ZESA_TEMPLATE' => ['label' => 'Buy ZESA Template', 'type' => 'text'],
+                'WHATSAPP_CUSTOMER_SETTINGS_TEMPLATE' => ['label' => 'Settings Template', 'type' => 'text'],
+                'WHATSAPP_CUSTOMER_APP_SECRET' => ['label' => 'Meta App Secret', 'type' => 'password'],
+            ],
+        ];
+
+        return view('admin.config', compact('globalGroups', 'agentGroups', 'customerGroups', 'parsed', 'tab'));
     }
 
     public function configUpdate(Request $request)
@@ -100,6 +129,10 @@ class AdminController extends Controller
             'MAGETSI_BACKEND', 'MAGETSI_API_URL', 'MAGETSI_CHANNEL', 'MAGETSI_API_TIMEOUT',
             'MAGETSI_LEGACY_URL', 'MAGETSI_LEGACY_TOKEN', 'MAGETSI_LEGACY_EMAIL',
             'MAGETSI_LEGACY_POLL_ATTEMPTS', 'MAGETSI_LEGACY_POLL_INTERVAL',
+            'WHATSAPP_CUSTOMER_TOKEN', 'WHATSAPP_CUSTOMER_PHONE_NUMBER_ID', 'WHATSAPP_CUSTOMER_VERIFY_TOKEN',
+            'WHATSAPP_CUSTOMER_BUY_ZESA_FLOW_ID', 'WHATSAPP_CUSTOMER_SETTINGS_FLOW_ID',
+            'WHATSAPP_CUSTOMER_FLOW_MODE', 'WHATSAPP_CUSTOMER_BUY_ZESA_TEMPLATE',
+            'WHATSAPP_CUSTOMER_SETTINGS_TEMPLATE', 'WHATSAPP_CUSTOMER_APP_SECRET',
         ];
 
         $lines = explode("\n", $content);
@@ -136,9 +169,9 @@ class AdminController extends Controller
             ->with('status', $result ? 'Configuration saved successfully.' : 'Failed to save configuration.');
     }
 
-    public function reports(Request $request)
+    protected function buildReportsQuery(Request $request)
     {
-        $query = Transaction::with('agent');
+        $query = Transaction::with('agent', 'customer');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -154,6 +187,34 @@ class AdminController extends Controller
             });
         }
 
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('handler')) {
+            $query->where('handler', $request->handler);
+        }
+
+        if ($request->filled('agent_id')) {
+            $query->where('agent_id', $request->agent_id);
+        }
+
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('currency')) {
+            $query->where('currency', $request->currency);
+        }
+
+        if ($request->filled('amount_min')) {
+            $query->where('amount', '>=', (float) $request->amount_min);
+        }
+
+        if ($request->filled('amount_max')) {
+            $query->where('amount', '<=', (float) $request->amount_max);
+        }
+
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
@@ -161,6 +222,13 @@ class AdminController extends Controller
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
+
+        return $query;
+    }
+
+    public function reports(Request $request)
+    {
+        $query = $this->buildReportsQuery($request);
 
         $sortField = $request->get('sort', 'created_at');
         $sortDir = $request->get('dir', 'desc');
@@ -172,7 +240,83 @@ class AdminController extends Controller
 
         $transactions = $query->paginate(20)->withQueryString();
 
-        return view('admin.reports', compact('transactions'));
+        $agents = Agent::orderBy('name')->get(['id', 'name']);
+        $customers = Customer::orderBy('name')->get(['id', 'name']);
+        $products = Transaction::select('product_id')->distinct()->whereNotNull('product_id')->pluck('product_id');
+        $handlers = Transaction::select('handler')->distinct()->whereNotNull('handler')->pluck('handler');
+        $currencies = Transaction::select('currency')->distinct()->whereNotNull('currency')->pluck('currency');
+
+        return view('admin.reports', compact('transactions', 'agents', 'customers', 'products', 'handlers', 'currencies'));
+    }
+
+    public function reportsExportCsv(Request $request)
+    {
+        $query = $this->buildReportsQuery($request);
+        $query->orderBy('created_at', 'desc');
+
+        $transactions = $query->get();
+
+        $filename = 'reports-' . now()->format('Y-m-d-His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($transactions) {
+            $handle = fopen('php://output', 'w');
+
+            // BOM for Excel UTF-8 support
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'Date', 'Agent', 'Customer Type', 'Meter', 'Customer', 'Amount', 'Currency',
+                'EcoCash', 'Reference', 'Token', 'Status', 'Failure Reason',
+            ]);
+
+            foreach ($transactions as $txn) {
+                fputcsv($handle, [
+                    $txn->created_at->format('d M Y H:i'),
+                    $txn->agent?->name ?? '—',
+                    $txn->customer_id ? 'Customer' : ($txn->agent_id ? 'Agent' : '—'),
+                    $txn->meter_number,
+                    $txn->customer_name ?? '—',
+                    number_format((float) $txn->amount, 2),
+                    $txn->currency,
+                    $txn->ecocash_number ?? '—',
+                    $txn->reference ?? '—',
+                    $txn->token ?? '—',
+                    $txn->status,
+                    $txn->status === 'failed' ? ($txn->failureReason() ?? '—') : '—',
+                ]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function reportsExportPdf(Request $request)
+    {
+        $query = $this->buildReportsQuery($request);
+        $query->orderBy('created_at', 'desc');
+
+        $transactions = $query->get();
+
+        $html = view('admin.reports-pdf', compact('transactions'))->render();
+
+        $dompdf = new Dompdf;
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $filename = 'reports-' . now()->format('Y-m-d-His') . '.pdf';
+
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 
     public function help()
@@ -209,10 +353,31 @@ class AdminController extends Controller
 
     public function agents()
     {
-        $agents = Agent::withCount('transactions')
-            ->withSum('transactions', 'amount')
-            ->latest()
-            ->paginate(20);
+        $sortField = request('sort', 'created_at');
+        $sortDir = request('dir', 'desc');
+        $allowedSorts = ['name', 'phone', 'created_at', 'transactions_count', 'transactions_sum_amount'];
+
+        $agents = Agent::withCount([
+            'transactions',
+            'transactions as completed_transactions_count' => fn($q) => $q->where('status', 'completed'),
+            'transactions as failed_transactions_count' => fn($q) => $q->where('status', 'failed'),
+        ])->withSum('transactions', 'amount');
+
+        if ($search = request('search')) {
+            $agents->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('ecocash_number', 'like', "%{$search}%");
+            });
+        }
+
+        if (in_array($sortField, $allowedSorts)) {
+            $agents->orderBy($sortField, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $agents->latest();
+        }
+
+        $agents = $agents->paginate(20);
 
         return view('admin.agents', compact('agents'));
     }
@@ -228,7 +393,17 @@ class AdminController extends Controller
             'last_transaction_at' => $agent->transactions()->latest()->value('created_at'),
         ];
 
-        $transactions = $agent->transactions()->latest()->paginate(20);
+        $sortField = request('sort', 'created_at');
+        $sortDir = request('dir', 'desc');
+        $allowedSorts = ['created_at', 'amount', 'status'];
+
+        $txnQuery = $agent->transactions();
+        if (in_array($sortField, $allowedSorts)) {
+            $txnQuery->orderBy($sortField, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $txnQuery->latest();
+        }
+        $transactions = $txnQuery->paginate(20);
 
         return view('admin.agent-detail', compact('agent', 'stats', 'transactions'));
     }
@@ -244,8 +419,113 @@ class AdminController extends Controller
 
     public function users()
     {
-        $users = User::latest()->paginate(20);
+        $sortField = request('sort', 'created_at');
+        $sortDir = request('dir', 'desc');
+        $allowedSorts = ['name', 'email', 'created_at', 'updated_at'];
+
+        $users = User::query();
+        if (in_array($sortField, $allowedSorts)) {
+            $users->orderBy($sortField, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $users->latest();
+        }
+
+        $users = $users->paginate(20);
+
         return view('admin.users', compact('users'));
+    }
+
+    public function userEdit(User $user)
+    {
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'blocked' => $user->blocked,
+        ]);
+    }
+
+    public function userUpdate(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update($data);
+
+        return redirect()->route('admin.users')
+            ->with('status', "User {$user->name} updated successfully.");
+    }
+
+    public function userPassword(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user->update(['password' => $data['password']]);
+
+        return redirect()->route('admin.users')
+            ->with('status', "Password for {$user->name} updated successfully.");
+    }
+
+    public function userToggleBlock(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('status', 'You cannot block yourself.');
+        }
+
+        $user->update(['blocked' => !$user->blocked]);
+
+        return back()->with('status', $user->blocked
+            ? "User {$user->name} has been blocked."
+            : "User {$user->name} has been unblocked.");
+    }
+
+    public function customers()
+    {
+        $sortField = request('sort', 'created_at');
+        $sortDir = request('dir', 'desc');
+        $allowedSorts = ['name', 'phone', 'created_at', 'transactions_count'];
+
+        $customers = Customer::withCount('transactions');
+
+        if (in_array($sortField, $allowedSorts)) {
+            $customers->orderBy($sortField, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $customers->latest();
+        }
+
+        $customers = $customers->paginate(20);
+
+        return view('admin.customers', compact('customers'));
+    }
+
+    public function customerDetail(Customer $customer)
+    {
+        $customer->loadCount('transactions');
+        $stats = [
+            'total_transactions' => $customer->transactions()->count(),
+            'completed_transactions' => $customer->transactions()->where('status', 'completed')->count(),
+            'failed_transactions' => $customer->transactions()->where('status', 'failed')->count(),
+            'total_revenue' => $customer->transactions()->where('status', 'completed')->sum('amount'),
+            'last_transaction_at' => $customer->transactions()->latest()->value('created_at'),
+        ];
+
+        $sortField = request('sort', 'created_at');
+        $sortDir = request('dir', 'desc');
+        $allowedSorts = ['created_at', 'amount', 'status'];
+
+        $txnQuery = $customer->transactions();
+        if (in_array($sortField, $allowedSorts)) {
+            $txnQuery->orderBy($sortField, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $txnQuery->latest();
+        }
+        $transactions = $txnQuery->paginate(20);
+
+        return view('admin.customer-detail', compact('customer', 'stats', 'transactions'));
     }
 
     private function parseEnv(string $content): array

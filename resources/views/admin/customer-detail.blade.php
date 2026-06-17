@@ -1,6 +1,6 @@
 @extends('admin.layout')
 
-@section('title', 'Agent: ' . ($agent->name ?? '—'))
+@section('title', 'Customer: ' . ($customer->name ?? '—'))
 
 @section('content')
     <div class="card" style="padding: 20px 24px; margin-bottom: 20px">
@@ -8,10 +8,10 @@
             <div style="width:42px;height:42px;background:#252c65;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">👤</div>
             <div style="flex:1">
                 <div style="display:flex;align-items:center;gap:12px">
-                    <h3 style="font-size:15px;font-weight:600;color:#333">Agent Details</h3>
-                    <a href="{{ route('admin.agents') }}" class="btn btn-outline" style="padding:4px 12px;font-size:12px">← Back to Agents</a>
+                    <h3 style="font-size:15px;font-weight:600;color:#333">Customer Details</h3>
+                    <a href="{{ route('admin.customers') }}" class="btn btn-outline" style="padding:4px 12px;font-size:12px">← Back to Customers</a>
                 </div>
-                <p style="font-size:13px;color:#888;margin-top:2px">Profile and transaction history for <strong style="color:#333">{{ $agent->name ?? 'Unnamed' }}</strong></p>
+                <p style="font-size:13px;color:#888;margin-top:2px">Profile and transaction history for <strong style="color:#333">{{ $customer->name ?? 'Unnamed' }}</strong></p>
             </div>
         </div>
     </div>
@@ -21,18 +21,10 @@
             <div class="card" style="padding:24px">
                 <div style="display:flex;flex-direction:column;align-items:center;text-align:center">
                     <div style="width:64px;height:64px;border-radius:6px;background:#252c65;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;margin-bottom:12px">
-                        {{ strtoupper(substr($agent->name ?? '?', 0, 1)) }}
+                        {{ strtoupper(substr($customer->name ?? '?', 0, 1)) }}
                     </div>
-                    <h3 style="font-size:17px;font-weight:700;color:#344767">{{ $agent->name ?? 'Unnamed' }}</h3>
-                    <p style="font-size:13px;color:#8392ab">{{ $agent->phone }}</p>
-                    <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
-                        <span class="badge {{ $agent->onboarded ? 'badge-success' : 'badge-warning' }}">
-                            {{ $agent->onboarded ? 'Onboarded' : 'Pending' }}
-                        </span>
-                        @if ($agent->blocked)
-                            <span class="badge badge-danger">Blocked</span>
-                        @endif
-                    </div>
+                    <h3 style="font-size:17px;font-weight:700;color:#344767">{{ $customer->name ?? 'Unnamed' }}</h3>
+                    <p style="font-size:13px;color:#8392ab">{{ $customer->phone }}</p>
                 </div>
 
                 <hr style="border:none;border-top:1px solid #f0f2f8;margin:20px 0">
@@ -40,25 +32,13 @@
                 <div style="font-size:13px">
                     <div style="display:flex;justify-content:space-between;padding:6px 0">
                         <span style="color:#8392ab">WA ID</span>
-                        <span style="color:#344767;font-family:ui-monospace,monospace">{{ $agent->wa_id }}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0">
-                        <span style="color:#8392ab">EcoCash</span>
-                        <span style="color:#344767">{{ $agent->ecocash_number ?? '—' }}</span>
+                        <span style="color:#344767;font-family:ui-monospace,monospace">{{ $customer->wa_id }}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;padding:6px 0">
                         <span style="color:#8392ab">Created</span>
-                        <span style="color:#344767;white-space:nowrap">{{ $agent->created_at->format('d M Y') }}</span>
+                        <span style="color:#344767;white-space:nowrap">{{ $customer->created_at->format('d M Y') }}</span>
                     </div>
                 </div>
-
-                <form method="POST" action="{{ route('admin.agents.toggle-block', $agent) }}" style="margin-top:16px">
-                    @csrf
-                    <button type="submit" class="btn {{ $agent->blocked ? 'btn-secondary' : 'btn-outline' }}" style="width:100%;justify-content:center"
-                            onclick="return confirm('{{ $agent->blocked ? 'Unblock' : 'Block' }} {{ $agent->name }}?')">
-                        {{ $agent->blocked ? '🔓 Unblock Agent' : '🔒 Block Agent' }}
-                    </button>
-                </form>
             </div>
         </div>
 
@@ -149,7 +129,7 @@
                     </div>
                 @else
                     <div class="card-body">
-                        <div class="empty-state"><p>No transactions from this agent.</p></div>
+                        <div class="empty-state"><p>No transactions from this customer.</p></div>
                     </div>
                 @endif
             </div>

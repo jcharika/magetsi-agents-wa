@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Agent;
+use App\Models\Customer;
 use App\Models\Transaction;
 use App\Jobs\Traits\ProcessZesaTransactionTrait;
 use App\Services\BackendManager;
@@ -23,51 +24,82 @@ class ProcessZesaTransaction implements ShouldQueue
     public int $timeout = 120;
 
     protected array $params;
-    protected array $agentData;
+    protected array $userData;
     protected string $flowToken;
 
-    public function __construct(array $params, array $agentData, string $flowToken)
+    public function __construct(array $params, array $userData, string $flowToken)
     {
         $this->params = $params;
-        $this->agentData = $agentData;
+        $this->userData = $userData;
         $this->flowToken = $flowToken;
     }
 
-    /**
-     * @throws \Throwable
-     */
     public function handle(BackendManager $backend, WhatsAppService $whatsapp): void
     {
-        $agent = Agent::firstOrNew(['wa_id' => $this->agentData['wa_id']], [
-            'phone' => $this->agentData['wa_id'],
-            'name' => $this->agentData['name'] ?? 'Customer',
-            'ecocash_number' => $this->agentData['ecocash_number'] ?? '',
-        ]);
-        $agent->save();
+        $isCustomer = empty($this->userData['ecocash_number']);
 
-        $transaction = Transaction::create([
-            'agent_id' => $agent->id,
-            'product_id' => 'zesa',
-            'handler' => 'customer_flow',
-            'meter_number' => $this->params['meter_number'] ?? '',
-            'amount' => $this->params['amount'] ?? 0,
-            'currency' => $this->params['currency'] ?? 'ZWG',
-            'ecocash_number' => $this->params['ecocash_number'] ?? '',
-            'recipient_phone' => $this->params['recipient_phone'] ?? null,
-            'status' => 'processing',
-            'api_response' => [],
-        ]);
+        if ($isCustomer) {
+            $whatsapp = WhatsAppService::forCustomer();
 
-        Log::debug('Queue: Processing ZESA transaction', [
-            'transaction_id' => $transaction->id,
-            'meter_number' => $this->params['meter_number'],
-            'amount' => $this->params['amount'],
-        ]);
+            $customer = Customer::firstOrCreate(
+                ['wa_id' => $this->userData['wa_id']],
+                ['name' => $this->userData['name'] ?? 'Customer', 'phone' => $this->userData['wa_id']],
+            );
 
-        $this->processZesaTransaction($backend, $whatsapp, $agent, $transaction, $this->params);
+            $transaction = Transaction::create([
+                'customer_id' => $customer->id,
+                'product_id' => 'zesa',
+                'handler' => 'customer_flow',
+                'meter_number' => $this->params['meter_number'] ?? '',
+                'amount' => $this->params['amount'] ?? 0,
+                'currency' => $this->params['currency'] ?? 'ZWG',
+                'ecocash_number' => $this->params['ecocash_number'] ?? '',
+                'recipient_phone' => $this->params['recipient_phone'] ?? null,
+                'status' => 'processing',
+                'api_response' => [],
+            ]);
+
+            Log::debug('Queue: Processing customer ZESA transaction', [
+                'transaction_id' => $transaction->id,
+                'customer_id' => $customer->id,
+                'meter_number' => $this->params['meter_number'],
+                'amount' => $this->params['amount'],
+            ]);
+
+            $this->processZesaTransaction($backend, $whatsapp, $customer, $transaction, $this->params);
+        } else {
+            $agent = Agent::firstOrNew(['wa_id' => $this->userData['wa_id']], [
+                'phone' => $this->userData['wa_id'],
+                'name' => $this->userData['name'] ?? 'Customer',
+                'ecocash_number' => $this->userData['ecocash_number'] ?? '',
+            ]);
+            $agent->save();
+
+            $transaction = Transaction::create([
+                'agent_id' => $agent->id,
+                'product_id' => 'zesa',
+                'handler' => 'customer_flow',
+                'meter_number' => $this->params['meter_number'] ?? '',
+                'amount' => $this->params['amount'] ?? 0,
+                'currency' => $this->params['currency'] ?? 'ZWG',
+                'ecocash_number' => $this->params['ecocash_number'] ?? '',
+                'recipient_phone' => $this->params['recipient_phone'] ?? null,
+                'status' => 'processing',
+                'api_response' => [],
+            ]);
+
+            Log::debug('Queue: Processing agent ZESA transaction', [
+                'transaction_id' => $transaction->id,
+                'agent_id' => $agent->id,
+                'meter_number' => $this->params['meter_number'],
+                'amount' => $this->params['amount'],
+            ]);
+
+            $this->processZesaTransaction($backend, $whatsapp, $agent, $transaction, $this->params);
+        }
     }
 
-    protected function notifySuccess(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn): void
+    protected function notifySuccess(WhatsAppService $whatsapp, Agent|Customer $actor, Transaction $transaction, array $txn): void
     {
         $rawResponse = $transaction->api_response['raw_response'] ?? [];
         $details = $rawResponse['body']['details'] ?? $rawResponse['poll_result']['details'] ?? [];
@@ -105,10 +137,10 @@ class ProcessZesaTransaction implements ShouldQueue
                 . "Your token has been sent to {$transaction->recipient_phone}.";
         }
 
-        $whatsapp->sendTextMessage($agent->wa_id, $message);
+        $whatsapp->sendTextMessage($actor->wa_id, $message);
     }
 
-    protected function notifyFailure(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, string $reason): void
+    protected function notifyFailure(WhatsAppService $whatsapp, Agent|Customer $actor, Transaction $transaction, string $reason): void
     {
         $message = "❌ *ZESA Purchase Failed*\n\n"
             . "Meter: {$transaction->meter_number}\n"
@@ -118,10 +150,10 @@ class ProcessZesaTransaction implements ShouldQueue
             . "Reason: {$reason}\n\n"
             . "Please try again or contact support if this persists.";
 
-        $whatsapp->sendTextMessage($agent->wa_id, $message);
+        $whatsapp->sendTextMessage($actor->wa_id, $message);
     }
 
-    protected function notifyPending(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn): void
+    protected function notifyPending(WhatsAppService $whatsapp, Agent|Customer $actor, Transaction $transaction, array $txn): void
     {
         $ref = $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—';
 
@@ -132,6 +164,6 @@ class ProcessZesaTransaction implements ShouldQueue
             . "Your payment is being processed. You will receive another notification once completed.\n\n"
             . "If you don't receive the token within a few minutes, please check your EcoCash balance.";
 
-        $whatsapp->sendTextMessage($agent->wa_id, $message);
+        $whatsapp->sendTextMessage($actor->wa_id, $message);
     }
 }

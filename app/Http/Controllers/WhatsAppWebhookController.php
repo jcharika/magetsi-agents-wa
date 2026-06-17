@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Traits\FlowDataController\BuyZesaFlowHandler;
-use App\Http\Controllers\Traits\FlowDataController\CustomerFlowHandler;
 use App\Http\Controllers\Traits\FlowDataController\FlowDataControllerShared;
 use App\Http\Controllers\Traits\FlowDataController\SettingsFlowHandler;
-use App\Http\Controllers\Traits\UsesCustomerFlow;
 use App\Services\BackendManager;
 use App\Services\Conversation\ConversationHandler;
 use App\Services\FlowEncryptionService;
@@ -21,8 +19,6 @@ class WhatsAppWebhookController extends Controller
     use FlowDataControllerShared;
     use BuyZesaFlowHandler;
     use SettingsFlowHandler;
-    use CustomerFlowHandler;
-    use UsesCustomerFlow;
 
     public function __construct(
         protected ConversationHandler    $handler,

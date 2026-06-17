@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Agent;
+use App\Models\Customer;
 use App\Models\Transaction;
 use App\Jobs\Traits\ProcessZesaTransactionTrait;
 use App\Services\BackendManager;
@@ -69,7 +70,7 @@ class ProcessAgentZesaTransaction implements ShouldQueue
         $this->processZesaTransaction($backend, $whatsapp, $agent, $transaction, $this->params);
     }
 
-    protected function notifySuccess(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn): void
+    protected function notifySuccess(WhatsAppService $whatsapp, Agent|Customer $agent, Transaction $transaction, array $txn): void
     {
         $rawResponse = $transaction->api_response['raw_response'] ?? [];
         $details = $rawResponse['body']['details'] ?? $rawResponse['poll_result']['details'] ?? [];
@@ -111,7 +112,7 @@ class ProcessAgentZesaTransaction implements ShouldQueue
         $whatsapp->sendTextMessage($agent->wa_id, $message);
     }
 
-    protected function notifyFailure(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, string $reason): void
+    protected function notifyFailure(WhatsAppService $whatsapp, Agent|Customer $agent, Transaction $transaction, string $reason): void
     {
         $message = "❌ *ZESA Purchase Failed*\n\n"
             . "Meter: {$transaction->meter_number}\n"
@@ -124,7 +125,7 @@ class ProcessAgentZesaTransaction implements ShouldQueue
         $whatsapp->sendTextMessage($agent->wa_id, $message);
     }
 
-    protected function notifyPending(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn): void
+    protected function notifyPending(WhatsAppService $whatsapp, Agent|Customer $agent, Transaction $transaction, array $txn): void
     {
         $ref = $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—';
 

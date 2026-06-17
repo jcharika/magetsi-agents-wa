@@ -13,11 +13,30 @@
         </div>
     </div>
 
-    <div class="card" style="padding: 28px 32px">
+    <div class="card" style="padding: 0 32px 28px">
+        <div style="display:flex;gap:0;border-bottom:1px solid #f0f2f8;margin-bottom:24px">
+            @php $tabs = ['global' => 'Global Configuration', 'agents' => 'Agent Configuration', 'customer' => 'Customer Configuration']; @endphp
+            @foreach ($tabs as $key => $label)
+                <a href="{{ route('admin.config', ['tab' => $key]) }}"
+                   style="padding:14px 24px;font-size:13px;font-weight:600;text-decoration:none;border-bottom:2px solid {{ $tab === $key ? '#252c65' : 'transparent' }};color:{{ $tab === $key ? '#252c65' : '#8392ab' }};transition:all .15s">
+                    {{ $label }}
+                </a>
+            @endforeach
+        </div>
+
         <form method="POST" action="{{ route('admin.config.update') }}">
             @csrf
+            <input type="hidden" name="tab" value="{{ $tab }}">
 
-            @foreach ($groups as $groupName => $fields)
+            @php
+                $groups = match ($tab) {
+                    'agents' => $agentGroups,
+                    'customer' => $customerGroups,
+                    default => $globalGroups,
+                };
+            @endphp
+
+            @forelse ($groups as $groupName => $fields)
                 <div class="config-group">
                     <h3>{{ $groupName }}</h3>
                     <div class="config-grid">
@@ -52,7 +71,11 @@
                         @endforeach
                     </div>
                 </div>
-            @endforeach
+            @empty
+                <p style="color:#8392ab;font-size:13px;text-align:center;padding:32px 0">
+                    No configuration fields for this section.
+                </p>
+            @endforelse
 
             <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #f0f2f8; display: flex; align-items: center; gap: 16px">
                 <button type="submit" class="btn btn-primary">Save Configuration</button>

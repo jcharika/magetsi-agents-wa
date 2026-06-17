@@ -23,6 +23,14 @@ class LoginController extends Controller
         $remember = $request->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            if ($user->blocked) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Your account has been suspended. Contact an administrator.',
+                ])->onlyInput('email');
+            }
             $request->session()->regenerate();
             return redirect()->intended('/admin');
         }

@@ -13,19 +13,47 @@
         </div>
     </div>
 
+    <div class="card" style="padding: 20px 24px; margin-bottom: 20px">
+        <form method="GET" action="{{ route('admin.agents') }}">
+            <div style="display:flex;gap:10px;align-items:end">
+                <input type="text" name="search" class="input" placeholder="Search name, phone or EcoCash…"
+                       value="{{ request('search') }}" style="min-width:220px;flex:1">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="{{ route('admin.agents') }}" class="btn btn-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+
     <div class="card" style="padding:0">
         @if ($agents->count())
             <div class="table-wrap">
                 <table class="soft-table">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Phone</th>
+                            <th>
+                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'name', 'dir' => request('sort') === 'name' && request('dir') === 'asc' ? 'desc' : 'asc']) }}" style="color:inherit;text-decoration:none">
+                                    Name {{ request('sort') === 'name' ? (request('dir') === 'asc' ? '↑' : '↓') : '' }}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'phone', 'dir' => request('sort') === 'phone' && request('dir') === 'asc' ? 'desc' : 'asc']) }}" style="color:inherit;text-decoration:none">
+                                    Phone {{ request('sort') === 'phone' ? (request('dir') === 'asc' ? '↑' : '↓') : '' }}
+                                </a>
+                            </th>
                             <th>EcoCash</th>
                             <th>Status</th>
-                            <th>Transactions</th>
-                            <th>Revenue</th>
+                            <th>
+                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'transactions_count', 'dir' => request('sort') === 'transactions_count' && request('dir') === 'asc' ? 'desc' : 'asc']) }}" style="color:inherit;text-decoration:none">
+                                    Transactions {{ request('sort') === 'transactions_count' ? (request('dir') === 'asc' ? '↑' : '↓') : '' }}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'transactions_sum_amount', 'dir' => request('sort') === 'transactions_sum_amount' && request('dir') === 'asc' ? 'desc' : 'asc']) }}" style="color:inherit;text-decoration:none">
+                                    Revenue {{ request('sort') === 'transactions_sum_amount' ? (request('dir') === 'asc' ? '↑' : '↓') : '' }}
+                                </a>
+                            </th>
                             <th>Last Activity</th>
+                            <th>Performance</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -53,6 +81,20 @@
                                 </td>
                                 <td style="font-size:12px;white-space:nowrap">
                                     {{ $agent->transactions()->latest()->value('created_at')?->diffForHumans() ?? '—' }}
+                                </td>
+                                <td>
+                                    @php
+                                        $total = $agent->transactions_count;
+                                        $completed = $agent->completed_transactions_count;
+                                        $rate = $total > 0 ? round(($completed / $total) * 100) : null;
+                                    @endphp
+                                    @if ($rate !== null)
+                                        <span class="badge" style="background:{{ $rate >= 80 ? '#e2f9ed' : ($rate >= 50 ? '#fef3e2' : '#fce4e8') }};color:{{ $rate >= 80 ? '#1a966e' : ($rate >= 50 ? '#c87a1c' : '#c72a48') }}">
+                                            {{ $rate }}%
+                                        </span>
+                                    @else
+                                        <span style="color:#bbb">—</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <form method="POST" action="{{ route('admin.agents.toggle-block', $agent) }}" style="display:inline">

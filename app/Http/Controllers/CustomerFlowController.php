@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Traits\FlowDataController\CustomerFlowHandler;
 use App\Http\Controllers\Traits\FlowDataController\FlowDataControllerShared;
-use App\Http\Controllers\Traits\UsesCustomerFlow;
-use App\Models\Agent;
+use App\Models\Customer;
 use App\Services\BackendManager;
 use App\Services\FlowEncryptionService;
 use App\Services\MeterValidationService;
@@ -17,14 +16,15 @@ class CustomerFlowController extends Controller
 {
     use FlowDataControllerShared;
     use CustomerFlowHandler;
-    use UsesCustomerFlow;
+
+    protected FlowEncryptionService $encryption;
 
     public function __construct(
-        protected FlowEncryptionService $encryption,
         protected MeterValidationService $meterService,
         protected BackendManager $backend,
     )
     {
+        $this->encryption = FlowEncryptionService::forCustomer();
     }
 
     public function __invoke(Request $request): Response
@@ -67,10 +67,10 @@ class CustomerFlowController extends Controller
             Log::debug('CustomerFlow: request', ['action' => $action, 'screen' => $screen, 'data' => $data, 'flowToken' => $flowToken]);
 
             $responsePayload = match ($action) {
-                'INIT' => $this->handleCustomerInit($screen, $data, $this->resolveCustomerAgent($flowToken)),
+                'INIT' => $this->handleCustomerInit($screen, $data, $this->resolveCustomer($flowToken)),
                 'ping' => $this->handlePing(),
-                'navigate' => $this->handleCustomerNavigate($screen, $this->resolveCustomerAgent($flowToken)),
-                'data_exchange' => $this->handleCustomerDataExchange($screen, $data, $this->resolveCustomerAgent($flowToken), $flowToken),
+                'navigate' => $this->handleCustomerNavigate($screen, $this->resolveCustomer($flowToken)),
+                'data_exchange' => $this->handleCustomerDataExchange($screen, $data, $this->resolveCustomer($flowToken), $flowToken),
                 'BACK' => $this->handleCustomerBack($screen, $data, $flowToken),
                 default => $this->handleErrorNotification($action, $data),
             };
@@ -96,9 +96,9 @@ class CustomerFlowController extends Controller
         return ['data' => ['status' => 'active']];
     }
 
-    protected function resolveCustomerAgent(string $flowToken): Agent
+    protected function resolveCustomer(string $flowToken): Customer
     {
-        return $this->resolveAgent(
+        return $this->resolveCustomerFromToken(
             $this->parseFlowToken($flowToken)
         );
     }
@@ -113,13 +113,12 @@ class CustomerFlowController extends Controller
         return $this->meterService;
     }
 
-    protected function handleCustomerNavigate(string $screen, Agent $agent): array
+    protected function handleCustomerNavigate(string $screen, Customer $customer): array
     {
-        // Normalize screen names
         $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
         Log::debug('CustomerFlow: navigate', ['screen' => $screen]);
 
-        return $this->handleCustomerInit($screen, [], $agent);
+        return $this->handleCustomerInit($screen, [], $customer);
     }
 
     protected function handleErrorNotification(string $action, array $data): array

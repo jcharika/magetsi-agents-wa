@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agent;
+use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\Conversation\ConversationSession;
 use App\Services\Conversation\FlowEngine;
@@ -27,7 +28,7 @@ class SimulatorController extends Controller
      */
     public function index()
     {
-        return view('simulator');
+        return view('simulator', ['mode' => request('mode', 'agent')]);
     }
 
     /**
@@ -38,6 +39,11 @@ class SimulatorController extends Controller
     {
         $action = $request->input('action');
         $payload = $request->input('payload', []);
+        $mode = $request->input('mode', 'agent');
+
+        if ($mode === 'customer') {
+            return $this->simulateCustomer($action, $payload);
+        }
 
         // Use the simulator agent — new agents start un-onboarded
         $agent = Agent::firstOrCreate(
@@ -63,6 +69,36 @@ class SimulatorController extends Controller
             'flow_complete' => $this->handleFlowComplete($agent, $payload),
             'validate_meter' => $this->handleMeterValidation($payload['meter_number'] ?? ''),
             default => response()->json(['messages' => [['type' => 'text', 'text' => 'Unknown action']]]),
+        };
+    }
+
+    // ── Customer Mode ───────────────────────────────
+
+    protected function simulateCustomer(string $action, array $payload): JsonResponse
+    {
+        $customer = Customer::firstOrCreate(
+            ['phone' => '263778888888'],
+            [
+                'name' => 'Customer',
+                'wa_id' => '263778888888',
+                'blocked' => false,
+            ]
+        );
+
+        if ($customer->blocked && $action !== 'start') {
+            return response()->json(['messages' => [['type' => 'text', 'text' => "❌ *Account Suspended*\n\nYour access has been suspended. Contact support."]]]);
+        }
+
+        return match ($action) {
+            'start' => response()->json([
+                'messages' => $this->customerWelcomeMessages($customer),
+            ]),
+            'text' => response()->json([
+                'messages' => $this->customerWelcomeMessages($customer),
+            ]),
+            'flow_complete' => $this->handleCustomerFlowComplete($customer, $payload),
+            'data_exchange' => $this->handleCustomerDataExchange($payload),
+            default => response()->json(['messages' => $this->customerWelcomeMessages($customer)]),
         };
     }
 
@@ -251,6 +287,33 @@ class SimulatorController extends Controller
      */
     public function flowSchema(Request $request, string $flowId): JsonResponse
     {
+        $mode = $request->input('mode', 'agent');
+
+        // Customer mode uses its own flow file
+        if ($mode === 'customer') {
+            $path = resource_path("flows/{$flowId}.json");
+            if (! File::exists($path)) {
+                return response()->json(['error' => 'Flow not found'], 404);
+            }
+            $schema = json_decode(File::get($path), true);
+
+            $customer = Customer::firstOrCreate(
+                ['phone' => '263778888888'],
+                ['name' => 'Customer', 'wa_id' => '263778888888', 'blocked' => false]
+            );
+
+            return response()->json([
+                'schema' => $schema,
+                'initial_data' => [
+                    'ecocash_number' => '',
+                ],
+            ]);
+        }
+
+        if ($flowId === 'customer') {
+            return response()->json(['error' => 'Customer flow not available in agent mode'], 404);
+        }
+
         $path = resource_path("flows/{$flowId}.json");
 
         if (! File::exists($path)) {
@@ -454,6 +517,71 @@ class SimulatorController extends Controller
         ]);
     }
 
+    protected function handleCustomerDataExchange(array $payload): JsonResponse
+    {
+        $trigger = $payload['trigger'] ?? '';
+
+        if ($trigger === 'verify_meter_number') {
+            $meterNumber = $payload['meter_number'] ?? '';
+
+            // Simulate meter validation
+            $service = app(\App\Services\MeterValidationService::class);
+            $result = $service->validate($meterNumber);
+
+            return response()->json([
+                'data' => [
+                    'meter_valid' => $result['valid'] ?? false,
+                    'customer_name' => $result['name'] ?? '',
+                    'customer_address' => $result['address'] ?? '',
+                    'meter_currency' => $result['currency'] ?? 'ZWG',
+                ],
+            ]);
+        }
+
+        if ($trigger === 'verify_telone_account') {
+            return response()->json([
+                'data' => [
+                    'account_valid' => true,
+                    'customer_name' => 'TelOne Customer',
+                    'customer_address' => 'Harare',
+                    'account_currency' => $payload['currency'] ?? 'ZWG',
+                ],
+            ]);
+        }
+
+        // Default: return empty data
+        return response()->json(['data' => []]);
+    }
+
+    protected function handleCustomerFlowComplete(Customer $customer, array $data): JsonResponse
+    {
+        $flowId = $data['flow_id'] ?? '';
+        $trigger = $data['trigger'] ?? '';
+
+        // Map completed flow to success message
+        $flowNames = [
+            'zesa' => 'ZESA Tokens',
+            'airtime' => 'Airtime',
+            'bundles' => 'Data Bundles',
+            'telone' => 'TelOne WiFi',
+            'telone_usd' => 'TelOne WiFi (USD)',
+            'billers' => 'Bills Payment',
+            'support' => 'Support Request',
+        ];
+
+        $name = $flowNames[$flowId] ?? ucfirst(str_replace('_', ' ', $flowId));
+
+        return response()->json([
+            'messages' => [
+                [
+                    'type' => 'text',
+                    'text' => "✅ *{$name}*\n\nYour request has been submitted successfully and is being processed.",
+                ],
+                ...$this->customerWelcomeMessages($customer),
+            ],
+        ]);
+    }
+
     protected function handleMeterValidation(string $meter): JsonResponse
     {
         $service = app(MeterValidationService::class);
@@ -461,6 +589,14 @@ class SimulatorController extends Controller
     }
 
     // ── Helpers ─────────────────────────────────────
+
+    protected function customerWelcomeMessages(Customer $customer): array
+    {
+        return [
+            ['type' => 'text', 'text' => "👋 Hi *{$customer->name}*! How can we help you today?"],
+            ['type' => 'flow', 'flow_id' => 'customer', 'cta' => '🏠 Home', 'text' => 'View all Magetsi services'],
+        ];
+    }
 
     /**
      * Build the welcome menu as flow CTA messages.

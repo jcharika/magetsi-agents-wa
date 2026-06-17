@@ -24,11 +24,21 @@ class FlowEncryptionService
     protected ?string $passphrase;
     protected ?string $appSecret;
 
-    public function __construct()
+    public function __construct(?string $appSecret = null)
     {
         $this->passphrase    = config('whatsapp.flow_private_key_passphrase', 'password') ?: null;
         $this->privateKeyPem = $this->loadPrivateKey();
-        $this->appSecret     = config('whatsapp.app_secret');
+        $this->appSecret     = $appSecret ?? config('whatsapp.app_secret');
+    }
+
+    /**
+     * Create a FlowEncryptionService instance configured for the customer bot.
+     */
+    public static function forCustomer(): self
+    {
+        return new self(
+            appSecret: config('whatsapp.customer_app_secret'),
+        );
     }
 
     /**

@@ -72,9 +72,21 @@
                             <tr>
                                 <th>Agent</th>
                                 <th>Meter</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Date</th>
+                                <th>
+                                    <a href="{{ request()->fullUrlWithQuery(['txn_sort' => 'amount', 'txn_dir' => request('txn_sort') === 'amount' && request('txn_dir') === 'asc' ? 'desc' : 'asc']) }}" style="color:inherit;text-decoration:none">
+                                        Amount {{ request('txn_sort') === 'amount' ? (request('txn_dir') === 'asc' ? '↑' : '↓') : '' }}
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ request()->fullUrlWithQuery(['txn_sort' => 'status', 'txn_dir' => request('txn_sort') === 'status' && request('txn_dir') === 'asc' ? 'desc' : 'asc']) }}" style="color:inherit;text-decoration:none">
+                                        Status {{ request('txn_sort') === 'status' ? (request('txn_dir') === 'asc' ? '↑' : '↓') : '' }}
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ request()->fullUrlWithQuery(['txn_sort' => 'created_at', 'txn_dir' => request('txn_sort') === 'created_at' && request('txn_dir') === 'asc' ? 'desc' : 'asc']) }}" style="color:inherit;text-decoration:none">
+                                        Date {{ request('txn_sort') === 'created_at' ? (request('txn_dir') === 'asc' ? '↑' : '↓') : '' }}
+                                    </a>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -110,7 +122,11 @@
                     <table class="soft-table">
                         <thead>
                             <tr>
-                                <th>Name</th>
+                                <th>
+                                    <a href="{{ request()->fullUrlWithQuery(['agent_sort' => 'name', 'agent_dir' => request('agent_sort') === 'name' && request('agent_dir') === 'asc' ? 'desc' : 'asc']) }}" style="color:inherit;text-decoration:none">
+                                        Name {{ request('agent_sort') === 'name' ? (request('agent_dir') === 'asc' ? '↑' : '↓') : '' }}
+                                    </a>
+                                </th>
                                 <th>Phone</th>
                                 <th>EcoCash</th>
                                 <th>Status</th>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Magetsi Agents — WhatsApp</title>
+    <title>Magetsi {{ $mode === 'customer' ? 'Customer' : 'Agents' }} — WhatsApp</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -499,17 +499,47 @@
         .flow-submit.active { background: #00a884; color: #fff; }
         .flow-submit.active:hover { background: #008069; }
         .flow-submit.disabled { background: #e9edef; color: #8696a0; cursor: default; }
+
+        /* NavigationList */
+        .nav-list-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px;
+            cursor: pointer;
+            transition: background .12s;
+            border-bottom: 1px solid #f0f2f5;
+        }
+        .nav-list-item:last-child { border-bottom: none; }
+        .nav-list-item:hover { background: #f7f9fa; }
+        .nav-list-item:active { background: #eef1f3; }
+        .nav-img {
+            width: 40px; height: 40px; border-radius: 8px;
+            background-size: cover; background-position: center;
+            flex-shrink: 0;
+            background-color: #f0f2f5;
+        }
+        .nav-item-content { flex: 1; min-width: 0; }
+        .nav-item-title { font-size: 15px; font-weight: 500; color: #111b21; }
+        .nav-item-desc { font-size: 13px; color: #667781; margin-top: 2px; }
+        .nav-chevron { width: 20px; height: 20px; color: #8696a0; flex-shrink: 0; }
+
+        /* Image, Caption, Link, OptIn */
+        .flow-image { width: 100%; display: block; border-radius: 6px; }
+        .flow-caption { font-size: 12px; color: #667781; padding: 0 14px; }
+        .flow-link { color: #00a884; text-decoration: underline; cursor: pointer; font-size: 14px; padding: 8px 0; display: inline-block; }
+        .flow-link:hover { color: #008069; }
+        .optin-label { display: flex; align-items: center; gap: 10px; padding: 4px 0; cursor: pointer; font-size: 14px; }
+        .optin-label input[type=checkbox] { width: 18px; height: 18px; accent-color: #00a884; }
     </style>
 </head>
 <body>
 
 <div class="wa-shell">
-    <div class="wa-header">
-        <div class="avatar">⚡</div>
-        <div class="contact-info">
-            <div class="contact-name">Magetsi Agents</div>
-            <div class="contact-status">online</div>
-        </div>
+        <div class="wa-header">
+            <div class="avatar">{{ $mode === 'customer' ? '👤' : '🤖' }}</div>
+            <div class="contact-info">
+                <div class="contact-name">Magetsi {{ $mode === 'customer' ? 'Customer' : 'Bot' }}</div>
+                <div class="contact-status">{{ $mode === 'customer' ? 'Customer Service' : 'online' }}</div>
+            </div>
         <div class="header-icons">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.9 14.3H15l-.3-.3c1-1.1 1.6-2.7 1.6-4.3 0-3.7-3-6.7-6.7-6.7S3 6 3 9.7s3 6.7 6.7 6.7c1.6 0 3.2-.6 4.3-1.6l.3.3v.8l5.1 5.1 1.5-1.5-5-5.2zm-6.2 0c-2.6 0-4.6-2.1-4.6-4.6s2.1-4.6 4.6-4.6 4.6 2.1 4.6 4.6-2 4.6-4.6 4.6z"/></svg>
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7a2 2 0 1 0-.001-4.001A2 2 0 0 0 12 7zm0 2a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 9zm0 6a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 15z"/></svg>
@@ -541,11 +571,13 @@ const flowContainer = document.getElementById('flowContainer');
 let lastSender = null;
 
 // ── API helpers ──
+const SIM_MODE = '{{ $mode }}';
+
 async function api(action, payload = {}) {
-    const res = await fetch('/simulate', {
+    const res = await fetch('{{ route('admin.simulate.post') }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-        body: JSON.stringify({ action, payload }),
+        body: JSON.stringify({ action, payload, mode: SIM_MODE }),
     });
     return res.json();
 }
@@ -665,8 +697,17 @@ let flowFormState = {};
 let flowFooter = null; // { label, payload keys }
 let meterTimer = null;
 let meterValid = false;
+let flowSchema = null;       // full schema for multi-screen navigation
+let flowScreensMap = {};     // screen name → screen object
+let currentScreenName = null;
 
-function closeFlow() { flowContainer.innerHTML = ''; activeFlowId = null; }
+function closeFlow() {
+    flowContainer.innerHTML = '';
+    activeFlowId = null;
+    flowSchema = null;
+    flowScreensMap = {};
+    currentScreenName = null;
+}
 
 async function openFlow(flowId) {
     activeFlowId = flowId;
@@ -674,24 +715,36 @@ async function openFlow(flowId) {
     meterValid = false;
 
     // Fetch schema from backend
-    const res = await fetch(`/simulate/flow/${flowId}`);
-    const { schema, initial_data } = await res.json();
+    const res = await fetch('/admin/simulate/flow/' + flowId + '?mode=' + SIM_MODE);
+    const fetched = await res.json();
+    flowSchema = fetched.schema;
 
-    const screen = schema.screens[0]; // single-screen flows
-    const children = screen.layout.children;
+    // Build screen map for multi-screen navigation
+    flowScreensMap = {};
+    for (const s of flowSchema.screens) {
+        flowScreensMap[s.id] = s;
+    }
+
+    const screen = flowSchema.screens[0]; // start at first screen
+    const initial_data = fetched.initial_data || {};
 
     // Pre-fill form state with initial data
-    for (const [key, value] of Object.entries(initial_data || {})) {
+    for (const [key, value] of Object.entries(initial_data)) {
         flowFormState[key] = value;
     }
 
-    // Build the panel
+    renderFlowScreen(screen.title, screen.name, screen.layout.children, flowFormState);
+}
+
+function renderFlowScreen(title, screenName, children, data) {
+    currentScreenName = screenName;
+
     let bodyHTML = '';
     let footerLabel = 'Submit';
     let footerPayloadKeys = [];
 
     for (const child of children) {
-        bodyHTML += renderComponent(child, initial_data);
+        bodyHTML += renderComponent(child, data);
         if (child.type === 'Footer') {
             footerLabel = child.label || 'Submit';
             if (child['on-click-action']?.payload) {
@@ -710,8 +763,8 @@ async function openFlow(flowId) {
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" transform="rotate(180 12 12)"/></svg>
           </button>
           <div>
-            <div class="flow-title">${screen.title}</div>
-            <div class="flow-from">Magetsi Agents</div>
+            <div class="flow-title">${esc(title)}</div>
+            <div class="flow-from">Magetsi ${SIM_MODE === 'customer' ? 'Customer' : 'Agents'}</div>
           </div>
         </div>
         <div class="flow-panel-body">${bodyHTML}</div>
@@ -724,17 +777,30 @@ async function openFlow(flowId) {
     updateSubmitState();
 }
 
+function navigateTo(screenName) {
+    if (!flowScreensMap[screenName]) {
+        closeFlow();
+        addBubble('⚠️ Screen not found: ' + screenName, 'in');
+        return;
+    }
+    const screen = flowScreensMap[screenName];
+    renderFlowScreen(screen.title, screen.name, screen.layout.children, flowFormState);
+}
+
 // ── Component renderers ──────────────────
 function renderComponent(c, data) {
     switch (c.type) {
         case 'TextHeading':
-            return `<div class="flow-card"><div class="flow-heading">${esc(c.text)}</div></div>`;
+            return `<div class="flow-card"><div class="flow-heading">${esc(resolveValue(c.text, data))}</div></div>`;
 
         case 'TextSubheading':
-            return `<div class="flow-subheading" style="padding:0 14px">${esc(c.text)}</div>`;
+            return `<div class="flow-subheading" style="padding:0 14px">${esc(resolveValue(c.text, data))}</div>`;
 
         case 'TextBody':
-            return `<div class="flow-body-text" style="padding:0 14px">${esc(c.text)}</div>`;
+            return `<div class="flow-body-text" style="padding:0 14px">${esc(resolveValue(c.text, data))}</div>`;
+
+        case 'TextCaption':
+            return `<div class="flow-card"><div class="flow-caption">${esc(resolveValue(c.text, data))}</div></div>`;
 
         case 'TextInput':
             return renderTextInput(c, data);
@@ -751,11 +817,167 @@ function renderComponent(c, data) {
         case 'TextArea':
             return renderTextArea(c, data);
 
+        case 'NavigationList':
+            return renderNavigationList(c);
+
+        case 'Image':
+            return `<div class="flow-card" style="padding:0"><img src="${esc(c.src)}" class="flow-image" alt=""></div>`;
+
+        case 'OptIn':
+            return renderOptIn(c);
+
+        case 'EmbeddedLink':
+            return renderEmbeddedLink(c);
+
+        case 'If':
+            return renderIf(c, data);
+
+        case 'Form':
+            return renderForm(c, data);
+
         case 'Footer':
             return ''; // handled separately
 
         default:
             return `<div class="flow-card"><div class="flow-body-text" style="color:#ea4335">Unsupported: ${c.type}</div></div>`;
+    }
+}
+
+function resolveValue(template, data) {
+    if (typeof template !== 'string') return template;
+    const m = template.match(/^\${([^}]+)}$/);
+    if (!m) return template;
+    const path = m[1].trim();
+    const parts = path.split('.');
+    // ${data.field} → data; ${form.field} → flowFormState
+    const source = (parts[0] === 'form') ? flowFormState : data;
+    const start = (parts[0] === 'data' || parts[0] === 'form') ? 1 : 0;
+    let val = source;
+    for (let i = start; i < parts.length; i++) {
+        if (val && typeof val === 'object') val = val[parts[i]];
+        else return '';
+    }
+    return (val === undefined || val === null) ? '' : String(val);
+}
+
+function evaluateCondition(condition, data) {
+    if (!condition) return false;
+    // Handle ${data.field} != ''
+    const m = condition.match(/^\${([^}]+)}\s*!=\s*''$/);
+    if (m) {
+        const val = resolveValue('${' + m[1] + '}', data);
+        return val !== '';
+    }
+    // Handle ${data.field} (truthy check)
+    const m2 = condition.match(/^\${([^}]+)}$/);
+    if (m2) {
+        const val = resolveValue(condition, data);
+        return val === 'true' || val === true || val === '1' || val === 1;
+    }
+    return false;
+}
+
+function renderForm(c, data) {
+    // Apply init-values to form state
+    if (c['init-values']) {
+        for (const [key, val] of Object.entries(c['init-values'])) {
+            let resolved = resolveValue(val, data);
+            if (resolved) flowFormState[key] = resolved;
+        }
+    }
+    // Render children
+    let html = '';
+    for (const child of (c.children || [])) {
+        html += renderComponent(child, data);
+    }
+    return html;
+}
+
+function renderIf(c, data) {
+    const condResult = evaluateCondition(c.condition, data);
+    const branch = condResult ? (c.then || []) : (c.else || []);
+    let html = '';
+    for (const child of branch) {
+        html += renderComponent(child, data);
+    }
+    return html;
+}
+
+function renderEmbeddedLink(c) {
+    const payload = JSON.stringify(c['on-click-action'] || {}).replace(/'/g, "\\'");
+    return `<div class="flow-card"><a href="#" class="flow-link" onclick="handleEmbeddedLink('${esc(c.text)}', '${esc(payload)}');return false">${esc(c.text)}</a></div>`;
+}
+
+function renderOptIn(c) {
+    return `<div class="flow-card">
+        <label class="optin-label">
+            <input type="checkbox" name="${esc(c.name)}" onchange="flowFormState['${esc(c.name)}'] = this.checked ? 'true' : ''; updateSubmitState()">
+            <span>${esc(c.label)}${c.required ? '<span class="flow-required"> *</span>' : ''}</span>
+        </label>
+    </div>`;
+}
+
+function renderNavigationList(c) {
+    const items = c['list-items'] || [];
+    let html = `<div class="flow-card" style="padding:0">`;
+    if (c.label) {
+        html += `<div class="flow-label" style="padding:12px 14px 0 14px">${esc(c.label)}</div>`;
+    }
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const start = item.start || {};
+        const main = item['main-content'] || {};
+        const onClick = item['on-click-action'] || {};
+        const nextScreen = onClick.next?.name;
+        const nextPayload = onClick.payload || {};
+
+        // Build inline style from image if present
+        let imgHTML = '';
+        if (start.image) {
+            // Meta sends a data: URI or URL; render as small icon
+            imgHTML = `<div class="nav-img" style="background-image:url('${esc(start.image)}')"></div>`;
+        }
+
+        const clickAttr = nextScreen
+            ? `onclick="handleNavClick('${nextScreen}', '${esc(main.title || '')}')"`
+            : '';
+
+        html += `<div class="nav-list-item" ${clickAttr}>
+            ${imgHTML}
+            <div class="nav-item-content">
+                <div class="nav-item-title">${esc(main.title || '')}</div>
+                ${main.description ? `<div class="nav-item-desc">${esc(main.description)}</div>` : ''}
+            </div>
+            <svg class="nav-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </div>`;
+    }
+    html += '</div>';
+    return html;
+}
+
+function handleNavClick(screenName, label) {
+    // Pre-store the label in flow form state for display
+    addBubble(label, 'out');
+    setTimeout(() => navigateTo(screenName), 300);
+}
+
+async function handleEmbeddedLink(text, payloadStr) {
+    addBubble(text, 'out');
+    await delay(300);
+    const payload = JSON.parse(payloadStr);
+    const data = await api('data_exchange', payload.payload || {});
+    if (data && data.data) {
+        for (const [k, v] of Object.entries(data.data)) {
+            flowFormState[k] = v;
+        }
+    }
+    if (data && data.messages) {
+        renderMessages(data.messages);
+    }
+    // Re-render the current screen with updated data
+    if (currentScreenName && flowScreensMap[currentScreenName]) {
+        const screen = flowScreensMap[currentScreenName];
+        renderFlowScreen(screen.title, screen.name, screen.layout.children, flowFormState);
     }
 }
 

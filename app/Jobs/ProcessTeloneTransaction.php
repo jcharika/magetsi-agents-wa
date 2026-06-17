@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Agent;
+use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\BackendManager;
 use App\Services\WhatsAppService;
@@ -22,44 +23,67 @@ class ProcessTeloneTransaction implements ShouldQueue
     public int $timeout = 120;
 
     protected array $params;
-    protected array $agentData;
+    protected array $userData;
     protected string $flowToken;
 
-    public function __construct(array $params, array $agentData, string $flowToken)
+    public function __construct(array $params, array $userData, string $flowToken)
     {
         $this->params = $params;
-        $this->agentData = $agentData;
+        $this->userData = $userData;
         $this->flowToken = $flowToken;
     }
 
     public function handle(BackendManager $backend, WhatsAppService $whatsapp): void
     {
-        $agent = Agent::firstOrNew(['wa_id' => $this->agentData['wa_id']], [
-            'phone' => $this->agentData['wa_id'],
-            'name' => $this->agentData['name'] ?? 'Customer',
-            'ecocash_number' => $this->agentData['ecocash_number'] ?? '',
-        ]);
-        $agent->save();
+        $isCustomer = empty($this->userData['ecocash_number']);
 
-        $currency = $this->params['currency'] ?? 'ZWG';
-        $handler = $this->params['handler'] ?? 'TELONE';
+        if ($isCustomer) {
+            $whatsapp = WhatsAppService::forCustomer();
 
-        $transaction = Transaction::create([
-            'agent_id' => $agent->id,
-            'product_id' => 'telone',
-            'handler' => $handler,
-            'meter_number' => $this->params['biller_account'] ?? '',
-            'amount' => 0,
-            'currency' => $currency,
-            'ecocash_number' => $this->params['ecocash_number'] ?? '',
-            'recipient_phone' => $this->params['phone_number'] ?? null,
-            'status' => 'processing',
-            'api_response' => [],
-        ]);
+            $customer = Customer::firstOrCreate(
+                ['wa_id' => $this->userData['wa_id']],
+                ['name' => $this->userData['name'] ?? 'Customer', 'phone' => $this->userData['wa_id']],
+            );
 
-        Log::debug('Queue: Processing TelOne purchase', [
+            $transaction = Transaction::create([
+                'customer_id' => $customer->id,
+                'product_id' => 'telone',
+                'handler' => $this->params['handler'] ?? 'TELONE',
+                'amount' => $this->params['amount'] ?? 0,
+                'currency' => $this->params['currency'] ?? 'ZWG',
+                'ecocash_number' => $this->params['ecocash_number'] ?? '',
+                'status' => 'processing',
+                'api_response' => [],
+            ]);
+
+            $this->processAndNotify($backend, $whatsapp, $customer, $transaction);
+        } else {
+            $agent = Agent::firstOrNew(['wa_id' => $this->userData['wa_id']], [
+                'phone' => $this->userData['wa_id'],
+                'name' => $this->userData['name'] ?? 'Customer',
+                'ecocash_number' => $this->userData['ecocash_number'] ?? '',
+            ]);
+            $agent->save();
+
+            $transaction = Transaction::create([
+                'agent_id' => $agent->id,
+                'product_id' => 'telone',
+                'handler' => $this->params['handler'] ?? 'TELONE',
+                'amount' => $this->params['amount'] ?? 0,
+                'currency' => $this->params['currency'] ?? 'ZWG',
+                'ecocash_number' => $this->params['ecocash_number'] ?? '',
+                'status' => 'processing',
+                'api_response' => [],
+            ]);
+
+            $this->processAndNotify($backend, $whatsapp, $agent, $transaction);
+        }
+    }
+
+    protected function processAndNotify(BackendManager $backend, WhatsAppService $whatsapp, Agent|Customer $actor, Transaction $transaction): void
+    {
+        Log::debug('Queue: Processing TelOne transaction', [
             'transaction_id' => $transaction->id,
-            'handler' => $handler,
             'account' => $this->params['biller_account'],
             'package' => $this->params['package'],
         ]);
@@ -79,14 +103,14 @@ class ProcessTeloneTransaction implements ShouldQueue
                     'api_response' => $result,
                 ]);
 
-                $this->notifySuccess($whatsapp, $agent, $transaction, $txn, $currency);
+                $this->notifySuccess($whatsapp, $actor, $transaction, $txn);
             } else {
                 $transaction->update([
                     'status' => 'failed',
                     'api_response' => $result,
                 ]);
 
-                $this->notifyFailure($whatsapp, $agent, $transaction, $result['error'] ?? 'TelOne purchase failed');
+                $this->notifyFailure($whatsapp, $actor, $transaction, $result['error'] ?? 'TelOne purchase failed');
             }
         } catch (\Throwable $e) {
             Log::error('Queue: TelOne purchase exception', [
@@ -99,36 +123,33 @@ class ProcessTeloneTransaction implements ShouldQueue
                 'api_response' => ['error' => $e->getMessage()],
             ]);
 
-            $this->notifyFailure($whatsapp, $agent, $transaction, $e->getMessage());
+            $this->notifyFailure($whatsapp, $actor, $transaction, $e->getMessage());
 
             throw $e;
         }
     }
 
-    protected function notifySuccess(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn, string $currency): void
+    protected function notifySuccess(WhatsAppService $whatsapp, Agent|Customer $actor, Transaction $transaction, array $txn): void
     {
         $ref = $txn['customer_reference'] ?? $txn['reference'] ?? $transaction->reference ?? '—';
-        $currencyLabel = $currency === 'USD' ? 'USD' : 'ZWG';
 
-        $message = "✅ *TelOne WiFi Purchase Successful*\n\n"
+        $message = "✅ *TelOne Purchase Successful*\n\n"
             . "Account: {$this->params['biller_account']}\n"
             . "Package: {$this->params['package']}\n"
-            . "Phone: {$transaction->recipient_phone}\n"
             . "Reference: {$ref}\n"
             . "Status: {$transaction->status}";
 
-        $whatsapp->sendTextMessage($agent->wa_id, $message);
+        $whatsapp->sendTextMessage($actor->wa_id, $message);
     }
 
-    protected function notifyFailure(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, string $reason): void
+    protected function notifyFailure(WhatsAppService $whatsapp, Agent|Customer $actor, Transaction $transaction, string $reason): void
     {
-        $message = "❌ *TelOne WiFi Purchase Failed*\n\n"
+        $message = "❌ *TelOne Purchase Failed*\n\n"
             . "Account: {$this->params['biller_account']}\n"
             . "Package: {$this->params['package']}\n"
-            . "Phone: {$transaction->recipient_phone}\n"
             . "Reason: {$reason}\n\n"
             . "Please try again or contact support if this persists.";
 
-        $whatsapp->sendTextMessage($agent->wa_id, $message);
+        $whatsapp->sendTextMessage($actor->wa_id, $message);
     }
 }

@@ -9,8 +9,6 @@ use App\Services\MeterValidationService;
 use App\Http\Controllers\Traits\FlowDataController\BuyZesaFlowHandler;
 use App\Http\Controllers\Traits\FlowDataController\SettingsFlowHandler;
 use App\Http\Controllers\Traits\FlowDataController\FlowDataControllerShared;
-use App\Http\Controllers\Traits\FlowDataController\CustomerFlowHandler;
-use App\Http\Controllers\Traits\UsesCustomerFlow;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -20,8 +18,6 @@ class FlowDataController extends Controller
     use FlowDataControllerShared;
     use BuyZesaFlowHandler;
     use SettingsFlowHandler;
-    use CustomerFlowHandler;
-    use UsesCustomerFlow;
 
     public function __construct(
         protected FlowEncryptionService  $encryption,
@@ -107,16 +103,8 @@ class FlowDataController extends Controller
 
     protected function handleInit(string $screen, array $data, string $flowToken): array
     {
-        $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
-
         $tokenData = $this->parseFlowToken($flowToken);
         $agent = $this->resolveAgent($tokenData);
-
-        $isCustomerFlow = $this->shouldUseCustomerFlow($tokenData['flow'] ?? '');
-
-        if ($isCustomerFlow) {
-            return $this->handleCustomerInit($screen, $data, $agent);
-        }
 
         if (($tokenData['flow'] ?? '') === 'buy_zesa' || $screen === 'BUY_ZESA_SCREEN') {
             return $this->initBuyZesa($agent);
@@ -142,11 +130,6 @@ class FlowDataController extends Controller
         $tokenData = $this->parseFlowToken($flowToken);
         Log::debug('Flow: handleDataExchange', ['screen' => $screen, 'data' => $data, 'tokenData' => $tokenData]);
         $agent = $this->resolveAgent($tokenData);
-
-        if ($this->shouldUseCustomerFlow($tokenData['flow'] ?? '')) {
-            Log::debug('Flow: using customer flow');
-            return $this->handleCustomerDataExchange($screen, $data, $agent, $flowToken);
-        }
 
         if ($screen === 'BUY_ZESA_SCREEN') {
             return $this->handleBuyZesaExchange($agent, $data, $flowToken);

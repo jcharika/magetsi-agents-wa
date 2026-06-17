@@ -7,7 +7,7 @@ use App\Jobs\ProcessBundleTransaction;
 use App\Jobs\ProcessZesaTransaction;
 use App\Jobs\ProcessTeloneTransaction;
 use App\Jobs\ProcessBillerTransaction;
-use App\Models\Agent;
+use App\Models\Customer;
 use App\Services\BackendManager;
 use App\Services\MeterValidationService;
 use Illuminate\Support\Facades\Cache;
@@ -18,12 +18,9 @@ trait CustomerFlowHandler
     abstract protected function backend(): BackendManager;
     abstract protected function meterService(): MeterValidationService;
     abstract protected function buildSuccessResponse(string $flowToken, array $extraParams = []): array;
-    abstract protected function parseFlowToken(string $flowToken): array;
-    abstract protected function resolveAgent(array $tokenData): Agent;
 
-    protected function handleCustomerInit(string $screen, array $data, Agent $agent): array
+    protected function handleCustomerInit(string $screen, array $data, Customer $customer): array
     {
-        // Normalize screen names
         $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
         Log::debug('Flow: handleCustomerInit', ['screen' => $screen, 'hasData' => !empty($data)]);
 
@@ -31,7 +28,6 @@ trait CustomerFlowHandler
             return [
                 'screen' => 'HOME_SCREEN',
                 'data' => [
-                    'ecocash_number' => $agent->ecocash_number ?? '',
                     'meter_valid' => false,
                     'customer_name' => '',
                     'customer_address' => '',
@@ -42,7 +38,6 @@ trait CustomerFlowHandler
 
         if ($screen === 'ZESA_SCREEN') {
             $responseData = [
-                'ecocash_number' => $agent->ecocash_number ?? '',
                 'meter_valid' => false,
                 'customer_name' => '',
                 'customer_address' => '',
@@ -57,7 +52,6 @@ trait CustomerFlowHandler
 
         if ($screen === 'AIRTIME_SCREEN') {
             $responseData = [
-                'ecocash_number' => $agent->ecocash_number ?? '',
                 'networks' => [
                     ['id' => 'econet', 'title' => 'Econet'],
                     ['id' => 'netone', 'title' => 'NetOne'],
@@ -77,7 +71,6 @@ trait CustomerFlowHandler
 
         if ($screen === 'BUNDLES_SCREEN') {
             $responseData = [
-                'ecocash_number' => $agent->ecocash_number ?? '',
                 'networks' => [
                     ['id' => 'econet', 'title' => 'Econet'],
                     ['id' => 'netone', 'title' => 'NetOne'],
@@ -101,7 +94,6 @@ trait CustomerFlowHandler
 
         if ($screen === 'TELONE_SCREEN') {
             $responseData = [
-                'ecocash_number' => $agent->ecocash_number ?? '',
                 'currency' => 'ZWG',
             ];
             Log::debug('Flow: TELONE_SCREEN init data', $responseData);
@@ -113,7 +105,6 @@ trait CustomerFlowHandler
 
         if ($screen === 'TELONE_USD_SCREEN') {
             $responseData = [
-                'ecocash_number' => $agent->ecocash_number ?? '',
                 'currency' => 'USD',
             ];
             Log::debug('Flow: TELONE_USD_SCREEN init data', $responseData);
@@ -124,13 +115,10 @@ trait CustomerFlowHandler
         }
 
         if ($screen === 'BILLERS_SCREEN') {
-            $responseData = [
-                'ecocash_number' => $agent->ecocash_number ?? '',
-            ];
-            Log::debug('Flow: BILLERS_SCREEN init data', $responseData);
+            Log::debug('Flow: BILLERS_SCREEN init data');
             return [
                 'screen' => 'BILLERS_SCREEN',
-                'data' => $responseData,
+                'data' => [],
             ];
         }
 
@@ -145,43 +133,40 @@ trait CustomerFlowHandler
         Log::warning('Flow: Unknown screen in init', ['screen' => $screen]);
         return [
             'screen' => 'HOME_SCREEN',
-            'data' => [
-                'ecocash_number' => $agent->ecocash_number ?? '',
-            ],
+            'data' => [],
         ];
     }
 
-    protected function handleCustomerDataExchange(string $screen, array $data, Agent $agent, string $flowToken): array
+    protected function handleCustomerDataExchange(string $screen, array $data, Customer $customer, string $flowToken): array
     {
         Log::debug('Flow: handleCustomerDataExchange', ['screen' => $screen, 'data' => $data]);
 
-        // Normalize screen names
         $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
 
         if ($screen === 'AIRTIME_SCREEN') {
-            return $this->handleBuyAirtime($agent, $data, $flowToken);
+            return $this->handleBuyAirtime($customer, $data, $flowToken);
         }
 
         if ($screen === 'BUNDLES_SCREEN') {
-            return $this->handleBuyBundle($agent, $data, $flowToken);
+            return $this->handleBuyBundle($customer, $data, $flowToken);
         }
 
         if ($screen === 'ZESA_SCREEN') {
-            return $this->handleBuyZesaDataExchange($agent, $data, $flowToken);
+            return $this->handleBuyZesaDataExchange($customer, $data, $flowToken);
         }
 
         if ($screen === 'TELONE_SCREEN' || $screen === 'TELONE_USD_SCREEN') {
-            return $this->handleTeloneDataExchange($agent, $data, $flowToken);
+            return $this->handleTeloneDataExchange($customer, $data, $flowToken);
         }
 
         if ($screen === 'BILLERS_SCREEN') {
-            return $this->handleBillerDataExchange($agent, $data, $flowToken);
+            return $this->handleBillerDataExchange($customer, $data, $flowToken);
         }
 
         return $this->buildSuccessResponse($flowToken);
     }
 
-    protected function handleBuyZesaDataExchange(Agent $agent, array $data, string $flowToken): array
+    protected function handleBuyZesaDataExchange(Customer $customer, array $data, string $flowToken): array
     {
         $trigger = $data['trigger'] ?? null;
         $meterNumber = $data['meter_number'] ?? '';
@@ -191,7 +176,7 @@ trait CustomerFlowHandler
         }
 
         if ($trigger === 'buy_zesa') {
-            return $this->processZesaPurchase($agent, $data, $flowToken);
+            return $this->processZesaPurchase($customer, $data, $flowToken);
         }
 
         return [
@@ -218,11 +203,11 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function processZesaPurchase(Agent $agent, array $data, string $flowToken): array
+    protected function processZesaPurchase(Customer $customer, array $data, string $flowToken): array
     {
         $meterNumber = $data['meter_number'] ?? '';
         $amount = (float)($data['amount'] ?? 0);
-        $ecocashNumber = $data['ecocash_number'] ?? $agent->ecocash_number;
+        $ecocashNumber = $data['ecocash_number'] ?? '';
         $recipientPhone = $data['recipient_phone'] ?? null;
 
         $params = [
@@ -232,16 +217,15 @@ trait CustomerFlowHandler
             'currency' => 'ZWG',
             'ecocash_number' => $ecocashNumber,
             'recipient_phone' => $recipientPhone,
-            'guest_id' => "Agent {$agent->id}",
+            'guest_id' => "Customer {$customer->id}",
         ];
 
-        $agentData = [
-            'wa_id' => $agent->wa_id,
-            'name' => $agent->name,
-            'ecocash_number' => $agent->ecocash_number,
+        $customerData = [
+            'wa_id' => $customer->wa_id,
+            'name' => $customer->name ?? 'Customer',
         ];
 
-        ProcessZesaTransaction::dispatch($params, $agentData, $flowToken)
+        ProcessZesaTransaction::dispatch($params, $customerData, $flowToken)
             ->onQueue('transactions');
 
         return [
@@ -260,7 +244,7 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function handleBuyAirtime(Agent $agent, array $data, string $flowToken): array
+    protected function handleBuyAirtime(Customer $customer, array $data, string $flowToken): array
     {
         $trigger = $data['trigger'] ?? null;
 
@@ -301,17 +285,16 @@ trait CustomerFlowHandler
             'email' => $email,
             'currency' => $currency,
             'network' => $network,
-            'ecocash_number' => $phone ?: $agent->ecocash_number,
-            'guest_id' => "Agent {$agent->id}",
+            'ecocash_number' => $phone ?: '',
+            'guest_id' => "Customer {$customer->id}",
         ];
 
-        $agentData = [
-            'wa_id' => $agent->wa_id,
-            'name' => $agent->name,
-            'ecocash_number' => $agent->ecocash_number,
+        $customerData = [
+            'wa_id' => $customer->wa_id,
+            'name' => $customer->name ?? 'Customer',
         ];
 
-        ProcessAirtimeTransaction::dispatch($params, $agentData, $flowToken)
+        ProcessAirtimeTransaction::dispatch($params, $customerData, $flowToken)
             ->onQueue('transactions');
 
         return [
@@ -329,7 +312,7 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function handleBuyBundle(Agent $agent, array $data, string $flowToken): array
+    protected function handleBuyBundle(Customer $customer, array $data, string $flowToken): array
     {
         $trigger = $data['trigger'] ?? null;
 
@@ -343,7 +326,7 @@ trait CustomerFlowHandler
         $network = $data['network'] ?? '';
         $phoneNumber = $data['phone_number'] ?? '';
         $bundleSize = $data['bundle_size'] ?? '';
-        $ecocashNumber = $data['ecocash_number'] ?? $agent->ecocash_number;
+        $ecocashNumber = $data['ecocash_number'] ?? '';
 
         if (!$network || !$phoneNumber || !$bundleSize) {
             return [
@@ -359,16 +342,15 @@ trait CustomerFlowHandler
             'bundle_size' => $bundleSize,
             'currency' => 'ZWG',
             'ecocash_number' => $ecocashNumber,
-            'guest_id' => "Agent {$agent->id}",
+            'guest_id' => "Customer {$customer->id}",
         ];
 
-        $agentData = [
-            'wa_id' => $agent->wa_id,
-            'name' => $agent->name,
-            'ecocash_number' => $agent->ecocash_number,
+        $customerData = [
+            'wa_id' => $customer->wa_id,
+            'name' => $customer->name ?? 'Customer',
         ];
 
-        ProcessBundleTransaction::dispatch($params, $agentData, $flowToken)
+        ProcessBundleTransaction::dispatch($params, $customerData, $flowToken)
             ->onQueue('transactions');
 
         return [
@@ -386,7 +368,7 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function handleTeloneDataExchange(Agent $agent, array $data, string $flowToken): array
+    protected function handleTeloneDataExchange(Customer $customer, array $data, string $flowToken): array
     {
         $trigger = $data['trigger'] ?? null;
 
@@ -395,7 +377,7 @@ trait CustomerFlowHandler
         }
 
         if ($trigger === 'buy_telone' || $trigger === 'buy_telone_usd') {
-            return $this->processTelonePurchase($agent, $data, $flowToken);
+            return $this->processTelonePurchase($customer, $data, $flowToken);
         }
 
         return [
@@ -427,13 +409,13 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function processTelonePurchase(Agent $agent, array $data, string $flowToken): array
+    protected function processTelonePurchase(Customer $customer, array $data, string $flowToken): array
     {
         $accountNumber = $data['biller_account'] ?? '';
         $phoneNumber = $data['phone_number'] ?? '';
         $package = $data['package'] ?? '';
         $currency = $data['currency'] ?? 'ZWG';
-        $ecocashNumber = $data['payment_account'] ?? $agent->ecocash_number;
+        $ecocashNumber = $data['payment_account'] ?? '';
 
         if (!$accountNumber || !$phoneNumber || !$package) {
             $screen = $currency === 'USD' ? 'TELONE_USD_SCREEN' : 'TELONE_SCREEN';
@@ -451,16 +433,15 @@ trait CustomerFlowHandler
             'package' => $package,
             'currency' => $currency,
             'ecocash_number' => $ecocashNumber,
-            'guest_id' => "Agent {$agent->id}",
+            'guest_id' => "Customer {$customer->id}",
         ];
 
-        $agentData = [
-            'wa_id' => $agent->wa_id,
-            'name' => $agent->name,
-            'ecocash_number' => $agent->ecocash_number,
+        $customerData = [
+            'wa_id' => $customer->wa_id,
+            'name' => $customer->name ?? 'Customer',
         ];
 
-        ProcessTeloneTransaction::dispatch($params, $agentData, $flowToken)
+        ProcessTeloneTransaction::dispatch($params, $customerData, $flowToken)
             ->onQueue('transactions');
 
         $currencyLabel = $currency === 'USD' ? 'USD' : 'ZWG';
@@ -479,7 +460,7 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function handleBillerDataExchange(Agent $agent, array $data, string $flowToken): array
+    protected function handleBillerDataExchange(Customer $customer, array $data, string $flowToken): array
     {
         $trigger = $data['trigger'] ?? null;
 
@@ -488,7 +469,7 @@ trait CustomerFlowHandler
         }
 
         if ($trigger === 'pay_biller') {
-            return $this->processBillerPayment($agent, $data, $flowToken);
+            return $this->processBillerPayment($customer, $data, $flowToken);
         }
 
         return [
@@ -521,13 +502,13 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function processBillerPayment(Agent $agent, array $data, string $flowToken): array
+    protected function processBillerPayment(Customer $customer, array $data, string $flowToken): array
     {
         $billerName = $data['biller_name'] ?? '';
         $accountNumber = $data['biller_account'] ?? '';
         $amount = (float)($data['amount'] ?? 0);
         $currency = $data['currency'] ?? 'ZWG';
-        $ecocashNumber = $data['payment_account'] ?? $agent->ecocash_number;
+        $ecocashNumber = $data['payment_account'] ?? '';
 
         if (!$billerName || !$accountNumber || !$amount) {
             return [
@@ -544,16 +525,15 @@ trait CustomerFlowHandler
             'amount' => $amount,
             'currency' => $currency,
             'ecocash_number' => $ecocashNumber,
-            'guest_id' => "Agent {$agent->id}",
+            'guest_id' => "Customer {$customer->id}",
         ];
 
-        $agentData = [
-            'wa_id' => $agent->wa_id,
-            'name' => $agent->name,
-            'ecocash_number' => $agent->ecocash_number,
+        $customerData = [
+            'wa_id' => $customer->wa_id,
+            'name' => $customer->name ?? 'Customer',
         ];
 
-        ProcessBillerTransaction::dispatch($params, $agentData, $flowToken)
+        ProcessBillerTransaction::dispatch($params, $customerData, $flowToken)
             ->onQueue('transactions');
 
         return [

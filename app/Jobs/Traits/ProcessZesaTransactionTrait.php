@@ -3,6 +3,7 @@
 namespace App\Jobs\Traits;
 
 use App\Models\Agent;
+use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\BackendManager;
 use App\Services\WhatsAppService;
@@ -16,7 +17,7 @@ trait ProcessZesaTransactionTrait
     protected function processZesaTransaction(
         BackendManager $backend,
         WhatsAppService $whatsapp,
-        Agent $agent,
+        Agent|Customer $actor,
         Transaction $transaction,
         array $params
     ): void {
@@ -48,7 +49,7 @@ trait ProcessZesaTransactionTrait
                         'api_response' => $result,
                     ]);
 
-                    $this->notifySuccess($whatsapp, $agent, $transaction, $txn);
+                    $this->notifySuccess($whatsapp, $actor, $transaction, $txn);
                 } elseif ($isFailed) {
                     $transaction->update([
                         'status' => 'failed',
@@ -56,7 +57,7 @@ trait ProcessZesaTransactionTrait
                         'reference' => $txn['customer_reference'] ?? $txn['reference'] ?? $txn['uid'] ?? null,
                     ]);
 
-                    $this->notifyFailure($whatsapp, $agent, $transaction, $failureMessage ?? 'Transaction failed to complete');
+                    $this->notifyFailure($whatsapp, $actor, $transaction, $failureMessage ?? 'Transaction failed to complete');
                 } else {
                     $transaction->update([
                         'status' => $txn['status'] ?? 'pending',
@@ -70,8 +71,6 @@ trait ProcessZesaTransactionTrait
                         'customer_reference' => $txn['customer_reference'] ?? null,
                         'api_response' => $result,
                     ]);
-
-//                    $this->notifyPending($whatsapp, $agent, $transaction, $txn);
                 }
             } else {
                 $transaction->update([
@@ -79,7 +78,7 @@ trait ProcessZesaTransactionTrait
                     'api_response' => $result,
                 ]);
 
-                $this->notifyFailure($whatsapp, $agent, $transaction, $result['error'] ?? 'Transaction failed');
+                $this->notifyFailure($whatsapp, $actor, $transaction, $result['error'] ?? 'Transaction failed');
             }
         } catch (\Throwable $e) {
             Log::error('Queue: ZESA transaction exception', [
@@ -92,13 +91,13 @@ trait ProcessZesaTransactionTrait
                 'api_response' => ['error' => $e->getMessage()],
             ]);
 
-            $this->notifyFailure($whatsapp, $agent, $transaction, $e->getMessage());
+            $this->notifyFailure($whatsapp, $actor, $transaction, $e->getMessage());
 
             throw $e;
         }
     }
 
-    abstract protected function notifySuccess(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn): void;
-    abstract protected function notifyFailure(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, string $reason): void;
-    abstract protected function notifyPending(WhatsAppService $whatsapp, Agent $agent, Transaction $transaction, array $txn): void;
+    abstract protected function notifySuccess(WhatsAppService $whatsapp, Agent|Customer $actor, Transaction $transaction, array $txn): void;
+    abstract protected function notifyFailure(WhatsAppService $whatsapp, Agent|Customer $actor, Transaction $transaction, string $reason): void;
+    abstract protected function notifyPending(WhatsAppService $whatsapp, Agent|Customer $actor, Transaction $transaction, array $txn): void;
 }

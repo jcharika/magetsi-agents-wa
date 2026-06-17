@@ -109,11 +109,13 @@ MAGETSI_API_URL=https://magetsi.co.zw
 The simulator routes are in `routes/web.php`. To disable in production, wrap them:
 
 ```php
-if (app()->environment('local', 'staging')) {
-    Route::get('/', [SimulatorController::class, 'index']);
-    Route::post('/simulate', [SimulatorController::class, 'simulate']);
-    Route::get('/simulate/flow/{flowId}', [SimulatorController::class, 'flowSchema']);
-}
+Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
+    Route::prefix('simulate')->name('simulate.')->group(function () {
+        Route::get('/', [SimulatorController::class, 'index'])->name('index');
+        Route::post('/', [SimulatorController::class, 'simulate'])->name('post');
+        Route::get('/flow/{flowId}', [SimulatorController::class, 'flowSchema'])->name('flow');
+    });
+});
 ```
 
 ## Magetsi Backend API

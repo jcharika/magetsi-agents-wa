@@ -13,7 +13,16 @@
         </div>
     </div>
 
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+        <a href="{{ route('admin.simulate.index', ['mode' => 'agent']) }}" class="btn {{ request('mode', 'agent') === 'agent' ? 'btn-primary' : 'btn-outline' }}" style="padding:8px 20px;font-size:13px">
+            🤖 Agent Mode
+        </a>
+        <a href="{{ route('admin.simulate.index', ['mode' => 'customer']) }}" class="btn {{ request('mode', 'agent') === 'customer' ? 'btn-primary' : 'btn-outline' }}" style="padding:8px 20px;font-size:13px">
+            👤 Customer Mode
+        </a>
+    </div>
+
     <div class="sim-frame-wrap">
-        <iframe src="{{ url('/') }}" title="WhatsApp Simulator" loading="eager" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
+        <iframe src="{{ route('admin.simulate.index', ['mode' => request('mode', 'agent')]) }}" title="WhatsApp Simulator" loading="eager" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
     </div>
 @endsection

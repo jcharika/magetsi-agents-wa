@@ -73,6 +73,11 @@
                                     "payload": {
                                         "trigger": "init_airtime",
                                         "ecocash_number": "",
+                                        "payment_methods": [
+                                            { "id": "ecocash", "title": "EcoCash ZWG" },
+                                            { "id": "ecocash-usd", "title": "EcoCash USD" },
+                                            { "id": "stripe", "title": "International Card" }
+                                        ],
                                         "networks": [
                                             {
                                                 "id": "econet",
@@ -113,10 +118,6 @@
                                             {
                                                 "id": "netone",
                                                 "title": "NetOne"
-                                            },
-                                            {
-                                                "id": "smartsuite",
-                                                "title": "SmartSuite"
                                             }
                                         ]
                                     }
@@ -409,7 +410,6 @@
                                 "label": "Beneficiary Phone",
                                 "input-type": "phone",
                                 "required": true,
-                                "label-variant": "large",
                                 "helper-text": "Enter the phone number to top up"
                             },
                             {
@@ -417,7 +417,6 @@
                                 "name": "payment",
                                 "label": "Pay with",
                                 "required": true,
-
                                 "data-source": [
                                     { "id": "ecocash", "title": "EcoCash ZWG" },
                                     { "id": "ecocash-usd", "title": "EcoCash USD" },
@@ -434,7 +433,6 @@
                                         "label": "EcoCash Phone Number",
                                         "input-type": "phone",
                                         "required": true,
-                                        "label-variant": "large",
                                         "helper-text": "Payment will be deducted from this number"
                                     }
                                 ]
@@ -445,7 +443,6 @@
                                 "label": "Amount",
                                 "input-type": "number",
                                 "required": true,
-                                "label-variant": "large",
                                 "helper-text": "Enter amount"
                             },
                             {
@@ -458,10 +455,15 @@
                                         "label": "Email",
                                         "input-type": "email",
                                         "required": true,
-                                        "label-variant": "large",
                                         "helper-text": "Enter your email for payment receipt"
                                     }
                                 ]
+                            },
+                            {
+                                "type": "OptIn",
+                                "name": "terms",
+                                "label": "I accept the Terms & Conditions",
+                                "required": true
                             }
                         ]
                     },

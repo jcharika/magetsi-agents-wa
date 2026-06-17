@@ -3,7 +3,7 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | WhatsApp Cloud API Configuration
+    | WhatsApp Cloud API Configuration — Agent Bot
     |--------------------------------------------------------------------------
     */
 
@@ -12,15 +12,35 @@ return [
     'verify_token' => env('WHATSAPP_VERIFY_TOKEN', 'magetsi_verify_token'),
     'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | WhatsApp Cloud API Configuration — Customer Bot
+    |--------------------------------------------------------------------------
+    |
+    | Configure a separate WhatsApp Business Account for the customer-facing
+    | chatbot. Uses its own webhook endpoint (/api/customer/webhook).
+    |
+    */
+
+    'customer_token' => env('WHATSAPP_CUSTOMER_TOKEN'),
+    'customer_phone_number_id' => env('WHATSAPP_CUSTOMER_PHONE_NUMBER_ID'),
+    'customer_verify_token' => env('WHATSAPP_CUSTOMER_VERIFY_TOKEN', 'magetsi_customer_verify'),
+    'customer_business_account_id' => env('WHATSAPP_CUSTOMER_BUSINESS_ACCOUNT_ID'),
+
     'api_url' => 'https://graph.facebook.com/v25.0',
 
     /*
     |--------------------------------------------------------------------------
-    | Meta App Secret (for signature verification)
+    | Meta App Secret
     |--------------------------------------------------------------------------
+    |
+    | agent_secret — used by the /api/webhook and /api/flow-data endpoints
+    | customer_secret — used by the /api/customer/webhook and /api/customer/flow-data endpoints
+    |
     */
 
     'app_secret' => env('META_APP_SECRET'),
+    'customer_app_secret' => env('WHATSAPP_CUSTOMER_APP_SECRET'),
 
     /*
     |--------------------------------------------------------------------------
@@ -38,31 +58,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Flow Delivery Mode
+    | Flow Delivery Mode — Agent
     |--------------------------------------------------------------------------
-    |
-    | How flows are sent to the user:
-    |
-    | "interactive" — sends an interactive flow message with a CTA button.
-    | Works inside user-initiated conversations (24h window).
-    | No template approval needed.
-    |
-    | "template" — sends a pre-approved message template with a FLOW
-    | button. Works for business-initiated conversations
-    | (outside 24h window). Requires template approval.
-    |
     */
 
     'flow_mode' => env('WHATSAPP_FLOW_MODE', 'interactive'),
 
     /*
     |--------------------------------------------------------------------------
-    | WhatsApp Flow IDs
+    | Flow Delivery Mode — Customer
     |--------------------------------------------------------------------------
-    |
-    | These are the Flow IDs from Meta WhatsApp Business Manager.
-    | Set after uploading and publishing flows.
-    |
+    */
+
+    'customer_flow_mode' => env('WHATSAPP_CUSTOMER_FLOW_MODE', 'interactive'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | WhatsApp Flow IDs — Agent
+    |--------------------------------------------------------------------------
     */
 
     'flows' => [
@@ -73,20 +86,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | WhatsApp Flow IDs — Customer
+    |--------------------------------------------------------------------------
+    */
+
+    'customer_flows' => [
+        'customer' => env('WHATSAPP_CUSTOMER_FLOW_ID'),
+        'zesa' => env('WHATSAPP_CUSTOMER_ZESA_FLOW_ID'),
+        'airtime' => env('WHATSAPP_CUSTOMER_AIRTIME_FLOW_ID'),
+        'bundle' => env('WHATSAPP_CUSTOMER_BUNDLE_FLOW_ID'),
+        'telone' => env('WHATSAPP_CUSTOMER_TELONE_FLOW_ID'),
+        'biller' => env('WHATSAPP_CUSTOMER_BILLER_FLOW_ID'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Flow Template Names
     |--------------------------------------------------------------------------
-    |
-    | When flow_mode = "template", these are the approved template names
-    | that have a FLOW button attached. Each template must be created in
-    | Meta Business Suite with a FLOW button pointing to the correct flow.
-    |
-    | See: docs/whatsapp-flows-setup.md
-    |
     */
 
     'flow_templates' => [
         'buy_zesa' => env('WHATSAPP_BUY_ZESA_TEMPLATE', 'buy_zesa_flow'),
         'settings' => env('WHATSAPP_SETTINGS_TEMPLATE', 'settings_flow'),
+        'customer' => env('WHATSAPP_CUSTOMER_TEMPLATE', 'customer_flow'),
+    ],
+
+    'customer_flow_templates' => [
         'customer' => env('WHATSAPP_CUSTOMER_TEMPLATE', 'customer_flow'),
     ],
 
