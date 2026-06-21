@@ -297,9 +297,6 @@ class SimulatorController extends Controller
             }
             $schema = json_decode(File::get($path), true);
 
-            // Filter NavigationList items based on enabled services
-            $schema = $this->filterCustomerFlowNavList($schema);
-
             $customer = Customer::firstOrCreate(
                 ['phone' => '263778888888'],
                 ['name' => 'Customer', 'wa_id' => '263778888888', 'blocked' => false]
@@ -309,6 +306,7 @@ class SimulatorController extends Controller
                 'schema' => $schema,
                 'initial_data' => [
                     'ecocash_number' => '',
+                    'enabled_services' => $this->buildSimNavItems(),
                 ],
             ]);
         }
@@ -350,35 +348,42 @@ class SimulatorController extends Controller
         ]);
     }
 
-    /**
-     * Filter customer flow NavigationList to only show enabled services.
-     */
-    protected function filterCustomerFlowNavList(array $schema): array
+    private function buildSimNavItems(): array
     {
-        $screenServiceMap = [
-            'ZESA_SCREEN' => 'ZESA',
-            'AIRTIME_SCREEN' => 'AIRTIME',
-            'BUNDLES_SCREEN' => 'BUNDLES',
-            'TELONE_HOME_SCREEN' => 'TELONE',
-            'BILLERS_SCREEN' => 'BILLERS',
-            'SUPPORT_SCREEN' => 'SUPPORT',
+        $iconPrefix = 'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%2240%22 height%3D%2240%22 viewBox%3D%220 0 40 40%22%3E%3Ccircle cx%3D%2220%22 cy%3D%2220%22 r%3D%2220%22 fill%3D%22%23252c65%22%2F%3E%3Ctext x%3D%2220%22 y%3D%2224%22 text-anchor%3D%22middle%22 fill%3D%22%23fff%22 font-size%3D%2216%22%3E';
+
+        $serviceDefs = [
+            'ZESA' => ['screen' => 'ZESA_SCREEN', 'title' => 'Buy Electricity (ZESA)', 'desc' => 'Prepaid tokens', 'icon' => '⚡', 'trigger' => 'init_zesa'],
+            'AIRTIME' => ['screen' => 'AIRTIME_SCREEN', 'title' => 'Buy Airtime', 'desc' => 'NetOne and Econet', 'icon' => '📞', 'trigger' => 'init_airtime'],
+            'BUNDLES' => ['screen' => 'BUNDLES_SCREEN', 'title' => 'Buy Bundles', 'desc' => 'Data for all nets', 'icon' => '📶', 'trigger' => 'init_bundles'],
+            'TELONE' => ['screen' => 'TELONE_HOME_SCREEN', 'title' => 'TelOne WiFi', 'desc' => 'Broadband bundles', 'icon' => '🌐', 'trigger' => 'init_telone'],
+            'BILLERS' => ['screen' => 'BILLERS_SCREEN', 'title' => 'Pay Bills', 'desc' => 'Third-party billers', 'icon' => '📄', 'trigger' => 'init_billers'],
+            'SUPPORT' => ['screen' => 'SUPPORT_SCREEN', 'title' => 'Contact Support', 'desc' => 'Get help', 'icon' => '💬', 'trigger' => 'init_support'],
         ];
 
-        foreach ($schema['screens'] as &$screen) {
-            if (($screen['id'] ?? '') !== 'HOME_SCREEN') continue;
-            foreach ($screen['layout']['children'] as &$child) {
-                if (($child['type'] ?? '') !== 'NavigationList') continue;
-                $child['list-items'] = array_values(array_filter($child['list-items'] ?? [], function ($item) use ($screenServiceMap) {
-                    $itemId = $item['id'] ?? '';
-                    $service = $screenServiceMap[$itemId] ?? null;
-                    if (!$service) return true;
-                    $key = "WHATSAPP_CUSTOMER_SERVICE_{$service}";
-                    return env($key, 'true') === 'true';
-                }));
-            }
+        $items = [];
+        foreach ($serviceDefs as $envSuffix => $svc) {
+            if (env("WHATSAPP_CUSTOMER_SERVICE_{$envSuffix}", 'true') !== 'true') continue;
+
+            $items[] = [
+                'id' => $svc['screen'],
+                'start' => [
+                    'image' => $iconPrefix . urlencode($svc['icon']) . '%3C%2Ftext%3E%3C%2Fsvg%3E',
+                    'alt-text' => $svc['title'],
+                ],
+                'main-content' => [
+                    'title' => $svc['title'],
+                    'description' => $svc['desc'],
+                ],
+                'on-click-action' => [
+                    'name' => 'navigate',
+                    'next' => ['type' => 'screen', 'name' => $svc['screen']],
+                    'payload' => ['trigger' => $svc['trigger']],
+                ],
+            ];
         }
 
-        return $schema;
+        return $items;
     }
 
     /**

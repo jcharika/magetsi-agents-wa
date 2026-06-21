@@ -45,15 +45,44 @@
                                         "type": "string"
                                     }
                                 }
+                            },
+                            "on-click-action": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                }
                             }
                         }
                     },
                     "__example__": [
                         {
-                            "id": "ZESA_SCREEN"
+                            "id": "ZESA_SCREEN",
+                            "main-content": {
+                                "title": "Buy ZESA Token",
+                                "metadata": "ZESA is the most popular electricity meter in Zimbabwe"
+                            },
+                            "on-click-action": {
+                                "name": "navigate",
+                                "payload": {
+                                    "screen": "ZESA_SCREEN"
+                                }
+                            }
                         },
                         {
-                            "id": "AIRTIME_SCREEN"
+                            "id": "AIRTIME_SCREEN",
+                            "main-content": {
+                                "title": "Buy Airtime",
+                                "description": "Top up your phone",
+                                "metadata": "EcoCash ZWG is the most popular payment method in Zimbabwe"
+                            },
+                            "on-click-action": {
+                                "name": "navigate",
+                                "payload": {
+                                    "screen": "AIRTIME_SCREEN"
+                                }
+                            }
                         }
                     ]
                 }
@@ -65,10 +94,7 @@
                         "type": "NavigationList",
                         "name": "main_nav",
                         "label": "Magetsi Services",
-                        "list-items": "${data.enabled_services}",
-                        "on-click-action": {
-                            "name": "data_exchange"
-                        }
+                        "list-items": "${data.enabled_services}"
                     }
                 ]
             }

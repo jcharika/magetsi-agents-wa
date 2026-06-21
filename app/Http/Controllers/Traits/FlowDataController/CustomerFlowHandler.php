@@ -45,10 +45,49 @@ trait CustomerFlowHandler
                 'screen' => 'HOME_SCREEN',
                 'data' => [
                     'error_message' => "This service is currently unavailable.",
+                    'enabled_services' => $this->buildServiceNavItems(),
                 ],
             ];
         }
         return null;
+    }
+
+    private function buildServiceNavItems(): array
+    {
+        $iconPrefix = 'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%2240%22 height%3D%2240%22 viewBox%3D%220 0 40 40%22%3E%3Ccircle cx%3D%2220%22 cy%3D%2220%22 r%3D%2220%22 fill%3D%22%23252c65%22%2F%3E%3Ctext x%3D%2220%22 y%3D%2224%22 text-anchor%3D%22middle%22 fill%3D%22%23fff%22 font-size%3D%2216%22%3E';
+
+        $serviceDefs = [
+            'ZESA' => ['screen' => 'ZESA_SCREEN', 'title' => 'Buy Electricity (ZESA)', 'desc' => 'Prepaid tokens', 'icon' => '⚡', 'trigger' => 'init_zesa'],
+            'AIRTIME' => ['screen' => 'AIRTIME_SCREEN', 'title' => 'Buy Airtime', 'desc' => 'NetOne and Econet', 'icon' => '📞', 'trigger' => 'init_airtime'],
+            'BUNDLES' => ['screen' => 'BUNDLES_SCREEN', 'title' => 'Buy Bundles', 'desc' => 'Data for all nets', 'icon' => '📶', 'trigger' => 'init_bundles'],
+            'TELONE' => ['screen' => 'TELONE_HOME_SCREEN', 'title' => 'TelOne WiFi', 'desc' => 'Broadband bundles', 'icon' => '🌐', 'trigger' => 'init_telone'],
+            'BILLERS' => ['screen' => 'BILLERS_SCREEN', 'title' => 'Pay Bills', 'desc' => 'Third-party billers', 'icon' => '📄', 'trigger' => 'init_billers'],
+            'SUPPORT' => ['screen' => 'SUPPORT_SCREEN', 'title' => 'Contact Support', 'desc' => 'Get help', 'icon' => '💬', 'trigger' => 'init_support'],
+        ];
+
+        $items = [];
+        foreach ($serviceDefs as $envSuffix => $svc) {
+            if (!$this->isCustomerServiceEnabled($envSuffix)) continue;
+
+            $items[] = [
+                'id' => $svc['screen'],
+                'start' => [
+                    'image' => $iconPrefix . urlencode($svc['icon']) . '%3C%2Ftext%3E%3C%2Fsvg%3E',
+                    'alt-text' => $svc['title'],
+                ],
+                'main-content' => [
+                    'title' => $svc['title'],
+                    'description' => $svc['desc'],
+                ],
+                'on-click-action' => [
+                    'name' => 'navigate',
+                    'next' => ['type' => 'screen', 'name' => $svc['screen']],
+                    'payload' => ['trigger' => $svc['trigger']],
+                ],
+            ];
+        }
+
+        return $items;
     }
 
     protected function handleCustomerInit(string $screen, array $data, Customer $customer): array
@@ -57,6 +96,7 @@ trait CustomerFlowHandler
         Log::debug('Flow: handleCustomerInit', ['screen' => $screen, 'hasData' => !empty($data)]);
 
         if (!$screen || $screen === 'HOME_SCREEN') {
+            $navItems = $this->buildServiceNavItems();
             return [
                 'screen' => 'HOME_SCREEN',
                 'data' => [
@@ -64,7 +104,7 @@ trait CustomerFlowHandler
                     'customer_name' => '',
                     'customer_address' => '',
                     'meter_currency' => 'ZWG',
-                    'enabled_services' => json_decode(file_get_contents(resource_path('flows/services.json')), false, 512, JSON_THROW_ON_ERROR)
+                    'enabled_services' => $navItems,
                 ],
             ];
         }
@@ -178,6 +218,38 @@ trait CustomerFlowHandler
         Log::debug('Flow: handleCustomerDataExchange', ['screen' => $screen, 'data' => $data]);
 
         $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
+
+        // HOME_SCREEN data_exchange — triggered by NavigationList item clicks
+        if ($screen === 'HOME_SCREEN') {
+            $trigger = $data['trigger'] ?? '';
+            // Map item triggers to target screens
+            $triggerToScreen = [
+                'nav_click' => null, // no default, check item data
+                'init_zesa' => 'ZESA_SCREEN',
+                'init_airtime' => 'AIRTIME_SCREEN',
+                'init_bundles' => 'BUNDLES_SCREEN',
+                'init_telone' => 'TELONE_HOME_SCREEN',
+                'init_billers' => 'BILLERS_SCREEN',
+                'init_support' => 'SUPPORT_SCREEN',
+            ];
+            $targetScreen = $triggerToScreen[$trigger] ?? null;
+            // If nav_click with no item-level trigger, try to find target from item id or other keys
+            if (!$targetScreen) {
+                $itemId = $data['id'] ?? '';
+                $targetScreen = match ($itemId) {
+                    'ZESA_SCREEN' => 'ZESA_SCREEN',
+                    'AIRTIME_SCREEN' => 'AIRTIME_SCREEN',
+                    'BUNDLES_SCREEN' => 'BUNDLES_SCREEN',
+                    'TELONE_HOME_SCREEN' => 'TELONE_HOME_SCREEN',
+                    'BILLERS_SCREEN' => 'BILLERS_SCREEN',
+                    'SUPPORT_SCREEN' => 'SUPPORT_SCREEN',
+                    default => null,
+                };
+            }
+            if ($targetScreen) {
+                return $this->handleCustomerInit($targetScreen, $data, $customer);
+            }
+        }
 
         if ($screen === 'AIRTIME_SCREEN') {
             return $this->handleBuyAirtime($customer, $data, $flowToken);

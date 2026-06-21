@@ -818,7 +818,7 @@ function renderComponent(c, data) {
             return renderTextArea(c, data);
 
         case 'NavigationList':
-            return renderNavigationList(c);
+            return renderNavigationList(c, data);
 
         case 'Image':
             return `<div class="flow-card" style="padding:0"><img src="${esc(c.src)}" class="flow-image" alt=""></div>`;
@@ -917,8 +917,12 @@ function renderOptIn(c) {
     </div>`;
 }
 
-function renderNavigationList(c) {
-    const items = c['list-items'] || [];
+function renderNavigationList(c, data) {
+    let items = c['list-items'] || [];
+    if (typeof items === 'string' && items.startsWith('${')) {
+        const resolved = resolveValue(items, data);
+        items = Array.isArray(resolved) ? resolved : [];
+    }
     let html = `<div class="flow-card" style="padding:0">`;
     if (c.label) {
         html += `<div class="flow-label" style="padding:12px 14px 0 14px">${esc(c.label)}</div>`;
