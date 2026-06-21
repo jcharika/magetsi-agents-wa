@@ -350,26 +350,109 @@ class SimulatorController extends Controller
 
     private function buildSimNavItems(): array
     {
-        $iconPrefix = 'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%2240%22 height%3D%2240%22 viewBox%3D%220 0 40 40%22%3E%3Ccircle cx%3D%2220%22 cy%3D%2220%22 r%3D%2220%22 fill%3D%22%23252c65%22%2F%3E%3Ctext x%3D%2220%22 y%3D%2224%22 text-anchor%3D%22middle%22 fill%3D%22%23fff%22 font-size%3D%2216%22%3E';
+        $iconDir = public_path('images/service-icons');
 
         $serviceDefs = [
-            'ZESA' => ['screen' => 'ZESA_SCREEN', 'title' => 'Buy Electricity (ZESA)', 'desc' => 'Prepaid tokens', 'icon' => '⚡', 'trigger' => 'init_zesa'],
-            'AIRTIME' => ['screen' => 'AIRTIME_SCREEN', 'title' => 'Buy Airtime', 'desc' => 'NetOne and Econet', 'icon' => '📞', 'trigger' => 'init_airtime'],
-            'BUNDLES' => ['screen' => 'BUNDLES_SCREEN', 'title' => 'Buy Bundles', 'desc' => 'Data for all nets', 'icon' => '📶', 'trigger' => 'init_bundles'],
-            'TELONE' => ['screen' => 'TELONE_HOME_SCREEN', 'title' => 'TelOne WiFi', 'desc' => 'Broadband bundles', 'icon' => '🌐', 'trigger' => 'init_telone'],
-            'BILLERS' => ['screen' => 'BILLERS_SCREEN', 'title' => 'Pay Bills', 'desc' => 'Third-party billers', 'icon' => '📄', 'trigger' => 'init_billers'],
-            'SUPPORT' => ['screen' => 'SUPPORT_SCREEN', 'title' => 'Contact Support', 'desc' => 'Get help', 'icon' => '💬', 'trigger' => 'init_support'],
+            'ZESA' => [
+                'screen' => 'ZESA_SCREEN',
+                'title' => 'Buy Electricity (ZESA)',
+                'desc' => 'Prepaid tokens',
+                'file' => 'zesa.png',
+                'alt' => 'ZESA electricity',
+                'payload' => [
+                    'trigger' => 'init_zesa',
+                    'meter_valid' => false,
+                    'customer_name' => '',
+                    'customer_address' => '',
+                    'meter_currency' => 'ZWG',
+                    'ecocash_number' => '',
+                ],
+            ],
+            'AIRTIME' => [
+                'screen' => 'AIRTIME_SCREEN',
+                'title' => 'Buy Airtime',
+                'desc' => 'NetOne and Econet',
+                'file' => 'airtime.png',
+                'alt' => 'Airtime',
+                'payload' => [
+                    'trigger' => 'init_airtime',
+                    'ecocash_number' => '',
+                    'payment_methods' => [
+                        ['id' => 'ecocash', 'title' => 'EcoCash ZWG'],
+                        ['id' => 'ecocash-usd', 'title' => 'EcoCash USD'],
+                        ['id' => 'stripe', 'title' => 'International Card'],
+                    ],
+                    'networks' => [
+                        ['id' => 'econet', 'title' => 'Econet'],
+                        ['id' => 'netone', 'title' => 'NetOne'],
+                    ],
+                ],
+            ],
+            'BUNDLES' => [
+                'screen' => 'BUNDLES_SCREEN',
+                'title' => 'Buy Bundles',
+                'desc' => 'Data for all nets',
+                'file' => 'bundles.png',
+                'alt' => 'Data bundles',
+                'payload' => [
+                    'trigger' => 'init_bundles',
+                    'ecocash_number' => '',
+                    'networks' => [
+                        ['id' => 'econet', 'title' => 'Econet'],
+                        ['id' => 'netone', 'title' => 'NetOne'],
+                    ],
+                ],
+            ],
+            'TELONE' => [
+                'screen' => 'TELONE_HOME_SCREEN',
+                'title' => 'TelOne WiFi',
+                'desc' => 'Broadband bundles',
+                'file' => 'telone.png',
+                'alt' => 'TelOne',
+                'payload' => [
+                    'trigger' => 'init_telone',
+                ],
+            ],
+            'BILLERS' => [
+                'screen' => 'BILLERS_SCREEN',
+                'title' => 'Pay Bills',
+                'desc' => 'Third-party billers',
+                'file' => 'billers.png',
+                'alt' => 'Billers',
+                'payload' => [
+                    'trigger' => 'init_billers',
+                    'ecocash_number' => '',
+                ],
+            ],
+            'SUPPORT' => [
+                'screen' => 'SUPPORT_SCREEN',
+                'title' => 'Contact Support',
+                'desc' => 'Get help',
+                'file' => 'support.png',
+                'alt' => 'Support',
+                'payload' => [
+                    'trigger' => 'init_support',
+                ],
+            ],
         ];
 
         $items = [];
         foreach ($serviceDefs as $envSuffix => $svc) {
-            if (env("WHATSAPP_CUSTOMER_SERVICE_{$envSuffix}", 'true') !== 'true') continue;
+            if (!(bool) config("whatsapp.customer_services.{$envSuffix}", true)) continue;
+
+            $iconPath = $iconDir . '/' . $svc['file'];
+            $image = '';
+            if (file_exists($iconPath)) {
+                $ext = pathinfo($iconPath, PATHINFO_EXTENSION);
+                $mime = $ext === 'svg' ? 'image/svg+xml' : 'image/' . $ext;
+                $image = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($iconPath));
+            }
 
             $items[] = [
                 'id' => $svc['screen'],
                 'start' => [
-                    'image' => $iconPrefix . urlencode($svc['icon']) . '%3C%2Ftext%3E%3C%2Fsvg%3E',
-                    'alt-text' => $svc['title'],
+                    'image' => $image,
+                    'alt-text' => $svc['alt'],
                 ],
                 'main-content' => [
                     'title' => $svc['title'],
@@ -378,7 +461,7 @@ class SimulatorController extends Controller
                 'on-click-action' => [
                     'name' => 'navigate',
                     'next' => ['type' => 'screen', 'name' => $svc['screen']],
-                    'payload' => ['trigger' => $svc['trigger']],
+                    'payload' => $svc['payload'],
                 ],
             ];
         }

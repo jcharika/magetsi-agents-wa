@@ -74,6 +74,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Customer Service Toggles
+    |--------------------------------------------------------------------------
+    |
+    | Each service can be enabled/disabled via env vars. The flow NavigationList
+    | items are built dynamically based on which services are enabled.
+    |
+    */
+
+    'customer_services' => [
+        'ZESA' => env('WHATSAPP_CUSTOMER_SERVICE_ZESA', true),
+        'AIRTIME' => env('WHATSAPP_CUSTOMER_SERVICE_AIRTIME', true),
+        'BUNDLES' => env('WHATSAPP_CUSTOMER_SERVICE_BUNDLES', true),
+        'TELONE' => env('WHATSAPP_CUSTOMER_SERVICE_TELONE', true),
+        'BILLERS' => env('WHATSAPP_CUSTOMER_SERVICE_BILLERS', true),
+        'SUPPORT' => env('WHATSAPP_CUSTOMER_SERVICE_SUPPORT', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | WhatsApp Flow IDs — Agent
     |--------------------------------------------------------------------------
     */
