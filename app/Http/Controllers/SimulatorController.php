@@ -351,6 +351,7 @@ class SimulatorController extends Controller
     private function buildSimNavItems(): array
     {
         $iconDir = public_path('images/service-icons');
+        $defaultMeterCurrency = 'ZWG';
 
         $serviceDefs = [
             'ZESA' => [
@@ -364,8 +365,12 @@ class SimulatorController extends Controller
                     'meter_valid' => false,
                     'customer_name' => '',
                     'customer_address' => '',
-                    'meter_currency' => 'ZWG',
+                    'meter_currency' => $defaultMeterCurrency,
                     'ecocash_number' => '',
+                    'payment_methods' => [
+                        ['id' => 'ecocash', 'title' => "EcoCash $defaultMeterCurrency"],
+                        ['id' => 'stripe', 'title' => 'International Card'],
+                    ],
                 ],
             ],
             'AIRTIME' => [

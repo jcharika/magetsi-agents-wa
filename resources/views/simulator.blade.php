@@ -857,7 +857,7 @@ function resolveValue(template, data) {
         if (val && typeof val === 'object') val = val[parts[i]];
         else return '';
     }
-    return (val === undefined || val === null) ? '' : String(val);
+    return (val === undefined || val === null) ? '' : val;
 }
 
 function evaluateCondition(condition, data) {
@@ -942,8 +942,9 @@ function renderNavigationList(c, data) {
             imgHTML = `<div class="nav-img" style="background-image:url('${esc(start.image)}')"></div>`;
         }
 
+        const payloadEnc = encodeURIComponent(JSON.stringify(nextPayload));
         const clickAttr = nextScreen
-            ? `onclick="handleNavClick('${nextScreen}', '${esc(main.title || '')}')"`
+            ? `onclick="handleNavClick('${nextScreen}', '${esc(main.title || '')}', '${payloadEnc}')"`
             : '';
 
         html += `<div class="nav-list-item" ${clickAttr}>
@@ -959,9 +960,15 @@ function renderNavigationList(c, data) {
     return html;
 }
 
-function handleNavClick(screenName, label) {
-    // Pre-store the label in flow form state for display
+function handleNavClick(screenName, label, payloadEnc) {
     addBubble(label, 'out');
+    // Merge navigation payload into form state so target screen has the data
+    if (payloadEnc) {
+        const payload = JSON.parse(decodeURIComponent(payloadEnc));
+        for (const [k, v] of Object.entries(payload)) {
+            flowFormState[k] = v;
+        }
+    }
     setTimeout(() => navigateTo(screenName), 300);
 }
 
@@ -1007,7 +1014,11 @@ function renderTextInput(c, data) {
 
 function renderRadioGroup(c, data) {
     const name = c.name;
-    const options = c['data-source'] || [];
+    let options = c['data-source'] || [];
+    if (typeof options === 'string' && options.startsWith('${')) {
+        const resolved = resolveValue(options, data);
+        options = Array.isArray(resolved) ? resolved : [];
+    }
     const initVal = data[name] || '';
 
     let html = `<div class="flow-card">
@@ -1027,7 +1038,11 @@ function renderRadioGroup(c, data) {
 
 function renderDropdown(c, data) {
     const name = c.name;
-    const options = c['data-source'] || [];
+    let options = c['data-source'] || [];
+    if (typeof options === 'string' && options.startsWith('${')) {
+        const resolved = resolveValue(options, data);
+        options = Array.isArray(resolved) ? resolved : [];
+    }
     const initVal = data[name] || '';
 
     let html = `<div class="flow-card">

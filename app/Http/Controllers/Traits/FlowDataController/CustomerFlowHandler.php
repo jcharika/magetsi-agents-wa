@@ -54,6 +54,7 @@ trait CustomerFlowHandler
     private function buildServiceNavItems(): array
     {
         $iconDir = public_path('images/service-icons');
+        $defaultMeterCurrency = 'ZWG';
 
         $serviceDefs = [
             'ZESA' => [
@@ -67,8 +68,12 @@ trait CustomerFlowHandler
                     'meter_valid' => false,
                     'customer_name' => '',
                     'customer_address' => '',
-                    'meter_currency' => 'ZWG',
+                    'meter_currency' => $defaultMeterCurrency,
                     'ecocash_number' => '',
+                    'payment_methods' => [
+                        ['id' => 'ecocash', 'title' => "EcoCash $defaultMeterCurrency"],
+                        ['id' => 'stripe', 'title' => 'International Card'],
+                    ],
                 ],
             ],
             'AIRTIME' => [
@@ -379,13 +384,19 @@ trait CustomerFlowHandler
             return $this->meterService()->validate($meterNumber);
         });
 
+        $currency = $result['currency'] ?? 'ZWG';
+
         return [
             'screen' => 'ZESA_SCREEN',
             'data' => [
                 'meter_valid' => $result['valid'] ?? false,
                 'customer_name' => $result['name'] ?? '',
                 'customer_address' => $result['address'] ?? '',
-                'meter_currency' => $result['currency'] ?? 'ZWG',
+                'meter_currency' => $currency,
+                'payment_methods' => [
+                    ['id' => 'ecocash', 'title' => "EcoCash $currency"],
+                    ['id' => 'stripe', 'title' => 'International Card'],
+                ],
                 'error_message' => ($result['valid'] ?? false) ? '' : 'Invalid meter number.',
             ],
         ];
@@ -395,14 +406,23 @@ trait CustomerFlowHandler
     {
         $meterNumber = $data['meter_number'] ?? '';
         $amount = (float)($data['amount'] ?? 0);
+        $paymentMethod = $data['payment'] ?? 'ecocash';
+        $email = $data['email'] ?? '';
         $ecocashNumber = $data['ecocash_number'] ?? '';
         $recipientPhone = $data['recipient_phone'] ?? null;
+
+        $currency = match ($paymentMethod) {
+            'stripe' => 'USD',
+            default => 'ZWG',
+        };
 
         $params = [
             'type' => 'zesa',
             'meter_number' => $meterNumber,
             'amount' => $amount,
-            'currency' => 'ZWG',
+            'currency' => $currency,
+            'payment_method' => $paymentMethod,
+            'email' => $email,
             'ecocash_number' => $ecocashNumber,
             'recipient_phone' => $recipientPhone,
             'guest_id' => "Customer {$customer->id}",
@@ -416,6 +436,7 @@ trait CustomerFlowHandler
         ProcessZesaTransaction::dispatch($params, $customerData, $flowToken)
             ->onQueue('transactions');
 
+        $currencyLabel = $currency === 'USD' ? 'USD' : 'ZWG';
         return [
             'screen' => 'SUCCESS',
             'data' => [
@@ -423,7 +444,7 @@ trait CustomerFlowHandler
                     'params' => [
                         'flow_token' => $flowToken,
                         'success' => true,
-                        'message' => "Your ZESA purchase of {$amount} ZWG for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
+                        'message' => "Your ZESA purchase of {$amount} {$currencyLabel} for meter {$meterNumber} is being processed. You will receive a WhatsApp notification once complete.",
                         'reference' => 'queued',
                         'close_flow' => true,
                     ],

@@ -124,6 +124,30 @@
                 "ecocash_number": {
                     "type": "string",
                     "__example__": "0771234567"
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "__example__": [
+                        {
+                            "id": "ecocash",
+                            "title": "EcoCash ZWG"
+                        },
+                        {
+                            "id": "stripe",
+                            "title": "International Card"
+                        }
+                    ]
                 }
             },
             "layout": {
@@ -141,6 +165,7 @@
                         "type": "Form",
                         "name": "zesa_form",
                         "init-values": {
+                            "payment": "ecocash",
                             "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
@@ -186,19 +211,46 @@
                                 "condition": "${data.meter_valid}",
                                 "then": [
                                     {
+                                        "type": "RadioButtonsGroup",
+                                        "name": "payment",
+                                        "label": "Pay with",
+                                        "required": true,
+                                        "data-source": "${data.payment_methods}"
+                                    },
+                                    {
                                         "type": "TextInput",
                                         "name": "amount",
-                                        "label": "Amount (ZWG)",
+                                        "label": "Amount",
                                         "input-type": "number",
                                         "required": true
                                     },
                                     {
-                                        "type": "TextInput",
-                                        "name": "ecocash_number",
-                                        "label": "EcoCash Number",
-                                        "input-type": "phone",
-                                        "required": true,
-                                        "helper-text": "Payment will be deducted from this number"
+                                        "type": "If",
+                                        "condition": "${form.payment} != 'stripe'",
+                                        "then": [
+                                            {
+                                                "type": "TextInput",
+                                                "name": "ecocash_number",
+                                                "label": "EcoCash Number",
+                                                "input-type": "phone",
+                                                "required": true,
+                                                "helper-text": "Payment will be deducted from this number"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "If",
+                                        "condition": "${form.payment} == 'stripe'",
+                                        "then": [
+                                            {
+                                                "type": "TextInput",
+                                                "name": "email",
+                                                "label": "Email",
+                                                "input-type": "email",
+                                                "required": true,
+                                                "helper-text": "Enter your email for payment receipt"
+                                            }
+                                        ]
                                     },
                                     {
                                         "type": "TextInput",
@@ -230,7 +282,9 @@
                                 "biller_account": "${form.meter_number}",
                                 "amount": "${form.amount}",
                                 "currency": "${data.meter_currency}",
+                                "payment": "${form.payment}",
                                 "payment_account": "${form.ecocash_number}",
+                                "email": "${form.email}",
                                 "recipient_phone": "${form.recipient_phone}"
                             }
                         }
