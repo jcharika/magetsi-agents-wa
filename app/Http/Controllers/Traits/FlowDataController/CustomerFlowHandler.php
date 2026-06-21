@@ -23,6 +23,10 @@ trait CustomerFlowHandler
         'ZESA_SCREEN' => 'ZESA',
         'AIRTIME_SCREEN' => 'AIRTIME',
         'BUNDLES_SCREEN' => 'BUNDLES',
+        'ECONET_USD_BUNDLE_SCREEN' => 'BUNDLES',
+        'ECONET_ZWG_BUNDLE_SCREEN' => 'BUNDLES',
+        'ECONET_SMARTSUITE_BUNDLE_SCREEN' => 'BUNDLES',
+        'NETONE_USD_BUNDLE_SCREEN' => 'BUNDLES',
         'TELONE_HOME_SCREEN' => 'TELONE',
         'TELONE_SCREEN' => 'TELONE',
         'TELONE_USD_SCREEN' => 'TELONE',
@@ -95,10 +99,6 @@ trait CustomerFlowHandler
                 'payload' => [
                     'trigger' => 'init_bundles',
                     'ecocash_number' => '',
-                    'networks' => [
-                        ['id' => 'econet', 'title' => 'Econet'],
-                        ['id' => 'netone', 'title' => 'NetOne'],
-                    ],
                 ],
             ],
             'TELONE' => [
@@ -224,6 +224,13 @@ trait CustomerFlowHandler
                 'network' => $data['network'] ?? '',
                 'currency' => $data['currency'] ?? 'ZWG',
             ];
+            if (str_contains($screen, 'USD')) {
+                $responseData['email'] = $data['email'] ?? '';
+            }
+            if ($screen === 'NETONE_USD_SCREEN') {
+                $responseData['categories'] = [['id' => 'AIRTIME', 'title' => 'Airtime']];
+                $responseData['amount_options'] = $this->buildAmountOptions();
+            }
             Log::debug("Flow: $screen init data", $responseData);
             return [
                 'screen' => $screen,
@@ -233,15 +240,33 @@ trait CustomerFlowHandler
 
         if ($screen === 'BUNDLES_SCREEN') {
             $responseData = [
-                'networks' => [
-                    ['id' => 'econet', 'title' => 'Econet'],
-                    ['id' => 'netone', 'title' => 'NetOne'],
-                    ['id' => 'smartsuite', 'title' => 'SmartSuite'],
-                ],
+                'ecocash_number' => $customer->ecocash_number ?? '',
+                'bundle_options' => $this->buildBundleOptions(),
             ];
             Log::debug('Flow: BUNDLES_SCREEN init data', $responseData);
             return [
                 'screen' => 'BUNDLES_SCREEN',
+                'data' => $responseData,
+            ];
+        }
+
+        $bundleSubScreens = ['ECONET_USD_BUNDLE_SCREEN', 'ECONET_ZWG_BUNDLE_SCREEN', 'ECONET_SMARTSUITE_BUNDLE_SCREEN', 'NETONE_USD_BUNDLE_SCREEN'];
+        if (in_array($screen, $bundleSubScreens)) {
+            $responseData = [
+                'ecocash_number' => $customer->ecocash_number ?? '',
+                'network' => $data['network'] ?? '',
+                'currency' => $data['currency'] ?? 'ZWG',
+            ];
+            if (str_contains($screen, 'USD')) {
+                $responseData['email'] = $data['email'] ?? '';
+            }
+            if ($screen === 'NETONE_USD_BUNDLE_SCREEN') {
+                $responseData['categories'] = [['id' => 'AIRTIME', 'title' => 'Airtime']];
+                $responseData['amount_options'] = $this->buildAmountOptions();
+            }
+            Log::debug("Flow: $screen init data", $responseData);
+            return [
+                'screen' => $screen,
                 'data' => $responseData,
             ];
         }
@@ -342,8 +367,9 @@ trait CustomerFlowHandler
             return $this->handleBuyAirtime($customer, $data, $flowToken, $screen);
         }
 
-        if ($screen === 'BUNDLES_SCREEN') {
-            return $this->handleBuyBundle($customer, $data, $flowToken);
+        $bundleSubScreens = ['BUNDLES_SCREEN', 'ECONET_USD_BUNDLE_SCREEN', 'ECONET_ZWG_BUNDLE_SCREEN', 'ECONET_SMARTSUITE_BUNDLE_SCREEN', 'NETONE_USD_BUNDLE_SCREEN'];
+        if (in_array($screen, $bundleSubScreens)) {
+            return $this->handleBuyBundle($customer, $data, $flowToken, $screen);
         }
 
         if ($screen === 'ZESA_SCREEN') {
@@ -536,25 +562,45 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function handleBuyBundle(Customer $customer, array $data, string $flowToken): array
+    protected function handleBuyBundle(Customer $customer, array $data, string $flowToken, string $currentScreen = 'BUNDLES_SCREEN'): array
     {
         $trigger = $data['trigger'] ?? null;
 
         if ($trigger !== 'buy_bundle') {
+            $fallbackScreen = match (true) {
+                str_contains($currentScreen, 'ECONET_USD') => 'ECONET_USD_BUNDLE_SCREEN',
+                str_contains($currentScreen, 'ECONET_ZWG') => 'ECONET_ZWG_BUNDLE_SCREEN',
+                str_contains($currentScreen, 'NETONE_USD') => 'NETONE_USD_BUNDLE_SCREEN',
+                default => 'BUNDLES_SCREEN',
+            };
             return [
-                'screen' => 'BUNDLES_SCREEN',
+                'screen' => $fallbackScreen,
                 'data' => ['error_message' => 'Invalid action.'],
             ];
         }
 
-        $network = $data['network'] ?? '';
-        $phoneNumber = $data['phone_number'] ?? '';
+        $receiver = $data['receiver'] ?? '';
+        $phoneNumber = $data['phone_number'] ?? $receiver;
         $bundleSize = $data['bundle_size'] ?? '';
-        $ecocashNumber = $data['ecocash_number'] ?? '';
+        $paymentMethod = $data['payment'] ?? 'ecocash';
+        $phone = $data['phone'] ?? '';
+        $email = $data['email'] ?? '';
+
+        $network = $data['network'] ?? '';
+        $currency = $data['currency'] ?? match ($paymentMethod) {
+            'stripe' => 'USD',
+            default => 'ZWG',
+        };
 
         if (!$network || !$phoneNumber || !$bundleSize) {
+            $errorScreen = match (true) {
+                str_contains($currentScreen, 'ECONET_USD') => 'ECONET_USD_BUNDLE_SCREEN',
+                str_contains($currentScreen, 'ECONET_ZWG') => 'ECONET_ZWG_BUNDLE_SCREEN',
+                str_contains($currentScreen, 'NETONE_USD') => 'NETONE_USD_BUNDLE_SCREEN',
+                default => 'BUNDLES_SCREEN',
+            };
             return [
-                'screen' => 'BUNDLES_SCREEN',
+                'screen' => $errorScreen,
                 'data' => ['error_message' => 'Please fill in all required fields.'],
             ];
         }
@@ -564,8 +610,10 @@ trait CustomerFlowHandler
             'network' => $network,
             'phone_number' => $phoneNumber,
             'bundle_size' => $bundleSize,
-            'currency' => 'ZWG',
-            'ecocash_number' => $ecocashNumber,
+            'payment_method' => $paymentMethod,
+            'email' => $email,
+            'currency' => $currency,
+            'ecocash_number' => $phone ?: '',
             'guest_id' => "Customer {$customer->id}",
         ];
 
@@ -825,6 +873,10 @@ trait CustomerFlowHandler
             if ($opt['currency'] === 'USD') {
                 $payload['email'] = '';
             }
+            if ($key === 'NETONE_USD_SCREEN') {
+                $payload['categories'] = [['id' => 'AIRTIME', 'title' => 'Airtime']];
+                $payload['amount_options'] = $this->buildAmountOptions();
+            }
 
             $items[] = [
                 'id' => $opt['screen'],
@@ -839,6 +891,132 @@ trait CustomerFlowHandler
                 'on-click-action' => [
                     'name' => 'navigate',
                     'next' => ['type' => 'screen', 'name' => $opt['screen']],
+                    'payload' => $payload,
+                ],
+            ];
+        }
+
+        return $items;
+    }
+
+    private function buildAmountOptions(): array
+    {
+        $options = [];
+        for ($i = 1; $i <= 9; $i++) {
+            $val = $i / 10;
+            $options[] = ['id' => (string)$val, 'title' => '$' . $val];
+        }
+        foreach ([1, 2, 5, 10, 20] as $val) {
+            $options[] = ['id' => (string)$val, 'title' => '$' . $val];
+        }
+        return $options;
+    }
+
+    private function buildBundleOptions(): array
+    {
+        $iconDir = public_path('images/service-icons');
+
+        $options = [
+            'ECONET_USD_BUNDLE_SCREEN' => [
+                'title' => 'Econet USD Bundles',
+                'desc' => 'US Dollar',
+                'file' => 'econet_usd_bundle.png',
+                'alt' => 'Econet USD',
+                'network' => 'econet',
+                'currency' => 'USD',
+            ],
+            'ECONET_ZWG_BUNDLE_SCREEN' => [
+                'title' => 'Econet ZWG Bundles',
+                'desc' => 'Zimbabwe Gold',
+                'file' => 'econet_zwg_bundle.png',
+                'alt' => 'Econet ZWG',
+                'network' => 'econet',
+                'currency' => 'ZWG',
+            ],
+            'ECONET_SMARTSUITE_BUNDLE_SCREEN' => [
+                'title' => 'Econet SmartSuite Bundles',
+                'desc' => 'SmartSuite',
+                'file' => 'smartsuite.png',
+                'alt' => 'SmartSuite',
+                'network' => 'econet',
+                'currency' => 'ZWG',
+            ],
+            'NETONE_USD_BUNDLE_SCREEN' => [
+                'title' => 'NetOne USD Bundles',
+                'desc' => 'US Dollar',
+                'file' => 'netone_usd_bundle.png',
+                'alt' => 'NetOne USD',
+                'network' => 'netone',
+                'currency' => 'USD',
+            ],
+            'TELONE_USD_SCREEN_TELONE_USD' => [
+                'title' => 'TelOne USD Bundles',
+                'desc' => 'US Dollar',
+                'file' => 'telone.png',
+                'alt' => 'TelOne USD',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+                'skipNetwork' => true,
+            ],
+            'TELONE_USD_SCREEN_PURCHASE' => [
+                'title' => 'TelOne Purchase Bundle USD',
+                'desc' => 'Purchase Bundle',
+                'file' => 'telone.png',
+                'alt' => 'TelOne USD',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+                'skipNetwork' => true,
+            ],
+            'TELONE_SCREEN' => [
+                'title' => 'TelOne ZWG Bundles',
+                'desc' => 'Zimbabwe Gold',
+                'file' => 'telone.png',
+                'alt' => 'TelOne ZWG',
+                'screen' => 'TELONE_SCREEN',
+                'currency' => 'ZWG',
+                'skipNetwork' => true,
+            ],
+        ];
+
+        $items = [];
+        foreach ($options as $key => $opt) {
+            $iconPath = $iconDir . '/' . $opt['file'];
+            $image = '';
+            if (file_exists($iconPath)) {
+                $image = base64_encode(file_get_contents($iconPath));
+            }
+
+            $screenId = $opt['screen'] ?? $key;
+            $itemId = $key;
+
+            $payload = [
+                'ecocash_number' => '${data.ecocash_number}',
+            ];
+            if (empty($opt['skipNetwork'])) {
+                $payload['network'] = $opt['network'];
+            }
+            $payload['currency'] = $opt['currency'];
+            if ($opt['currency'] === 'USD') {
+                $payload['email'] = '';
+            }
+            if ($key === 'NETONE_USD_BUNDLE_SCREEN') {
+                $payload['categories'] = [['id' => 'AIRTIME', 'title' => 'Airtime']];
+                $payload['amount_options'] = $this->buildAmountOptions();
+            }
+
+            $items[] = [
+                'id' => $itemId,
+                'start' => [
+                    'image' => $image,
+                    'alt-text' => $opt['alt'],
+                ],
+                'main-content' => [
+                    'title' => $opt['title'],
+                    'description' => $opt['desc'],
+                ],
+                'on-click-action' => [
+                    'name' => 'navigate',
+                    'next' => ['type' => 'screen', 'name' => $screenId],
                     'payload' => $payload,
                 ],
             ];

@@ -13,6 +13,14 @@
             "ECONET_ZWG_SCREEN",
             "NETONE_USD_SCREEN"
         ],
+        "BUNDLES_SCREEN": [
+            "ECONET_USD_BUNDLE_SCREEN",
+            "ECONET_ZWG_BUNDLE_SCREEN",
+            "ECONET_SMARTSUITE_BUNDLE_SCREEN",
+            "NETONE_USD_BUNDLE_SCREEN",
+            "TELONE_USD_SCREEN",
+            "TELONE_SCREEN"
+        ],
         "TELONE_HOME_SCREEN": [
             "TELONE_SCREEN",
             "TELONE_USD_SCREEN"
@@ -584,6 +592,37 @@
                 "email": {
                     "type": "string",
                     "__example__": "user@example.com"
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    },
+                    "__example__": [
+                        {"id": "AIRTIME", "title": "Airtime"}
+                    ]
+                },
+                "amount_options": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    },
+                    "__example__": [
+                        {"id": "0.1", "title": "$0.1"},
+                        {"id": "0.5", "title": "$0.5"},
+                        {"id": "1", "title": "$1"},
+                        {"id": "5", "title": "$5"},
+                        {"id": "10", "title": "$10"},
+                        {"id": "20", "title": "$20"}
+                    ]
                 }
             },
             "layout": {
@@ -613,12 +652,18 @@
                                 "helper-text": "Enter the NetOne phone number to top up"
                             },
                             {
-                                "type": "TextInput",
+                                "type": "RadioButtonsGroup",
+                                "name": "category",
+                                "label": "Category",
+                                "required": true,
+                                "data-source": "${data.categories}"
+                            },
+                            {
+                                "type": "RadioButtonsGroup",
                                 "name": "amount",
                                 "label": "Amount (USD)",
-                                "input-type": "number",
                                 "required": true,
-                                "helper-text": "Enter amount in USD"
+                                "data-source": "${data.amount_options}"
                             },
                             {
                                 "type": "TextInput",
@@ -646,6 +691,409 @@
                                 "handler": "AIRTIME",
                                 "receiver": "${form.receiver}",
                                 "amount": "${form.amount}",
+                                "category": "${form.category}",
+                                "payment": "stripe",
+                                "email": "${form.email}",
+                                "network": "netone",
+                                "currency": "USD"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "ECONET_USD_BUNDLE_SCREEN",
+            "terminal": true,
+            "success": true,
+            "title": "Econet USD Bundles",
+            "data": {
+                "ecocash_number": {
+                    "type": "string",
+                    "__example__": "0771234567"
+                },
+                "network": {
+                    "type": "string",
+                    "__example__": "econet"
+                },
+                "currency": {
+                    "type": "string",
+                    "__example__": "USD"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": "user@example.com"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "TextHeading",
+                        "text": "Econet USD Bundles"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Buy data bundles for Econet in US Dollar"
+                    },
+                    {
+                        "type": "Form",
+                        "name": "econet_usd_bundle_form",
+                        "init-values": {
+                            "email": "${data.email}"
+                        },
+                        "children": [
+                            {
+                                "type": "TextInput",
+                                "name": "receiver",
+                                "label": "Beneficiary Phone",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Enter the Econet phone number for the bundle"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "bundle_size",
+                                "label": "Bundle Size",
+                                "input-type": "text",
+                                "required": true,
+                                "helper-text": "e.g. 1GB, 5GB, 10GB"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "email",
+                                "label": "Email",
+                                "input-type": "email",
+                                "required": true,
+                                "helper-text": "Enter your email for payment receipt"
+                            },
+                            {
+                                "type": "OptIn",
+                                "name": "terms",
+                                "label": "I accept the Terms & Conditions",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Footer",
+                        "label": "Buy Econet USD Bundle",
+                        "on-click-action": {
+                            "name": "complete",
+                            "payload": {
+                                "trigger": "buy_bundle",
+                                "handler": "BUNDLES",
+                                "receiver": "${form.receiver}",
+                                "bundle_size": "${form.bundle_size}",
+                                "payment": "stripe",
+                                "email": "${form.email}",
+                                "network": "econet",
+                                "currency": "USD"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "ECONET_ZWG_BUNDLE_SCREEN",
+            "terminal": true,
+            "success": true,
+            "title": "Econet ZWG Bundles",
+            "data": {
+                "ecocash_number": {
+                    "type": "string",
+                    "__example__": "0771234567"
+                },
+                "network": {
+                    "type": "string",
+                    "__example__": "econet"
+                },
+                "currency": {
+                    "type": "string",
+                    "__example__": "ZWG"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "TextHeading",
+                        "text": "Econet ZWG Bundles"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Buy data bundles for Econet with Zimbabwe Gold"
+                    },
+                    {
+                        "type": "Form",
+                        "name": "econet_zwg_bundle_form",
+                        "init-values": {
+                            "ecocash_number": "${data.ecocash_number}"
+                        },
+                        "children": [
+                            {
+                                "type": "TextInput",
+                                "name": "receiver",
+                                "label": "Beneficiary Phone",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Enter the Econet phone number for the bundle"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "bundle_size",
+                                "label": "Bundle Size",
+                                "input-type": "text",
+                                "required": true,
+                                "helper-text": "e.g. 1GB, 5GB, 10GB"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "ecocash_number",
+                                "label": "EcoCash Number",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Payment will be deducted from this number"
+                            },
+                            {
+                                "type": "OptIn",
+                                "name": "terms",
+                                "label": "I accept the Terms & Conditions",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Footer",
+                        "label": "Buy Econet ZWG Bundle",
+                        "on-click-action": {
+                            "name": "complete",
+                            "payload": {
+                                "trigger": "buy_bundle",
+                                "handler": "BUNDLES",
+                                "receiver": "${form.receiver}",
+                                "bundle_size": "${form.bundle_size}",
+                                "payment": "ecocash",
+                                "phone": "${form.ecocash_number}",
+                                "network": "econet",
+                                "currency": "ZWG"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "ECONET_SMARTSUITE_BUNDLE_SCREEN",
+            "terminal": true,
+            "success": true,
+            "title": "Econet SmartSuite Bundles",
+            "data": {
+                "ecocash_number": {
+                    "type": "string",
+                    "__example__": "0771234567"
+                },
+                "network": {
+                    "type": "string",
+                    "__example__": "econet"
+                },
+                "currency": {
+                    "type": "string",
+                    "__example__": "ZWG"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "TextHeading",
+                        "text": "Econet SmartSuite Bundles"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Buy SmartSuite data bundles for Econet through Magetsi"
+                    },
+                    {
+                        "type": "Form",
+                        "name": "smartsuite_bundle_form",
+                        "init-values": {
+                            "ecocash_number": "${data.ecocash_number}"
+                        },
+                        "children": [
+                            {
+                                "type": "TextInput",
+                                "name": "receiver",
+                                "label": "Beneficiary Phone",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Enter the Econet phone number for the bundle"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "bundle_size",
+                                "label": "Bundle Size",
+                                "input-type": "text",
+                                "required": true,
+                                "helper-text": "e.g. 1GB, 5GB, 10GB"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "ecocash_number",
+                                "label": "EcoCash Number",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Payment will be deducted from this number"
+                            },
+                            {
+                                "type": "OptIn",
+                                "name": "terms",
+                                "label": "I accept the Terms & Conditions",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Footer",
+                        "label": "Buy SmartSuite Bundle",
+                        "on-click-action": {
+                            "name": "complete",
+                            "payload": {
+                                "trigger": "buy_bundle",
+                                "handler": "BUNDLES",
+                                "receiver": "${form.receiver}",
+                                "bundle_size": "${form.bundle_size}",
+                                "payment": "ecocash",
+                                "phone": "${form.ecocash_number}",
+                                "network": "econet",
+                                "currency": "ZWG"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "NETONE_USD_BUNDLE_SCREEN",
+            "terminal": true,
+            "success": true,
+            "title": "NetOne USD Bundles",
+            "data": {
+                "ecocash_number": {
+                    "type": "string",
+                    "__example__": "0771234567"
+                },
+                "network": {
+                    "type": "string",
+                    "__example__": "netone"
+                },
+                "currency": {
+                    "type": "string",
+                    "__example__": "USD"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": "user@example.com"
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    },
+                    "__example__": [
+                        {"id": "AIRTIME", "title": "Airtime"}
+                    ]
+                },
+                "amount_options": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    },
+                    "__example__": [
+                        {"id": "0.1", "title": "$0.1"},
+                        {"id": "0.5", "title": "$0.5"},
+                        {"id": "1", "title": "$1"},
+                        {"id": "5", "title": "$5"},
+                        {"id": "10", "title": "$10"},
+                        {"id": "20", "title": "$20"}
+                    ]
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "TextHeading",
+                        "text": "NetOne USD Bundles"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Buy data bundles for NetOne in US Dollar"
+                    },
+                    {
+                        "type": "Form",
+                        "name": "netone_usd_bundle_form",
+                        "init-values": {
+                            "email": "${data.email}"
+                        },
+                        "children": [
+                            {
+                                "type": "TextInput",
+                                "name": "receiver",
+                                "label": "Beneficiary Phone",
+                                "input-type": "phone",
+                                "required": true,
+                                "helper-text": "Enter the NetOne phone number for the bundle"
+                            },
+                            {
+                                "type": "RadioButtonsGroup",
+                                "name": "category",
+                                "label": "Category",
+                                "required": true,
+                                "data-source": "${data.categories}"
+                            },
+                            {
+                                "type": "RadioButtonsGroup",
+                                "name": "bundle_size",
+                                "label": "Bundle Size",
+                                "required": true,
+                                "data-source": "${data.amount_options}"
+                            },
+                            {
+                                "type": "TextInput",
+                                "name": "email",
+                                "label": "Email",
+                                "input-type": "email",
+                                "required": true,
+                                "helper-text": "Enter your email for payment receipt"
+                            },
+                            {
+                                "type": "OptIn",
+                                "name": "terms",
+                                "label": "I accept the Terms & Conditions",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Footer",
+                        "label": "Buy NetOne USD Bundle",
+                        "on-click-action": {
+                            "name": "complete",
+                            "payload": {
+                                "trigger": "buy_bundle",
+                                "handler": "BUNDLES",
+                                "receiver": "${form.receiver}",
+                                "bundle_size": "${form.bundle_size}",
+                                "category": "${form.category}",
                                 "payment": "stripe",
                                 "email": "${form.email}",
                                 "network": "netone",
@@ -658,15 +1106,14 @@
         },
         {
             "id": "BUNDLES_SCREEN",
-            "terminal": true,
-            "success": true,
-            "title": "Buy Bundles",
+            "terminal": false,
+            "title": "Buy Data Bundles",
             "data": {
                 "ecocash_number": {
                     "type": "string",
                     "__example__": "0771234567"
                 },
-                "networks": {
+                "bundle_options": {
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -674,23 +1121,99 @@
                             "id": {
                                 "type": "string"
                             },
-                            "title": {
-                                "type": "string"
+                            "start": {
+                                "type": "object",
+                                "properties": {
+                                    "image": {"type": "string"},
+                                    "alt-text": {"type": "string"}
+                                }
+                            },
+                            "main-content": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {"type": "string"},
+                                    "description": {"type": "string"}
+                                }
+                            },
+                            "on-click-action": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "next": {
+                                        "type": "object",
+                                        "properties": {
+                                            "type": {"type": "string"},
+                                            "name": {"type": "string"}
+                                        }
+                                    },
+                                    "payload": {
+                                        "type": "object",
+                                        "properties": {
+                                            "ecocash_number": {"type": "string"},
+                                            "network": {"type": "string"},
+                                            "currency": {"type": "string"}
+                                        }
+                                    }
+                                }
                             }
                         }
                     },
                     "__example__": [
                         {
-                            "id": "econet",
-                            "title": "Econet"
+                            "id": "ECONET_USD_BUNDLE_SCREEN",
+                            "start": {"image": "", "alt-text": "ECONET USD"},
+                            "main-content": {"title": "Econet USD Bundles", "description": "US Dollar"},
+                            "on-click-action": {
+                                "name": "navigate",
+                                "next": {"type": "screen", "name": "ECONET_USD_BUNDLE_SCREEN"},
+                                "payload": {
+                                    "ecocash_number": "${data.ecocash_number}",
+                                    "network": "econet",
+                                    "currency": "USD"
+                                }
+                            }
                         },
                         {
-                            "id": "netone",
-                            "title": "NetOne"
+                            "id": "ECONET_ZWG_BUNDLE_SCREEN",
+                            "start": {"image": "", "alt-text": "ECONET ZWG"},
+                            "main-content": {"title": "Econet ZWG Bundles", "description": "Zimbabwe Gold"},
+                            "on-click-action": {
+                                "name": "navigate",
+                                "next": {"type": "screen", "name": "ECONET_ZWG_BUNDLE_SCREEN"},
+                                "payload": {
+                                    "ecocash_number": "${data.ecocash_number}",
+                                    "network": "econet",
+                                    "currency": "ZWG"
+                                }
+                            }
                         },
                         {
-                            "id": "smartsuite",
-                            "title": "SmartSuite"
+                            "id": "ECONET_SMARTSUITE_BUNDLE_SCREEN",
+                            "start": {"image": "", "alt-text": "SMARTSUITE"},
+                            "main-content": {"title": "Econet SmartSuite Bundles", "description": "SmartSuite"},
+                            "on-click-action": {
+                                "name": "navigate",
+                                "next": {"type": "screen", "name": "ECONET_SMARTSUITE_BUNDLE_SCREEN"},
+                                "payload": {
+                                    "ecocash_number": "${data.ecocash_number}",
+                                    "network": "econet",
+                                    "currency": "ZWG"
+                                }
+                            }
+                        },
+                        {
+                            "id": "NETONE_USD_BUNDLE_SCREEN",
+                            "start": {"image": "", "alt-text": "ECONET USD"},
+                            "main-content": {"title": "Econet USD Bundles", "description": "US Dollar"},
+                            "on-click-action": {
+                                "name": "navigate",
+                                "next": {"type": "screen", "name": "ECONET_USD_BUNDLE_SCREEN"},
+                                "payload": {
+                                    "ecocash_number": "${data.ecocash_number}",
+                                    "network": "econet",
+                                    "currency": "USD"
+                                }
+                            }
                         }
                     ]
                 }
@@ -699,68 +1222,10 @@
                 "type": "SingleColumnLayout",
                 "children": [
                     {
-                        "type": "TextHeading",
-                        "text": "Buy Data Bundles"
-                    },
-                    {
-                        "type": "TextBody",
-                        "text": "Purchase data bundles for Econet, NetOne and SmartSuite"
-                    },
-                    {
-                        "type": "Form",
-                        "name": "bundles_form",
-                        "init-values": {
-                            "ecocash_number": "${data.ecocash_number}"
-                        },
-                        "children": [
-                            {
-                                "type": "RadioButtonsGroup",
-                                "name": "network_select",
-                                "label": "Select Network",
-                                "required": true,
-                                "data-source": "${data.networks}"
-                            },
-                            {
-                                "type": "TextInput",
-                                "name": "phone_number",
-                                "label": "Phone Number",
-                                "input-type": "phone",
-                                "required": true,
-                                "helper-text": "Enter the phone number for the bundle"
-                            },
-                            {
-                                "type": "TextInput",
-                                "name": "package_select",
-                                "label": "Select Package",
-                                "input-type": "text",
-                                "required": true,
-                                "helper-text": "Enter package name e.g. 1GB, 5GB, 10GB"
-                            },
-                            {
-                                "type": "TextInput",
-                                "name": "ecocash_number",
-                                "label": "EcoCash Number",
-                                "input-type": "phone",
-                                "required": true,
-                                "helper-text": "Payment will be deducted from this number"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "Footer",
-                        "label": "Buy Bundle",
-                        "on-click-action": {
-                            "name": "complete",
-                            "payload": {
-                                "trigger": "buy_bundle",
-                                "handler": "BUNDLES",
-                                "network": "${form.network_select}",
-                                "phone_number": "${form.phone_number}",
-                                "package": "${form.package_select}",
-                                "currency": "ZWG",
-                                "payment_account": "${form.ecocash_number}"
-                            }
-                        }
+                        "type": "NavigationList",
+                        "name": "bundles_nav",
+                        "description": "Select an option below",
+                        "list-items": "${data.bundle_options}"
                     }
                 ]
             }

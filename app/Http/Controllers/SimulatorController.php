@@ -308,6 +308,9 @@ class SimulatorController extends Controller
                     'ecocash_number' => '',
                     'enabled_services' => $this->buildSimNavItems(),
                     'airtime_options' => $this->buildSimAirtimeOptions(),
+                    'bundle_options' => $this->buildSimBundleOptions(),
+                    'categories' => [['id' => 'AIRTIME', 'title' => 'Airtime']],
+                    'amount_options' => $this->buildSimAmountOptions(),
                 ],
             ]);
         }
@@ -513,9 +516,141 @@ class SimulatorController extends Controller
             if ($opt['currency'] === 'USD') {
                 $navPayload['email'] = '';
             }
+            if ($screenId === 'NETONE_USD_SCREEN') {
+                $navPayload['categories'] = [['id' => 'AIRTIME', 'title' => 'Airtime']];
+                $navPayload['amount_options'] = $this->buildSimAmountOptions();
+            }
 
             $items[] = [
                 'id' => $screenId,
+                'start' => [
+                    'image' => $image,
+                    'alt-text' => $opt['alt'],
+                ],
+                'main-content' => [
+                    'title' => $opt['title'],
+                    'description' => $opt['desc'],
+                ],
+                'on-click-action' => [
+                    'name' => 'navigate',
+                    'next' => ['type' => 'screen', 'name' => $screenId],
+                    'payload' => $navPayload,
+                ],
+            ];
+        }
+
+        return $items;
+    }
+
+    private function buildSimAmountOptions(): array
+    {
+        $options = [];
+        for ($i = 1; $i <= 9; $i++) {
+            $val = $i / 10;
+            $options[] = ['id' => (string)$val, 'title' => '$' . $val];
+        }
+        foreach ([1, 2, 5, 10, 20] as $val) {
+            $options[] = ['id' => (string)$val, 'title' => '$' . $val];
+        }
+        return $options;
+    }
+
+    private function buildSimBundleOptions(): array
+    {
+        $iconDir = public_path('images/service-icons');
+
+        $options = [
+            'ECONET_USD_BUNDLE_SCREEN' => [
+                'title' => 'Econet USD Bundles',
+                'desc' => 'US Dollar',
+                'file' => 'econet_usd_bundle.png',
+                'alt' => 'Econet USD',
+                'network' => 'econet',
+                'currency' => 'USD',
+            ],
+            'ECONET_ZWG_BUNDLE_SCREEN' => [
+                'title' => 'Econet ZWG Bundles',
+                'desc' => 'Zimbabwe Gold',
+                'file' => 'econet_zwg_bundle.png',
+                'alt' => 'Econet ZWG',
+                'network' => 'econet',
+                'currency' => 'ZWG',
+            ],
+            'ECONET_SMARTSUITE_BUNDLE_SCREEN' => [
+                'title' => 'Econet SmartSuite Bundles',
+                'desc' => 'SmartSuite',
+                'file' => 'smartsuite.png',
+                'alt' => 'SmartSuite',
+                'network' => 'econet',
+                'currency' => 'ZWG',
+            ],
+            'NETONE_USD_BUNDLE_SCREEN' => [
+                'title' => 'NetOne USD Bundles',
+                'desc' => 'US Dollar',
+                'file' => 'netone_usd_bundle.png',
+                'alt' => 'NetOne USD',
+                'network' => 'netone',
+                'currency' => 'USD',
+            ],
+            'TELONE_USD_SCREEN_TELONE_USD' => [
+                'title' => 'TelOne USD Bundles',
+                'desc' => 'US Dollar',
+                'file' => 'telone.png',
+                'alt' => 'TelOne USD',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+                'skipNetwork' => true,
+            ],
+            'TELONE_USD_SCREEN_PURCHASE' => [
+                'title' => 'TelOne Purchase Bundle USD',
+                'desc' => 'Purchase Bundle',
+                'file' => 'telone.png',
+                'alt' => 'TelOne USD',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+                'skipNetwork' => true,
+            ],
+            'TELONE_SCREEN' => [
+                'title' => 'TelOne ZWG Bundles',
+                'desc' => 'Zimbabwe Gold',
+                'file' => 'telone.png',
+                'alt' => 'TelOne ZWG',
+                'screen' => 'TELONE_SCREEN',
+                'currency' => 'ZWG',
+                'skipNetwork' => true,
+            ],
+        ];
+
+        $items = [];
+        foreach ($options as $key => $opt) {
+            $iconPath = $iconDir . '/' . $opt['file'];
+            $image = '';
+            if (file_exists($iconPath)) {
+                $ext = pathinfo($iconPath, PATHINFO_EXTENSION);
+                $mime = $ext === 'svg' ? 'image/svg+xml' : 'image/' . $ext;
+                $image = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($iconPath));
+            }
+
+            $screenId = $opt['screen'] ?? $key;
+            $itemId = $key;
+
+            $navPayload = [
+                'ecocash_number' => '${data.ecocash_number}',
+            ];
+            if (empty($opt['skipNetwork'])) {
+                $navPayload['network'] = $opt['network'];
+            }
+            $navPayload['currency'] = $opt['currency'];
+            if ($opt['currency'] === 'USD') {
+                $navPayload['email'] = '';
+            }
+            if ($key === 'NETONE_USD_BUNDLE_SCREEN') {
+                $navPayload['categories'] = [['id' => 'AIRTIME', 'title' => 'Airtime']];
+                $navPayload['amount_options'] = $this->buildSimAmountOptions();
+            }
+
+            $items[] = [
+                'id' => $itemId,
                 'start' => [
                     'image' => $image,
                     'alt-text' => $opt['alt'],
@@ -779,10 +914,8 @@ class SimulatorController extends Controller
                     ],
                 ],
                 'BUNDLES_SCREEN' => [
-                    'networks' => [
-                        ['id' => 'econet', 'title' => 'Econet'],
-                        ['id' => 'netone', 'title' => 'NetOne'],
-                    ],
+                    'ecocash_number' => '',
+                    'bundle_options' => $this->buildSimBundleOptions(),
                 ],
                 default => [],
             };
