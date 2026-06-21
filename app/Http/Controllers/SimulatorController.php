@@ -307,6 +307,7 @@ class SimulatorController extends Controller
                 'initial_data' => [
                     'ecocash_number' => '',
                     'enabled_services' => $this->buildSimNavItems(),
+                    'airtime_options' => $this->buildSimAirtimeOptions(),
                 ],
             ]);
         }
@@ -381,16 +382,6 @@ class SimulatorController extends Controller
                 'alt' => 'Airtime',
                 'payload' => [
                     'trigger' => 'init_airtime',
-                    'ecocash_number' => '',
-                    'payment_methods' => [
-                        ['id' => 'ecocash', 'title' => 'EcoCash ZWG'],
-                        ['id' => 'ecocash-usd', 'title' => 'EcoCash USD'],
-                        ['id' => 'stripe', 'title' => 'International Card'],
-                    ],
-                    'networks' => [
-                        ['id' => 'econet', 'title' => 'Econet'],
-                        ['id' => 'netone', 'title' => 'NetOne'],
-                    ],
                 ],
             ],
             'BUNDLES' => [
@@ -464,9 +455,79 @@ class SimulatorController extends Controller
                     'description' => $svc['desc'],
                 ],
                 'on-click-action' => [
-                    'name' => 'navigate',
-                    'next' => ['type' => 'screen', 'name' => $svc['screen']],
+                    'name' => 'data_exchange',
                     'payload' => $svc['payload'],
+                ],
+            ];
+        }
+
+        return $items;
+    }
+
+    private function buildSimAirtimeOptions(): array
+    {
+        $iconDir = public_path('images/service-icons');
+
+        $options = [
+            'ECONET_USD_SCREEN' => [
+                'title' => 'Econet USD Airtime',
+                'desc' => 'US Dollar',
+                'file' => 'econet_usd.png',
+                'alt' => 'Econet USD',
+                'network' => 'econet',
+                'currency' => 'USD',
+            ],
+            'ECONET_ZWG_SCREEN' => [
+                'title' => 'Econet ZWG Airtime',
+                'desc' => 'Zimbabwe Gold',
+                'file' => 'econet_zwg.png',
+                'alt' => 'Econet ZWG',
+                'network' => 'econet',
+                'currency' => 'ZWG',
+            ],
+            'NETONE_USD_SCREEN' => [
+                'title' => 'NetOne USD Airtime',
+                'desc' => 'US Dollar',
+                'file' => 'netone_usd.png',
+                'alt' => 'NetOne USD',
+                'network' => 'netone',
+                'currency' => 'USD',
+            ],
+        ];
+
+        $items = [];
+        foreach ($options as $screenId => $opt) {
+            $iconPath = $iconDir . '/' . $opt['file'];
+            $image = '';
+            if (file_exists($iconPath)) {
+                $ext = pathinfo($iconPath, PATHINFO_EXTENSION);
+                $mime = $ext === 'svg' ? 'image/svg+xml' : 'image/' . $ext;
+                $image = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($iconPath));
+            }
+
+            $navPayload = [
+                'ecocash_number' => '${data.ecocash_number}',
+                'network' => $opt['network'],
+                'currency' => $opt['currency'],
+            ];
+            if ($opt['currency'] === 'USD') {
+                $navPayload['email'] = '';
+            }
+
+            $items[] = [
+                'id' => $screenId,
+                'start' => [
+                    'image' => $image,
+                    'alt-text' => $opt['alt'],
+                ],
+                'main-content' => [
+                    'title' => $opt['title'],
+                    'description' => $opt['desc'],
+                ],
+                'on-click-action' => [
+                    'name' => 'navigate',
+                    'next' => ['type' => 'screen', 'name' => $screenId],
+                    'payload' => $navPayload,
                 ],
             ];
         }
@@ -655,12 +716,18 @@ class SimulatorController extends Controller
             $service = app(\App\Services\MeterValidationService::class);
             $result = $service->validate($meterNumber);
 
+            $currency = $result['currency'] ?? 'ZWG';
             return response()->json([
                 'data' => [
                     'meter_valid' => $result['valid'] ?? false,
                     'customer_name' => $result['name'] ?? '',
                     'customer_address' => $result['address'] ?? '',
-                    'meter_currency' => $result['currency'] ?? 'ZWG',
+                    'meter_currency' => $currency,
+                    'ecocash_number' => $payload['ecocash_number'] ?? '',
+                    'payment_methods' => [
+                        ['id' => 'ecocash', 'title' => "EcoCash $currency"],
+                        ['id' => 'stripe', 'title' => 'International Card'],
+                    ],
                 ],
             ]);
         }
@@ -673,6 +740,55 @@ class SimulatorController extends Controller
                     'customer_address' => 'Harare',
                     'account_currency' => $payload['currency'] ?? 'ZWG',
                 ],
+            ]);
+        }
+
+        // Handle nav item data_exchange — map triggers to screen init data
+        $navScreenMap = [
+            'init_zesa' => 'ZESA_SCREEN',
+            'init_airtime' => 'AIRTIME_SCREEN',
+            'init_bundles' => 'BUNDLES_SCREEN',
+            'init_telone' => 'TELONE_HOME_SCREEN',
+            'init_billers' => 'BILLERS_SCREEN',
+            'init_support' => 'SUPPORT_SCREEN',
+        ];
+        if (!isset($navScreenMap[$trigger])) {
+            // Fallback: map item id directly to screen name (e.g. nav_click with id=AIRTIME_SCREEN)
+            $itemId = $payload['id'] ?? '';
+            if ($trigger === 'nav_click' && $itemId) {
+                $trigger = "init_{$itemId}";
+            }
+        }
+
+        if (isset($navScreenMap[$trigger])) {
+            $screen = $navScreenMap[$trigger];
+            $data = match ($screen) {
+                'AIRTIME_SCREEN' => [
+                    'ecocash_number' => '',
+                    'airtime_options' => $this->buildSimAirtimeOptions(),
+                ],
+                'ZESA_SCREEN' => [
+                    'meter_valid' => false,
+                    'customer_name' => '',
+                    'customer_address' => '',
+                    'meter_currency' => 'ZWG',
+                    'ecocash_number' => '',
+                    'payment_methods' => [
+                        ['id' => 'ecocash', 'title' => 'EcoCash ZWG'],
+                        ['id' => 'stripe', 'title' => 'International Card'],
+                    ],
+                ],
+                'BUNDLES_SCREEN' => [
+                    'networks' => [
+                        ['id' => 'econet', 'title' => 'Econet'],
+                        ['id' => 'netone', 'title' => 'NetOne'],
+                    ],
+                ],
+                default => [],
+            };
+            return response()->json([
+                'screen' => $screen,
+                'data' => $data,
             ]);
         }
 

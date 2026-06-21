@@ -943,9 +943,13 @@ function renderNavigationList(c, data) {
         }
 
         const payloadEnc = encodeURIComponent(JSON.stringify(nextPayload));
-        const clickAttr = nextScreen
-            ? `onclick="handleNavClick('${nextScreen}', '${esc(main.title || '')}', '${payloadEnc}')"`
-            : '';
+        const actionName = onClick.name || 'navigate';
+        let clickAttr = '';
+        if (actionName === 'navigate' && nextScreen) {
+            clickAttr = `onclick="handleNavClick('${nextScreen}', '${esc(main.title || '')}', '${payloadEnc}')"`;
+        } else if (actionName === 'data_exchange') {
+            clickAttr = `onclick="handleNavDataExchange('${esc(main.title || '')}', '${payloadEnc}')"`;
+        }
 
         html += `<div class="nav-list-item" ${clickAttr}>
             ${imgHTML}
@@ -970,6 +974,24 @@ function handleNavClick(screenName, label, payloadEnc) {
         }
     }
     setTimeout(() => navigateTo(screenName), 300);
+}
+
+async function handleNavDataExchange(label, payloadEnc) {
+    addBubble(label, 'out');
+    await delay(300);
+    const payload = JSON.parse(decodeURIComponent(payloadEnc));
+    const data = await api('data_exchange', payload);
+    if (data && data.data) {
+        for (const [k, v] of Object.entries(data.data)) {
+            flowFormState[k] = v;
+        }
+        if (data.screen) {
+            navigateTo(data.screen);
+        } else if (currentScreenName && flowScreensMap[currentScreenName]) {
+            const screen = flowScreensMap[currentScreenName];
+            renderFlowScreen(screen.title, screen.name, screen.layout.children, flowFormState);
+        }
+    }
 }
 
 async function handleEmbeddedLink(text, payloadStr) {

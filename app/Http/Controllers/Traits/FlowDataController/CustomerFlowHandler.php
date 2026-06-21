@@ -84,16 +84,6 @@ trait CustomerFlowHandler
                 'alt' => 'Airtime',
                 'payload' => [
                     'trigger' => 'init_airtime',
-                    'ecocash_number' => '',
-                    'payment_methods' => [
-                        ['id' => 'ecocash', 'title' => 'EcoCash ZWG'],
-                        ['id' => 'ecocash-usd', 'title' => 'EcoCash USD'],
-                        ['id' => 'stripe', 'title' => 'International Card'],
-                    ],
-                    'networks' => [
-                        ['id' => 'econet', 'title' => 'Econet'],
-                        ['id' => 'netone', 'title' => 'NetOne'],
-                    ],
                 ],
             ],
             'BUNDLES' => [
@@ -165,8 +155,7 @@ trait CustomerFlowHandler
                     'description' => $svc['desc'],
                 ],
                 'on-click-action' => [
-                    'name' => 'navigate',
-                    'next' => ['type' => 'screen', 'name' => $svc['screen']],
+                    'name' => 'data_exchange',
                     'payload' => $svc['payload'],
                 ],
             ];
@@ -203,6 +192,11 @@ trait CustomerFlowHandler
                 'customer_name' => '',
                 'customer_address' => '',
                 'meter_currency' => 'ZWG',
+                'ecocash_number' => $customer->ecocash_number ?? '',
+                'payment_methods' => [
+                    ['id' => 'ecocash', 'title' => 'EcoCash ' . ($data['meter_currency'] ?? 'ZWG')],
+                    ['id' => 'stripe', 'title' => 'International Card'],
+                ],
             ];
             Log::debug('Flow: ZESA_SCREEN init data', $responseData);
             return [
@@ -213,19 +207,26 @@ trait CustomerFlowHandler
 
         if ($screen === 'AIRTIME_SCREEN') {
             $responseData = [
-                'networks' => [
-                    ['id' => 'econet', 'title' => 'Econet'],
-                    ['id' => 'netone', 'title' => 'NetOne'],
-                ],
-                'payment_methods' => [
-                    ['id' => 'ecocash', 'title' => 'EcoCash ZWG'],
-                    ['id' => 'ecocash-usd', 'title' => 'EcoCash USD'],
-                    ['id' => 'stripe', 'title' => 'International Card'],
-                ],
+                'ecocash_number' => $customer->ecocash_number ?? '',
+                'airtime_options' => $this->buildAirtimeOptions(),
             ];
             Log::debug('Flow: AIRTIME_SCREEN init data', $responseData);
             return [
                 'screen' => 'AIRTIME_SCREEN',
+                'data' => $responseData,
+            ];
+        }
+
+        $airtimeSubScreens = ['ECONET_USD_SCREEN', 'ECONET_ZWG_SCREEN', 'NETONE_USD_SCREEN'];
+        if (in_array($screen, $airtimeSubScreens)) {
+            $responseData = [
+                'ecocash_number' => $customer->ecocash_number ?? '',
+                'network' => $data['network'] ?? '',
+                'currency' => $data['currency'] ?? 'ZWG',
+            ];
+            Log::debug("Flow: $screen init data", $responseData);
+            return [
+                'screen' => $screen,
                 'data' => $responseData,
             ];
         }
@@ -336,8 +337,9 @@ trait CustomerFlowHandler
             }
         }
 
-        if ($screen === 'AIRTIME_SCREEN') {
-            return $this->handleBuyAirtime($customer, $data, $flowToken);
+        $airtimeSubScreens = ['AIRTIME_SCREEN', 'ECONET_USD_SCREEN', 'ECONET_ZWG_SCREEN', 'NETONE_USD_SCREEN'];
+        if (in_array($screen, $airtimeSubScreens)) {
+            return $this->handleBuyAirtime($customer, $data, $flowToken, $screen);
         }
 
         if ($screen === 'BUNDLES_SCREEN') {
@@ -365,7 +367,7 @@ trait CustomerFlowHandler
         $meterNumber = $data['meter_number'] ?? '';
 
         if ($trigger === 'verify_meter_number') {
-            return $this->verifyMeterNumber($meterNumber);
+            return $this->verifyMeterNumber($meterNumber, $data['ecocash_number'] ?? '');
         }
 
         if ($trigger === 'buy_zesa') {
@@ -378,7 +380,7 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function verifyMeterNumber(string $meterNumber): array
+    protected function verifyMeterNumber(string $meterNumber, string $ecocashNumber = ''): array
     {
         $result = Cache::remember("validation/$meterNumber", 360, function () use ($meterNumber) {
             return $this->meterService()->validate($meterNumber);
@@ -393,6 +395,7 @@ trait CustomerFlowHandler
                 'customer_name' => $result['name'] ?? '',
                 'customer_address' => $result['address'] ?? '',
                 'meter_currency' => $currency,
+                'ecocash_number' => $ecocashNumber,
                 'payment_methods' => [
                     ['id' => 'ecocash', 'title' => "EcoCash $currency"],
                     ['id' => 'stripe', 'title' => 'International Card'],
@@ -453,13 +456,19 @@ trait CustomerFlowHandler
         ];
     }
 
-    protected function handleBuyAirtime(Customer $customer, array $data, string $flowToken): array
+    protected function handleBuyAirtime(Customer $customer, array $data, string $flowToken, string $currentScreen = 'AIRTIME_SCREEN'): array
     {
         $trigger = $data['trigger'] ?? null;
 
         if ($trigger !== 'buy_airtime') {
+            $fallbackScreen = match (true) {
+                str_contains($currentScreen, 'ECONET_USD') => 'ECONET_USD_SCREEN',
+                str_contains($currentScreen, 'ECONET_ZWG') => 'ECONET_ZWG_SCREEN',
+                str_contains($currentScreen, 'NETONE_USD') => 'NETONE_USD_SCREEN',
+                default => 'AIRTIME_SCREEN',
+            };
             return [
-                'screen' => 'AIRTIME_SCREEN',
+                'screen' => $fallbackScreen,
                 'data' => ['error_message' => 'Invalid action.'],
             ];
         }
@@ -470,19 +479,25 @@ trait CustomerFlowHandler
         $amount = (float)($data['amount'] ?? 0);
         $email = $data['email'] ?? '';
 
-        $currency = match ($paymentMethod) {
+        $currency = $data['currency'] ?? match ($paymentMethod) {
             'ecocash-usd', 'stripe' => 'USD',
             default => 'ZWG',
         };
 
         if (!$receiver || !$amount) {
+            $errorScreen = match (true) {
+                str_contains($currentScreen, 'ECONET_USD') => 'ECONET_USD_SCREEN',
+                str_contains($currentScreen, 'ECONET_ZWG') => 'ECONET_ZWG_SCREEN',
+                str_contains($currentScreen, 'NETONE_USD') => 'NETONE_USD_SCREEN',
+                default => 'AIRTIME_SCREEN',
+            };
             return [
-                'screen' => 'AIRTIME_SCREEN',
+                'screen' => $errorScreen,
                 'data' => ['error_message' => 'Please fill in all required fields.'],
             ];
         }
 
-        $network = $this->detectNetwork($receiver);
+        $network = $data['network'] ?? $this->detectNetwork($receiver);
 
         $params = [
             'type' => 'airtime',
@@ -758,6 +773,78 @@ trait CustomerFlowHandler
                 ],
             ],
         ];
+    }
+
+    private function buildAirtimeOptions(): array
+    {
+        $iconDir = public_path('images/service-icons');
+
+        $options = [
+            'ECONET_USD_SCREEN' => [
+                'screen' => 'ECONET_USD_SCREEN',
+                'title' => 'Econet USD Airtime',
+                'desc' => 'US Dollar',
+                'file' => 'econet_usd.png',
+                'alt' => 'Econet USD',
+                'network' => 'econet',
+                'currency' => 'USD',
+            ],
+            'ECONET_ZWG_SCREEN' => [
+                'screen' => 'ECONET_ZWG_SCREEN',
+                'title' => 'Econet ZWG Airtime',
+                'desc' => 'Zimbabwe Gold',
+                'file' => 'econet_zwg.png',
+                'alt' => 'Econet ZWG',
+                'network' => 'econet',
+                'currency' => 'ZWG',
+            ],
+            'NETONE_USD_SCREEN' => [
+                'screen' => 'NETONE_USD_SCREEN',
+                'title' => 'NetOne USD Airtime',
+                'desc' => 'US Dollar',
+                'file' => 'netone_usd.png',
+                'alt' => 'NetOne USD',
+                'network' => 'netone',
+                'currency' => 'USD',
+            ],
+        ];
+
+        $items = [];
+        foreach ($options as $key => $opt) {
+            $iconPath = $iconDir . '/' . $opt['file'];
+            $image = '';
+            if (file_exists($iconPath)) {
+                $image = base64_encode(file_get_contents($iconPath));
+            }
+
+            $payload = [
+                'ecocash_number' => '${data.ecocash_number}',
+                'network' => $opt['network'],
+                'currency' => $opt['currency'],
+            ];
+            if ($opt['currency'] === 'USD') {
+                $payload['email'] = '';
+            }
+
+            $items[] = [
+                'id' => $opt['screen'],
+                'start' => [
+                    'image' => $image,
+                    'alt-text' => $opt['alt'],
+                ],
+                'main-content' => [
+                    'title' => $opt['title'],
+                    'description' => $opt['desc'],
+                ],
+                'on-click-action' => [
+                    'name' => 'navigate',
+                    'next' => ['type' => 'screen', 'name' => $opt['screen']],
+                    'payload' => $payload,
+                ],
+            ];
+        }
+
+        return $items;
     }
 
     protected function detectNetwork(string $phoneNumber): string
