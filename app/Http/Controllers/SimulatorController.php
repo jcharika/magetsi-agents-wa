@@ -309,8 +309,10 @@ class SimulatorController extends Controller
                     'enabled_services' => $this->buildSimNavItems(),
                     'airtime_options' => $this->buildSimAirtimeOptions(),
                     'bundle_options' => $this->buildSimBundleOptions(),
+                    'telone_options' => $this->buildSimTeloneOptions(),
                     'categories' => [['id' => 'AIRTIME', 'title' => 'Airtime']],
                     'amount_options' => $this->buildSimAmountOptions(),
+                    'payment_methods' => $this->buildSimPaymentMethods('ZWG'),
                 ],
             ]);
         }
@@ -512,6 +514,7 @@ class SimulatorController extends Controller
                 'ecocash_number' => '${data.ecocash_number}',
                 'network' => $opt['network'],
                 'currency' => $opt['currency'],
+                'payment_methods' => $this->buildSimPaymentMethods($opt['currency']),
             ];
             if ($opt['currency'] === 'USD') {
                 $navPayload['email'] = '';
@@ -636,11 +639,12 @@ class SimulatorController extends Controller
 
             $navPayload = [
                 'ecocash_number' => '${data.ecocash_number}',
+                'currency' => $opt['currency'],
+                'payment_methods' => $this->buildSimPaymentMethods($opt['currency']),
             ];
             if (empty($opt['skipNetwork'])) {
                 $navPayload['network'] = $opt['network'];
             }
-            $navPayload['currency'] = $opt['currency'];
             if ($opt['currency'] === 'USD') {
                 $navPayload['email'] = '';
             }
@@ -668,6 +672,92 @@ class SimulatorController extends Controller
         }
 
         return $items;
+    }
+
+    private function buildSimTeloneOptions(): array
+    {
+        $iconDir = public_path('images/service-icons');
+
+        $options = [
+            'TELONE_RECHARGE_USD' => [
+                'title' => 'TelOne Recharge USD',
+                'desc' => 'US Dollar',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+            ],
+            'TELONE_RECHARGE_ZWG' => [
+                'title' => 'TelOne Recharge ZWG',
+                'desc' => 'Zimbabwe Gold',
+                'screen' => 'TELONE_SCREEN',
+                'currency' => 'ZWG',
+            ],
+            'TELONE_PURCHASE_BUNDLE_USD' => [
+                'title' => 'TelOne Purchase Bundle USD',
+                'desc' => 'Purchase Bundle',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+            ],
+            'TELONE_PURCHASE_BUNDLE_ZWG' => [
+                'title' => 'TelOne Purchase Bundle ZWG',
+                'desc' => 'Purchase Bundle',
+                'screen' => 'TELONE_SCREEN',
+                'currency' => 'ZWG',
+            ],
+            'TELONE_BILL_PAYMENT' => [
+                'title' => 'TelOne Bill Payment',
+                'desc' => 'Pay your bill',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+            ],
+        ];
+
+        $items = [];
+        foreach ($options as $itemId => $opt) {
+            $iconPath = $iconDir . '/telone.png';
+            $image = '';
+            if (file_exists($iconPath)) {
+                $ext = pathinfo($iconPath, PATHINFO_EXTENSION);
+                $mime = $ext === 'svg' ? 'image/svg+xml' : 'image/' . $ext;
+                $image = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($iconPath));
+            }
+
+            $payload = [
+                'currency' => $opt['currency'],
+                'ecocash_number' => '${data.ecocash_number}',
+                'payment_methods' => $this->buildSimPaymentMethods($opt['currency']),
+            ];
+
+            $items[] = [
+                'id' => $itemId,
+                'start' => [
+                    'image' => $image,
+                    'alt-text' => $opt['title'],
+                ],
+                'main-content' => [
+                    'title' => $opt['title'],
+                    'description' => $opt['desc'],
+                ],
+                'on-click-action' => [
+                    'name' => 'navigate',
+                    'next' => ['type' => 'screen', 'name' => $opt['screen']],
+                    'payload' => $payload,
+                ],
+            ];
+        }
+
+        return $items;
+    }
+
+    private function buildSimPaymentMethods(string $currency): array
+    {
+        $methods = [
+            ['id' => 'ecocash-usd', 'title' => 'EcoCash USD'],
+        ];
+        if ($currency !== 'USD') {
+            $methods[] = ['id' => 'ecocash', 'title' => 'EcoCash ZWG'];
+        }
+        $methods[] = ['id' => 'stripe', 'title' => 'International Card'];
+        return $methods;
     }
 
     /**
@@ -908,14 +998,14 @@ class SimulatorController extends Controller
                     'customer_address' => '',
                     'meter_currency' => 'ZWG',
                     'ecocash_number' => '',
-                    'payment_methods' => [
-                        ['id' => 'ecocash', 'title' => 'EcoCash ZWG'],
-                        ['id' => 'stripe', 'title' => 'International Card'],
-                    ],
+                    'payment_methods' => $this->buildSimPaymentMethods('ZWG'),
                 ],
                 'BUNDLES_SCREEN' => [
                     'ecocash_number' => '',
                     'bundle_options' => $this->buildSimBundleOptions(),
+                ],
+                'TELONE_HOME_SCREEN' => [
+                    'telone_options' => $this->buildSimTeloneOptions(),
                 ],
                 default => [],
             };

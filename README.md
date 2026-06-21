@@ -52,3 +52,6 @@ WhatsApp Client → POST /api/webhook → ConversationHandler → BackendManager
 - **Frontend:** Tailwind CSS 4, Vite 8
 - **Database:** SQLite (default)
 - **Deployment:** Deployer 7
+
+All payment methods
+Gap analysis for the chatbot

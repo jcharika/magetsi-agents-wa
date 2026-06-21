@@ -193,10 +193,7 @@ trait CustomerFlowHandler
                 'customer_address' => '',
                 'meter_currency' => 'ZWG',
                 'ecocash_number' => $customer->ecocash_number ?? '',
-                'payment_methods' => [
-                    ['id' => 'ecocash', 'title' => 'EcoCash ' . ($data['meter_currency'] ?? 'ZWG')],
-                    ['id' => 'stripe', 'title' => 'International Card'],
-                ],
+                'payment_methods' => $this->buildPaymentMethods($data['meter_currency'] ?? 'ZWG'),
             ];
             Log::debug('Flow: ZESA_SCREEN init data', $responseData);
             return [
@@ -219,10 +216,12 @@ trait CustomerFlowHandler
 
         $airtimeSubScreens = ['ECONET_USD_SCREEN', 'ECONET_ZWG_SCREEN', 'NETONE_USD_SCREEN'];
         if (in_array($screen, $airtimeSubScreens)) {
+            $currency = $data['currency'] ?? (str_contains($screen, 'USD') ? 'USD' : 'ZWG');
             $responseData = [
                 'ecocash_number' => $customer->ecocash_number ?? '',
                 'network' => $data['network'] ?? '',
-                'currency' => $data['currency'] ?? 'ZWG',
+                'currency' => $currency,
+                'payment_methods' => $this->buildPaymentMethods($currency),
             ];
             if (str_contains($screen, 'USD')) {
                 $responseData['email'] = $data['email'] ?? '';
@@ -252,10 +251,12 @@ trait CustomerFlowHandler
 
         $bundleSubScreens = ['ECONET_USD_BUNDLE_SCREEN', 'ECONET_ZWG_BUNDLE_SCREEN', 'ECONET_SMARTSUITE_BUNDLE_SCREEN', 'NETONE_USD_BUNDLE_SCREEN'];
         if (in_array($screen, $bundleSubScreens)) {
+            $currency = $data['currency'] ?? (str_contains($screen, 'USD') ? 'USD' : 'ZWG');
             $responseData = [
                 'ecocash_number' => $customer->ecocash_number ?? '',
                 'network' => $data['network'] ?? '',
-                'currency' => $data['currency'] ?? 'ZWG',
+                'currency' => $currency,
+                'payment_methods' => $this->buildPaymentMethods($currency),
             ];
             if (str_contains($screen, 'USD')) {
                 $responseData['email'] = $data['email'] ?? '';
@@ -272,16 +273,20 @@ trait CustomerFlowHandler
         }
 
         if ($screen === 'TELONE_HOME_SCREEN') {
-            Log::debug('Flow: TELONE_HOME_SCREEN init data');
+            $responseData = [
+                'telone_options' => $this->buildTeloneOptions(),
+            ];
+            Log::debug('Flow: TELONE_HOME_SCREEN init data', $responseData);
             return [
                 'screen' => 'TELONE_HOME_SCREEN',
-                'data' => [],
+                'data' => $responseData,
             ];
         }
 
         if ($screen === 'TELONE_SCREEN') {
             $responseData = [
                 'currency' => 'ZWG',
+                'payment_methods' => $this->buildPaymentMethods('ZWG'),
             ];
             Log::debug('Flow: TELONE_SCREEN init data', $responseData);
             return [
@@ -293,6 +298,7 @@ trait CustomerFlowHandler
         if ($screen === 'TELONE_USD_SCREEN') {
             $responseData = [
                 'currency' => 'USD',
+                'payment_methods' => $this->buildPaymentMethods('USD'),
             ];
             Log::debug('Flow: TELONE_USD_SCREEN init data', $responseData);
             return [
@@ -422,10 +428,7 @@ trait CustomerFlowHandler
                 'customer_address' => $result['address'] ?? '',
                 'meter_currency' => $currency,
                 'ecocash_number' => $ecocashNumber,
-                'payment_methods' => [
-                    ['id' => 'ecocash', 'title' => "EcoCash $currency"],
-                    ['id' => 'stripe', 'title' => 'International Card'],
-                ],
+                'payment_methods' => $this->buildPaymentMethods($currency),
                 'error_message' => ($result['valid'] ?? false) ? '' : 'Invalid meter number.',
             ],
         ];
@@ -869,6 +872,7 @@ trait CustomerFlowHandler
                 'ecocash_number' => '${data.ecocash_number}',
                 'network' => $opt['network'],
                 'currency' => $opt['currency'],
+                'payment_methods' => $this->buildPaymentMethods($opt['currency']),
             ];
             if ($opt['currency'] === 'USD') {
                 $payload['email'] = '';
@@ -991,11 +995,12 @@ trait CustomerFlowHandler
 
             $payload = [
                 'ecocash_number' => '${data.ecocash_number}',
+                'currency' => $opt['currency'],
+                'payment_methods' => $this->buildPaymentMethods($opt['currency']),
             ];
             if (empty($opt['skipNetwork'])) {
                 $payload['network'] = $opt['network'];
             }
-            $payload['currency'] = $opt['currency'];
             if ($opt['currency'] === 'USD') {
                 $payload['email'] = '';
             }
@@ -1023,6 +1028,90 @@ trait CustomerFlowHandler
         }
 
         return $items;
+    }
+
+    private function buildTeloneOptions(): array
+    {
+        $iconDir = public_path('images/service-icons');
+
+        $options = [
+            'TELONE_RECHARGE_USD' => [
+                'title' => 'TelOne Recharge USD',
+                'desc' => 'US Dollar',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+            ],
+            'TELONE_RECHARGE_ZWG' => [
+                'title' => 'TelOne Recharge ZWG',
+                'desc' => 'Zimbabwe Gold',
+                'screen' => 'TELONE_SCREEN',
+                'currency' => 'ZWG',
+            ],
+            'TELONE_PURCHASE_BUNDLE_USD' => [
+                'title' => 'TelOne Purchase Bundle USD',
+                'desc' => 'Purchase Bundle',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+            ],
+            'TELONE_PURCHASE_BUNDLE_ZWG' => [
+                'title' => 'TelOne Purchase Bundle ZWG',
+                'desc' => 'Purchase Bundle',
+                'screen' => 'TELONE_SCREEN',
+                'currency' => 'ZWG',
+            ],
+            'TELONE_BILL_PAYMENT' => [
+                'title' => 'TelOne Bill Payment',
+                'desc' => 'Pay your bill',
+                'screen' => 'TELONE_USD_SCREEN',
+                'currency' => 'USD',
+            ],
+        ];
+
+        $items = [];
+        foreach ($options as $itemId => $opt) {
+            $iconPath = $iconDir . '/telone.png';
+            $image = '';
+            if (file_exists($iconPath)) {
+                $image = base64_encode(file_get_contents($iconPath));
+            }
+
+            $payload = [
+                'currency' => $opt['currency'],
+                'ecocash_number' => '${data.ecocash_number}',
+                'payment_methods' => $this->buildPaymentMethods($opt['currency']),
+            ];
+
+            $items[] = [
+                'id' => $itemId,
+                'start' => [
+                    'image' => $image,
+                    'alt-text' => $opt['title'],
+                ],
+                'main-content' => [
+                    'title' => $opt['title'],
+                    'description' => $opt['desc'],
+                ],
+                'on-click-action' => [
+                    'name' => 'navigate',
+                    'next' => ['type' => 'screen', 'name' => $opt['screen']],
+                    'payload' => $payload,
+                ],
+            ];
+        }
+
+        return $items;
+    }
+
+    private function buildPaymentMethods(string $currency): array
+    {
+        $methods = [
+            ['id' => 'ecocash-usd', 'title' => 'EcoCash USD'],
+        ];
+        if ($currency !== 'USD') {
+            $methods[] = ['id' => 'ecocash', 'title' => 'EcoCash ZWG'];
+        }
+        $methods[] = ['id' => 'stripe', 'title' => 'International Card'];
+        return $methods;
     }
 
     protected function detectNetwork(string $phoneNumber): string

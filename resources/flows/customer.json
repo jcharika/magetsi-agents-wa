@@ -410,6 +410,16 @@
                 "email": {
                     "type": "string",
                     "__example__": "user@example.com"
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    }
                 }
             },
             "layout": {
@@ -427,7 +437,9 @@
                         "type": "Form",
                         "name": "econet_usd_form",
                         "init-values": {
-                            "email": "${data.email}"
+                            "payment": "ecocash-usd",
+                            "email": "${data.email}",
+                            "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
                             {
@@ -447,12 +459,39 @@
                                 "helper-text": "Enter amount in USD"
                             },
                             {
-                                "type": "TextInput",
-                                "name": "email",
-                                "label": "Email",
-                                "input-type": "email",
+                                "type": "RadioButtonsGroup",
+                                "name": "payment",
+                                "label": "Pay with",
                                 "required": true,
-                                "helper-text": "Enter your email for payment receipt"
+                                "data-source": "${data.payment_methods}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} != 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} == 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "email",
+                                        "label": "Email",
+                                        "input-type": "email",
+                                        "required": true,
+                                        "helper-text": "Enter your email for payment receipt"
+                                    }
+                                ]
                             },
                             {
                                 "type": "OptIn",
@@ -472,8 +511,9 @@
                                 "handler": "AIRTIME",
                                 "receiver": "${form.receiver}",
                                 "amount": "${form.amount}",
-                                "payment": "stripe",
+                                "payment": "${form.payment}",
                                 "email": "${form.email}",
+                                "phone": "${form.ecocash_number}",
                                 "network": "econet",
                                 "currency": "USD"
                             }
@@ -499,6 +539,20 @@
                 "currency": {
                     "type": "string",
                     "__example__": "ZWG"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": ""
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    }
                 }
             },
             "layout": {
@@ -516,6 +570,7 @@
                         "type": "Form",
                         "name": "econet_zwg_form",
                         "init-values": {
+                            "payment": "ecocash",
                             "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
@@ -536,12 +591,39 @@
                                 "helper-text": "Enter amount in ZWG"
                             },
                             {
-                                "type": "TextInput",
-                                "name": "ecocash_number",
-                                "label": "EcoCash Number",
-                                "input-type": "phone",
+                                "type": "RadioButtonsGroup",
+                                "name": "payment",
+                                "label": "Pay with",
                                 "required": true,
-                                "helper-text": "Payment will be deducted from this number"
+                                "data-source": "${data.payment_methods}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} != 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} == 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "email",
+                                        "label": "Email",
+                                        "input-type": "email",
+                                        "required": true,
+                                        "helper-text": "Enter your email for payment receipt"
+                                    }
+                                ]
                             },
                             {
                                 "type": "OptIn",
@@ -561,7 +643,8 @@
                                 "handler": "AIRTIME",
                                 "receiver": "${form.receiver}",
                                 "amount": "${form.amount}",
-                                "payment": "ecocash",
+                                "payment": "${form.payment}",
+                                "email": "${form.email}",
                                 "phone": "${form.ecocash_number}",
                                 "network": "econet",
                                 "currency": "ZWG"
@@ -623,6 +706,16 @@
                         {"id": "10", "title": "$10"},
                         {"id": "20", "title": "$20"}
                     ]
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    }
                 }
             },
             "layout": {
@@ -640,7 +733,9 @@
                         "type": "Form",
                         "name": "netone_usd_form",
                         "init-values": {
-                            "email": "${data.email}"
+                            "payment": "ecocash-usd",
+                            "email": "${data.email}",
+                            "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
                             {
@@ -652,26 +747,53 @@
                                 "helper-text": "Enter the NetOne phone number to top up"
                             },
                             {
-                                "type": "RadioButtonsGroup",
+                                "type": "Dropdown",
                                 "name": "category",
                                 "label": "Category",
                                 "required": true,
                                 "data-source": "${data.categories}"
                             },
                             {
-                                "type": "RadioButtonsGroup",
+                                "type": "Dropdown",
                                 "name": "amount",
                                 "label": "Amount (USD)",
                                 "required": true,
                                 "data-source": "${data.amount_options}"
                             },
                             {
-                                "type": "TextInput",
-                                "name": "email",
-                                "label": "Email",
-                                "input-type": "email",
+                                "type": "RadioButtonsGroup",
+                                "name": "payment",
+                                "label": "Pay with",
                                 "required": true,
-                                "helper-text": "Enter your email for payment receipt"
+                                "data-source": "${data.payment_methods}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} != 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} == 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "email",
+                                        "label": "Email",
+                                        "input-type": "email",
+                                        "required": true,
+                                        "helper-text": "Enter your email for payment receipt"
+                                    }
+                                ]
                             },
                             {
                                 "type": "OptIn",
@@ -690,10 +812,11 @@
                                 "trigger": "buy_airtime",
                                 "handler": "AIRTIME",
                                 "receiver": "${form.receiver}",
-                                "amount": "${form.amount}",
                                 "category": "${form.category}",
-                                "payment": "stripe",
+                                "amount": "${form.amount}",
+                                "payment": "${form.payment}",
                                 "email": "${form.email}",
+                                "phone": "${form.ecocash_number}",
                                 "network": "netone",
                                 "currency": "USD"
                             }
@@ -723,6 +846,16 @@
                 "email": {
                     "type": "string",
                     "__example__": "user@example.com"
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    }
                 }
             },
             "layout": {
@@ -740,7 +873,9 @@
                         "type": "Form",
                         "name": "econet_usd_bundle_form",
                         "init-values": {
-                            "email": "${data.email}"
+                            "payment": "ecocash-usd",
+                            "email": "${data.email}",
+                            "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
                             {
@@ -760,12 +895,39 @@
                                 "helper-text": "e.g. 1GB, 5GB, 10GB"
                             },
                             {
-                                "type": "TextInput",
-                                "name": "email",
-                                "label": "Email",
-                                "input-type": "email",
+                                "type": "RadioButtonsGroup",
+                                "name": "payment",
+                                "label": "Pay with",
                                 "required": true,
-                                "helper-text": "Enter your email for payment receipt"
+                                "data-source": "${data.payment_methods}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} != 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} == 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "email",
+                                        "label": "Email",
+                                        "input-type": "email",
+                                        "required": true,
+                                        "helper-text": "Enter your email for payment receipt"
+                                    }
+                                ]
                             },
                             {
                                 "type": "OptIn",
@@ -785,8 +947,9 @@
                                 "handler": "BUNDLES",
                                 "receiver": "${form.receiver}",
                                 "bundle_size": "${form.bundle_size}",
-                                "payment": "stripe",
+                                "payment": "${form.payment}",
                                 "email": "${form.email}",
+                                "phone": "${form.ecocash_number}",
                                 "network": "econet",
                                 "currency": "USD"
                             }
@@ -812,6 +975,20 @@
                 "currency": {
                     "type": "string",
                     "__example__": "ZWG"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": ""
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    }
                 }
             },
             "layout": {
@@ -829,6 +1006,7 @@
                         "type": "Form",
                         "name": "econet_zwg_bundle_form",
                         "init-values": {
+                            "payment": "ecocash",
                             "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
@@ -849,12 +1027,39 @@
                                 "helper-text": "e.g. 1GB, 5GB, 10GB"
                             },
                             {
-                                "type": "TextInput",
-                                "name": "ecocash_number",
-                                "label": "EcoCash Number",
-                                "input-type": "phone",
+                                "type": "RadioButtonsGroup",
+                                "name": "payment",
+                                "label": "Pay with",
                                 "required": true,
-                                "helper-text": "Payment will be deducted from this number"
+                                "data-source": "${data.payment_methods}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} != 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} == 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "email",
+                                        "label": "Email",
+                                        "input-type": "email",
+                                        "required": true,
+                                        "helper-text": "Enter your email for payment receipt"
+                                    }
+                                ]
                             },
                             {
                                 "type": "OptIn",
@@ -874,7 +1079,8 @@
                                 "handler": "BUNDLES",
                                 "receiver": "${form.receiver}",
                                 "bundle_size": "${form.bundle_size}",
-                                "payment": "ecocash",
+                                "payment": "${form.payment}",
+                                "email": "${form.email}",
                                 "phone": "${form.ecocash_number}",
                                 "network": "econet",
                                 "currency": "ZWG"
@@ -901,6 +1107,20 @@
                 "currency": {
                     "type": "string",
                     "__example__": "ZWG"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": ""
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    }
                 }
             },
             "layout": {
@@ -918,6 +1138,7 @@
                         "type": "Form",
                         "name": "smartsuite_bundle_form",
                         "init-values": {
+                            "payment": "ecocash",
                             "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
@@ -938,12 +1159,39 @@
                                 "helper-text": "e.g. 1GB, 5GB, 10GB"
                             },
                             {
-                                "type": "TextInput",
-                                "name": "ecocash_number",
-                                "label": "EcoCash Number",
-                                "input-type": "phone",
+                                "type": "RadioButtonsGroup",
+                                "name": "payment",
+                                "label": "Pay with",
                                 "required": true,
-                                "helper-text": "Payment will be deducted from this number"
+                                "data-source": "${data.payment_methods}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} != 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} == 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "email",
+                                        "label": "Email",
+                                        "input-type": "email",
+                                        "required": true,
+                                        "helper-text": "Enter your email for payment receipt"
+                                    }
+                                ]
                             },
                             {
                                 "type": "OptIn",
@@ -963,7 +1211,8 @@
                                 "handler": "BUNDLES",
                                 "receiver": "${form.receiver}",
                                 "bundle_size": "${form.bundle_size}",
-                                "payment": "ecocash",
+                                "payment": "${form.payment}",
+                                "email": "${form.email}",
                                 "phone": "${form.ecocash_number}",
                                 "network": "econet",
                                 "currency": "ZWG"
@@ -1025,6 +1274,16 @@
                         {"id": "10", "title": "$10"},
                         {"id": "20", "title": "$20"}
                     ]
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    }
                 }
             },
             "layout": {
@@ -1042,7 +1301,9 @@
                         "type": "Form",
                         "name": "netone_usd_bundle_form",
                         "init-values": {
-                            "email": "${data.email}"
+                            "payment": "ecocash-usd",
+                            "email": "${data.email}",
+                            "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
                             {
@@ -1054,26 +1315,53 @@
                                 "helper-text": "Enter the NetOne phone number for the bundle"
                             },
                             {
-                                "type": "RadioButtonsGroup",
+                                "type": "Dropdown",
                                 "name": "category",
                                 "label": "Category",
                                 "required": true,
                                 "data-source": "${data.categories}"
                             },
                             {
-                                "type": "RadioButtonsGroup",
+                                "type": "Dropdown",
                                 "name": "bundle_size",
                                 "label": "Bundle Size",
                                 "required": true,
                                 "data-source": "${data.amount_options}"
                             },
                             {
-                                "type": "TextInput",
-                                "name": "email",
-                                "label": "Email",
-                                "input-type": "email",
+                                "type": "RadioButtonsGroup",
+                                "name": "payment",
+                                "label": "Pay with",
                                 "required": true,
-                                "helper-text": "Enter your email for payment receipt"
+                                "data-source": "${data.payment_methods}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} != 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} == 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "email",
+                                        "label": "Email",
+                                        "input-type": "email",
+                                        "required": true,
+                                        "helper-text": "Enter your email for payment receipt"
+                                    }
+                                ]
                             },
                             {
                                 "type": "OptIn",
@@ -1094,8 +1382,9 @@
                                 "receiver": "${form.receiver}",
                                 "bundle_size": "${form.bundle_size}",
                                 "category": "${form.category}",
-                                "payment": "stripe",
+                                "payment": "${form.payment}",
                                 "email": "${form.email}",
+                                "phone": "${form.ecocash_number}",
                                 "network": "netone",
                                 "currency": "USD"
                             }
@@ -1234,6 +1523,64 @@
             "id": "TELONE_HOME_SCREEN",
             "terminal": false,
             "title": "TelOne WiFi",
+            "data": {
+                "telone_options": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "start": {
+                                "type": "object",
+                                "properties": {
+                                    "image": {"type": "string"},
+                                    "alt-text": {"type": "string"}
+                                }
+                            },
+                            "main-content": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {"type": "string"},
+                                    "description": {"type": "string"}
+                                }
+                            },
+                            "on-click-action": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "next": {
+                                        "type": "object",
+                                        "properties": {
+                                            "type": {"type": "string"},
+                                            "name": {"type": "string"}
+                                        }
+                                    },
+                                    "payload": {
+                                        "type": "object",
+                                        "properties": {
+                                            "currency": {"type": "string"}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "__example__": [
+                        {
+                            "id": "TELONE_RECHARGE_USD",
+                            "start": {"image": "", "alt-text": "TelOne USD"},
+                            "main-content": {"title": "TelOne Recharge USD", "description": "US Dollar"},
+                            "on-click-action": {
+                                "name": "navigate",
+                                "next": {"type": "screen", "name": "TELONE_USD_SCREEN"},
+                                "payload": {"currency": "USD"}
+                            }
+                        }
+                    ]
+                }
+            },
             "layout": {
                 "type": "SingleColumnLayout",
                 "children": [
@@ -1241,50 +1588,7 @@
                         "type": "NavigationList",
                         "name": "telone_nav",
                         "description": "Ditch the Queues, Top Up Your TelOne Wi-Fi Online with Magetsi!",
-                        "list-items": [
-                            {
-                                "id": "TELONE_SCREEN",
-                                "start": {
-                                    "image": "/9j/4AAQSkZJRgABAQACWAJYAAD/2wCEAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDIBCQkJDAsMGA0NGDIhHCEyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMv/CABEIA9QD1AMBIgACEQEDEQH/xAA1AAEAAgIDAQAAAAAAAAAAAAAABwgBBgIEBQMBAQACAwEBAAAAAAAAAAAAAAAFBgEDBAIH/9oADAMBAAIQAxAAAACOhBVoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADXtg0Xuycxtzr9iNiQx5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0R63kztl+ux6vnXp3pr2wRcNkatIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFqKt3A+U7ZaCp5gk49zpMedz7Gk7HHxfpjj4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALiCdsuI4kgUW8m8dWzQM4HtbBo3c5eLbnX7EbEhjyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABcQTtlAfL6ivME37jgqQ9byT67Hq+denemvbBFw2Rq0gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXEE7ZQAAPCq5cD5FBU8wSce50mMbn2NJ2OOivTHJwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXEE7ZQAAAMRxJAot5N46tmgZwPZ2HRu5y8O3Nr9+v6Y1SU15jVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQjVJQnoW6TAAAAAfL6ivME37jgqQ9byTuTrX7lwbbjIGnH59L9gRm4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADdx9jroAAAAAAHh1buB8igqeYJOOy6y8ZtRsFQp2o8pI4q/aGMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbuPslcAAAAAAAARvJAot5N46tmgcuIk+caf7NXOy0TwPfokqGn0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABu4+yVwAAAAAAAAB8vqK8wTfyNypD1vJO3O1fuXDtuMgacfnkv2BG7wwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3cfZK4AAAAAAAAAAB4dW7gfIoKnqCDhs2svGbU+/UKdqPKSOKv2hjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG7j7JXAAAAAAAAAAAAEbSSKLeTeOrZoHLiJPnGoGyVzstG8D36JKhp9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbuPslcAAAAAAAAGDyPWhyQNMjso3RwAD5fUV6gi/kblSHreSdudq/cuHbcZA04/PJfsCM3gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbuPslcAAAAAAAAceWt42QBv8Se/D/RbP548pn5sAAAB4dWrg/IoKnqCDjsustebUbBUKdaRKSQKv3BgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABu4+yVwAAAAAAADEQS9WPlnteYzE/QLPbDEEuzfy/kNvCAAAAjaSRRfyLx1aNB5cRJ83VD71f77aq59mBttg1e2NthFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7FhFexYRXsWEV7Fvxf/nwAAAAAAAweDV+Y4bir4HJYtks3UG0cjTfcHfUwAAAAHy+or1BF/I2KkvX8g+2zanz1SG+41zY4q/BpkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALgCwfIQAAAAAAHHl4mPcAazy4wX1UPO7MywztO+MstnjymfmgAAAAAAHh1auD8igqeoIOHf6DGzd+xo+yxt39McVjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAuALB8hAAAAAAHnnoRR0dH45LXcdXtx30LA8dTlxyWn9iKpVnPlobOMAAAAAABG0kii3k3jq0aDz4D3di0Dv8dj3B1+xG3YPO0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC4AsHyEAAAADjpOn92J6OepSR9q71/JoPmR26SYNmPset0F46nctV2wPHTttkaiWokqX6o7qqAAAAAAAA+X1FeoHv7GxUl63kn32XU+eqQ33Gu7DFX3I0yIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFwBYPkIAAADGRXrYZC+cL0xr2OtscF1ePrUqIfo6PeI7dB3kbbqV7nsDbP5nCDty3xVjnHlM/NgAAAAAAAAAPDq1cH5FBU9QOce/wBBjZu/Y0fZY27emzjisgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFwBYPkIAAAAAHzgWfYEhemRR82mQZi/R5Ejm7y2R2WV9Pnli13oxrJU58sDZygAAAAAAAAAI2kkUW8m8dWjQefAe7sOg9/kse4Ph94y7h52AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXAQml/nU2ITE2ITE2ITE2ITE2ITE2ITEuQB2/Ni9svj5ztA0mKJTiS693cZx3W0DdrEVHk3vqk2oTdELNiExNiExNiExNiExNiExNiExNiExNiExNiN5H3xuR60APl9RXqB7+xsVJet5J9tm1PnqkN9xruwxV+yNMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABnZtZ2LTATMeFR4H2o46ckS3PrHV39zbK3dmaIVtU3kb7KDIAAAAAAA9LPjz5S3PeZGm9fsHdVgAAAPDq1cH5FBU9QOce/0GNm8ffRtmjbt6bOOKyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG8aR758Dx0AAAAAZ93w+av7/ANrZ/UqdcCI6AwdTtveIK8exkWW3p0vHW7UtbcDzuAAAAAPtMG3g02dvS+krQg3RoAAAAACN5IFFvJvHVo0HljB7PY15pk9ga+x72Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br42Br4v9Fcq42cVR/hZiBou+eAOaZAAAA4SlE03x1W2QU2Nxrfu6LJaJCEbvDAM406ILIeTPeoNx9vhZ7VkeZAAAZHt7RN/ZW/B2skqSHrWAAAAAAAA+X1FeoIv5GxUl63kgAAAAAAAAAAAAAAAAAAAAAAAAAAAAF/wOn3DMExvb2POC1wG7vSj7gGPQAHXmeHZSjqtvQpsYi/7+1YOXb0dSDF7voOPaGAZfKHJoSHiuH3kOMrhYeyzj3Omdn9afCmza/ek6PjJ118AAAAAAAAAAADw6tXB+RQbE9QQcAAAAAAAAAAAAAAAAAAAAAAAAAAAAX/AAAMZHiQNZT5aJSoiXInir78xr7QM75Hsr8VX3fGfnS4uOpJjaSZTR5ukyQ5/cZ/eRdEkNOy+tHfX1+pMRp7Oj1uT5fWN3Na2VtxXP7TxGNz7domTzfYs1dyNnGAAAAAAAAAAAAABiN5JFFvJvHVs0BnAAAAAAAAAAAAAAAAAAAAAAAAAABf8AAAGNM3THnbVXyrA1/iPouMsat3Yn/p9Op0/wBqL/nvezn7feITqHDDlDXpbVYePYPvoXw5Nvd62z+5nEcfOS3nMcbd6mo5xufGFdh6fHXsPX2wd1jeQ7tQAAAAAAAAAAAAAAD5fUV6gi7NSDWgAAAAAAAAAAAAAAAAAAAAAAAAAX/AAAAxn5EIxn6PlQv075TpqElVqq+Fq/SlTRyDzobo9Hrx15svz+30/n3JLTvXdjhFb5HRw8JHzG4khG4kfTNH96a87zJeOVzh8ZMgAAAAAAAAAAAAAAB8D7RdoMIno+aAAAAAAAAAAAAAAAAAAAAAAAAAAF/wAAANN3KEdMlFvDn2oe6T7pe0aFUKnufra/qzOO7uHf8AWPnH8ixlhnrynp3R53DPi+1CdPlR/wBqSpjnjDZ9pjT1iS/l9Y2jd8e+t5PO9223X11Hbpr5wHrUAAAAAAAAAAAAAAYi42+rOt+aZwAAAAAAAAAAAAAAAAAAAAAAAAAAAF/wAAAfKrM/Vtj7hjqdvPDZuexeTpuz5rsu+eP1+H3NSN81ftkeLO27tXrat8fW7Ncj/SOEN07HrHPqSWj1fvrvpe8SPAW6xfukvQYSl4lSa6r2llaD9B118AAAAAAAAAAAAB1/EqybzCLAAAAAAAAAAAAAAAAAAAAAAAAAAAAABf8AAAAOBDMUe14sJ9PZw1d/dnmtdkIOlI3k+GuWO7Pf3rrbvPiajueynlx/7O8Gl/X2/kaJIfo6QeFtG3eBlq8fyDos3M/UbLfmytapY64CZ2MytAAAAAAAAAAAAHwPtF2gwiej5rJhzM8HMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMcHMX8DAADWNnhrVIRLghPpwHylqLNq5KzLulbrwqENEfZ8X3bhH97yvj7PP79DXfM2U6X3+XWy+vsdbX/Lu+jy8rOPG8z5fWVs2B4s72/Ez6128561ss58pD1rAAAAAAAAAMRcbfVnW/NByMd/v7Bx2X4/fCNumWGPeWBlgZYGWBlgZYGWBlgZYGWBlgZYGWBlgZYGWBlgZYGWBlgZYGWBlgZYGWBlgZYGWBcAT/yMADjWCfayR9uwI+4AOx8M7Iew7qdv53Wo0kuNZLlNGGcRPQAAABCXidrq/QbBgZnAJemGsFnZb5/zHVAgAAAAAAAPh4dWTeYRwGXfxt6uz9z7xl3YOOxAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXAFg+QgDiRBEGx65C/TBnTJY5+jO++K0yU/T5StChzMxPfJDXOYhDqYmEOpiEOpiEOpiEOpiEbRtZL5apOouJeiWLvvzGrtzZ6sExdddl4StDAAAAAAHwPtF2gwiej5rJjl9Nn1SPR2DOIq/Bp7wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALgCwfIQHge/EWrth3GfrC/UPlu+5yl31Lz/TO+ohnyAAAAAAABjT9xx521X8i2EGRt30LZdbcs5bzn4fuTvyoM+AAAADEXm3VZ1vzQcjHf7+wcdl+P3wjLqGNgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFwBYPkIHGtE/RJyWHVJ69vue+bGTohwAAAAAAAAAAHDmIvhi2+ucdi0mWYJnTZych0RAAADr+JVo3iEcBl6GNvU2jt/aMu+cHHYgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALgCwfIQOt9+QAAAAAAAAAAAAAAYyOt9uYAAHXPvF2gwiej5rJjl9No1SPQ2DOIq/Bp7wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALgCwfIQAAAAAAAAAAAAAAAAAADEXG31a1rzQcjHod7YOOy/H7EZdQxsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAuALB8hAAAAAAAAAAAAAAAAAAdfxasm8QlxDL0MbeptHb+8Zd2DjsQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFwBYPkIAAAAAAAAAAAAAAAA6594u0GEj0PNZMcu5MHF0xhsMjIK7RykZq745SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMI5SMJ5Fv8AmIAAAAAAAAAAAAAABiLjcKs615oORjatsmyt9vle0USUDV6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3cfZK4AAAAAAAAAAAAAA6/i1YN5hLiGW1a/XhT1s3tUWTCtdoYyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABu4+yVwAAAAAAAAAAAAdc+8XaDCR6Hmg5dyeo/dp02fV89lgjd4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG7j7JXAAAAAAAAAAABFpuFWNb80HIxtW2TZW+3yvaKJKBq9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbuPslcAAAAAAAAAAdfxasm8QlxBna9frwJ72b2qLJhWu0MZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3cfZK4AAAAAAAAOudiLdBhI7/nA5dyeo/dp01/Z89lgjd4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG7j7JXAAAAAAADEXG4VZ1nzgcjG17XNda7fL9oosoGr0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABu4+yVwAAAAAB1/FqybxCXEGdr1+vBnrZfbosmFa7QxkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADdx9krgAAAA6594u0GEjv8AnA5c9m1adqmuvarebEq7I/bYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhYlXYWJV2FiVdhcMX72AAAYi43CrGt+aDkY73d97k4fj9yOiQxgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC4gnbKAA6/i1ZN4hLiDPex56uy9r7x0UHJwgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXEE7ZR1z7xdoMJHoeaDl9Nk1aej72UZDBq0gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXEYi6dsu31a1rzQZHe7vvcnD8fuR0SGMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbrCPFO2Uz3seersva+8dFZwcnCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABomfpssxP9H3soyGDVpAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+P2M5DGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPQwZ2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/8QANBAAAAYCAQMCBQQCAQUBAQAAAAECAwQFBhEHExQXEGASFiExQBUgMFAYQSMIIiVhgDJR/9oACAEBAAEIAP8A7sr7pTJk1IQtDiCW3752Yg2D0Je0Q5rM1v4m/fTLy2HCW3X3DcnTT/vfIMbtsYtHK629NmQr7pTPwtSELQ42S2/euUYlT5fVnAtuQeK7fCH1SC9NmIVg9CXtMOazNb+Jv3q/HZksOMP8j8FLYN22xJxpbS1Ic9GXlsuEtuvuG5Omn/epkR/fkTiOrzRDk2LkGN2uMWrldbehKMvtXXKmSS1IQtDrZON+9coxKny6rVAtuQeK7jB31SCMtemzIQbB6GvaYc1ma38TfvV+OzJYcZf5H4KUwbttiLjS2lqQv0ZecZcStuvuG5Om39e9TIj+/InEdVmqHJsXIcbtcYtXK629CUZfauuVMklqShaHGycb965RiVPl1UqBbcg8V3GDvKkAyMvuCPQg2D0Ne0w5rM1HxNe9X47Mplxl/kjgpTBu22IuNracUhfoy84ytK26+4bk6bf96mWy0fInEdVmjbkyLkON2uL2rldbehKMhXXKmSJuShaHGyW371ynEqfL6pUC35B4ruMHeVJGtfcbECwehuf9mL43SZZD6sDxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjI8WMjxYyPFjP8z8dmUytl/kjgpbBvW2IuNracUhY2K6ymVc1qXBwjlOHdk3AuPeplstDkTiOqzNtyZFyHG7XF7VddbehKMhgvKsmoJuuvIU6LYw25cP3rlOJU+X1aoFvyDxZcYQ8qSf29N6GJ5ra4pL6kPF8wqssh9WD71fjtSmVsv8AJPBa2TdtsRdbU04ptfpXWMurmtzIOEcpRLvp19x71MtlocicR1WZtrmRchxu1xe0XXW3oStDBuVpVR06+7hTYtjEblw/euUYlT5fVqgW/IHFlxhL6pHrsYnmtricv44eL5hV5XD6sH3rIjtSmFsP8k8FrY6ttiLramXFIX6V1jLq5rcyFhHKUS86cC497ch8R1WZNrmxchxu1xa0XXW/oStDBuVpVR0667hTYtjEblw/euUYlUZhVKr7fkDiy4wl9Uj1IYnmtricv44eL5fV5XC6sH3rIjtSmFsP8k8FrZ6ttiLjS2lmhwEK+xl1c1uZCwjlOJedOBce9uQ+I6rMm3J0XIcatcWtHK+39CVoxg3K0moNuuu4U2LYxGpcP3bv+DKMSp8vqlV9vyDxZb4Q+p8H9D9CPQxPNbTE5fxw8XzCqyyF1YPuzJL2PjtaU6ShRKLZfvkR2pLDjD3JHBS2CdtsRcaW0tSHAX0FfYy6ya3MhYPynEvenAuPdRnoc1XBOSa+nRgNv+tYbXyVfwa39+Q+I6rM0OTouQ43bYvaOV9v6ErQwfleTUG1XXcKbFsYbUuH7oWehmFud3llhOLha4MnrGoWX8WUYlT5fVKr7fkHiy3wd5T4MtHr0I9HsYnmtpicv44mL5hVZZC6sH3Pndv+iYhYy0mMKtv0TLa6aaD2X0/ifjsyWHGXuSOClsk7bYi40tpakOAvoK+yl1k1qXCwflOJe9OBce5TMiHNVxtVdTtmC/8A4MJt/wBbxGvmq/jMtjkTiKqzNDk2LkONWuL2jlfbehK0MH5Xk0/SrruJaQZ0VqTF7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4ZHcMjuGR3DI7hkdwyO4Z/DX9hm9t+s5hYy0ghwtcbbsKdSf5coxKny+qVX2/IPFdvg7ynwZaPRgj0YgWb0Ff/ZDnMzm/iaGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbG/w8zt/wBExSxnEr7+uB2/6LmVfJUn/f8ANIjsyWHGX+SOClsk9b4i40tpakLBfcMyHGHErarrpuVpp/R+4DMiHNVwRMV9Q36kZl9sQtiu8Wr5/wDOZbLR8icRVWaJcmxMhxu1xe1crrYF9wStCuvDZ+FqShaHUE437eUM+t/1jM7B9PqQ4WuPjh2FQovwMoxKny6pVX2/IHFdvg763wZGX3H+xBs3oLm0Q5zM1v4mte3cstio8asLALMzVs/2ceW/6PmkB5Sf9/gyI7Mphxl/kfgpbJPW2JLbW2tSFj/YZkLYcJxquum5Wmn9e29jmq36cCBUNn9f2oUpB7Ti1qV3jcCx/CMtlocicR1eZpcmxMhxu1xe1crrb0JWvtXXhs6akoWh1CXG/bFxd11BXOT7SXzbOtpC2MOyWJyNklmdnOelyK6SUa2+ikkpPqQ4XuOpVz6lf4eT4lT5dVKr7bkDiu3wd9T4MjL7+kGzegr2iHOZmt/E1r2opRJI93PLmFUj62JDn/UHhxHpuFDsOV7xWRZFHjMxI6I8ZuRHeWptq0qYF1BXDscoxp/BbVCQf10ZevG9t+kZrCUpP3P8SRHZlMLYkcj8FKa6ttiS21tuKbX6MvrjuE43W3LcrTT+j9p8nXtnkuWtYBR02B43Sx0NsIiRmy+Fsi0REXIs6fMt6XE4F9xjBoKJ63ocPuXL/FK+zeyGjjZFRyquTBJ+OuRXSz+xera1NrJaMctE3VDCsU/i8icR1WZoXNiZDjdri9ouutvQj+E9iuu1M6akoWh1BLb9oK//ACYi3Fdj/MeaOXbnJuHNb25y5iCPtScl0OQXLNXAznEpOQNw59XNjck5RDOmn01XHpKeLWxRyJCKt5HKQg/v6kOGbgn6OXVL/GybEqfLqtVfb5/xXb4O+p8a16wLJ6Cv/shzmJrfxNe0LfBcYv7Dv7VnjzDmNdPkzjlrHl/OWK45YQLqkiWsH9nMjfwWuOySP7/s4wtv0vNIyFp/9/jSI7MphbEjkfgtTXVtsRcbW04ptz0YfXHcJxuuum5Wm3zL6+0ZDLcmM4w9xJ8USLf1B/s5qb/8XSyAr7/sYeXHeQ81R2SLimh2Df5HInEdVmSFzYmQ43a4taLr7f0T9PqK67WzpqShaHWycb9nmOOi6eWZwz+3mZr48KZdCT+JtCv2EOG7fusckVq/ycnxKoy6rVAt+QOK7fCJCpAMtH6wLJ6CounEnMTWvja9nXVi3UVEywd4ifcfvsocd/Zywz1ePJ5iMfxRGVft4st/03M2WVp/KkR2pbC2H+R+C1M9W1xFxtTTim1+jDy2HEuN1103K03IP7/3/m2wHm2wHm2wHm2wHm2wHm2wHm2wHm2wHm2wHm2wHm2wHm2wHm2wHm2wGTcnT8lpXa1fDx6yPIk/t5QvKuLic2qfqpDbsJtoj/ZFkORJLUhoubbEvv5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsB5tsBiub5JlcgugRa/g5F4jqsyQudEyHG7XF7Ryvt/RP00YrrtbOmpCVodbJbfssvsOI1fDmF+j1ddbYaW67b5/YXs9dLg+LceQ6aR+p2eacbR7pxdnTlIfizl11qf4qEGtRJThvFLsvpz8gixWYUZEeP8Aw5PiVRl9WqBb8g8WW+ESVPgy0evWvsnoKtoiTmZzXxt+yi+w4nP4c7uU+mTZdU4rE6tg1VZNyU6iTc1NPX0cFMOu9Mpw+syyF0ptvWWuITkwrglEpKVJ/CpqSwvp6YddhvHNfjZIlyP5JEdmXHcYf5H4LUz1rXEXG1tOKbc9GHlsLStuuum5Wm3z+h+ySHF60t8iWXxXnIb86cdJhmM8csw5n6vkP7bKsh28FyFOyjB7LD3Fza6NJalsk4z/AK/nL7jDuPLDJlokvUdDXY9CTDrv5+ReI6rM0OTouQ43a4xaOV9t6JES+ejtdNz5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUPmVQ+ZVD5lUMx44sMbUqXFP+UhiuKSsyvp/Ro8frMcglDrP3mklEZHmHGKkPOW+LxZpPrUy6f8hCPHdlPoZYwzihDJNz8hbbS2hKE6/ByfE6jL6tUC35B4rt8HkKkAy0ejG/7tSEqIyVmfFLMzqT6CVFfhSXI8n+N9zoxnHBxJXlDwRl8/QzJKTNWF5WeW18qYX7f9DMuP4GUIOUzIKdSWB1d4f/AK/hItmMdxa0yab0IGI4NWYqyS2dF+JIjtSo7jD/ACPwUtnrWuIuNracU25/eaI/vlWFVmVRtScmxOzxeZ0Zv8Vn9KyQY4/IiwGk16TyUqulJTw0pJ4J8JfvyDHKzJa44dlf45a4TIJExDqHm0uN/vL7jDOMJl305trW1kOphNw4WtfjaIci8R1WaIcnRMhxu1xi0cr7b+9n18WyhuRJeacWSqnqTqUy1/DYJ+KukEON3erx7TH+zDHPlLPrnFpP8EmMxMjOR5OW8czcecctMdiTGZrXxNH+2BWzLSY3Eg4XxdEpjanW5JIvyfuMoxOoy+rVX2/IXFlvg8hT4MtHo/7vRDRGM04yh3vUnVtnVzKic5DsP3vp+OM6kcRSevx/GR6f6GV2Nnk+Yow2nzLC/mOrjKj4/wAkFHf/AEbMGH2ZLRPR/wCDM+M2rN1drQNSnW5S4M8y9C+4xPCLPK5BHHxrFKzF4nQgaIvzJEdmUw4w/wAj8FLYJ21xJxpbLim3P7zRDI8XrMmgdtPy7A7PFXlOKMtHr9xFv6DhRajxqybH+iB/YYl9eXsx0Ligqr+OTFo/xM3DeN/HOtyhjx/8kblyAy8Ue+q8oo7pJfp/2+h/ty3CqzLYpFIs4Vpith+nXiE9UyJGGcUOy+nPyGLGZix22GNfnGRH9+ReIqrNEOTomQ43a4xaOV9t/evx2pDK2ncz4nNs3bDHXGltLUhZ/slPFGiOPK4pql1uDsOOiQ+1FjOyH+KWnZ71/kz3qf1+/LNi3DwtyMGuIsekU0JuR8lZrQfXHvnrL6H6ZHV8o4rZmSVR5LEtonY3rbVEG7r3INjHr5/EuQpt0Y5klTlFU3Y1Ba+/9Dk+JU+XVaq+25C4rt8HfVIIyMvv/eGkj++Y8fV2UJW+i9x+xx2wVEsjLR+n0ItqxnHX84ukthttDTSG2zPQzG/fy+xThuN09XGpKiLWxPVSkoSalLySoyvlFmTYRrGDLSSo63W20GteT8kQa1JwKPGONIJVDzuTyOI40V45GPH5Qx4R+XIsZwo+Q1WV0N0Rdgf0+hrQlxCkLyCGvi6+h5VjzS0uMocT/QyI7MphxiRyPwUtnq22JONrZcU25/eGkjHLMuLGw15t4/uCFTTy8yuk1MGpqYVJWM18DI8pq8Xg91YknM+RU/ErHMYrMWr+0rvV11thpbr19kU/P568axZnjrF01bEF6Rw7irqtsp4YoTV/yUOIUeNJ/wDGemtiRGYltG1JteLcVtDNaciYtuOekmsjZlndZCZk3qYGScs3ECM8hJJQlJf0WXZpTYbWd7a5zliszyR62V/ebHMtv3WQRatvX+g+UmZKj1VfiWMxcVo2oDGXZVExOmVMfxTDJVrPLKcu9Zk6LXxlSJllyvDXJODjacRyzNHEu5bVVFfRwEQq7ZDZDZDZDZDZDZDZDMc0dq5DVHR8f8Vs0T5XmQkki+3wlvf9EZkQ5G5krcRS7W1l3e2WQWbtjaf3r7iGmluOX1ou5vp1iuQ+iLHW8vinF1MRF5JYLWlptS146wfIWbSclm+lxfVdDG7i0d5CvsleXFwydxRkt6tMq4ruMsrqWO3r/kjOS+g+SM5HyRnI+SM5HyRnR/b5IzrQ+SM5HyRnI+SM5GXtZZh8Nh2RwgbTGXTHLJJ/Qv6OZNjQIjsqVyPzk/Y9apxVSlLPav77ku4OqwuaSD+piNA/XMpp6ZTaEttpQjlO4cq8LeYYxWlRj+NQK1DjiGm1uOT83u8psXanCKji2AiT3+RMstR2UssZNk1zbZIrE8UTxETiOrLZtsh47uIsLISMjIjIZHfxcao5FnLhY1k+esptL+Rxzd0CDm4rg+XFlNa6UgSpLUOK7Jfn2r2V5HJvJGP2iqbIINillaHEpWj+gM9Fs8uzWmwysOZa57yZc5zLNLxmZ/f++3r780W3XuIVWgYq8iLybRuuLuK5u1RVrz0isuRMPqVfOtSeYHjIzqfMyXI42D1NPTwqKsZr4AL7kOI0pdTkUt0cpMsO8e2Rv4g689h1M4+OXP8AlXjMV4iJJfCk/t9aYkx+dbtqKOX7tcaniUUdlpLDCGkEY42tzt8LgqX+eZ6HI3MdbiKXa2su72yyGzdsLX2A6tKEKUrJLVV1kdhYH/sWDb3TalRiTfXCJfIzdtlFdJ5FxrIyOssCx0uQ1cTsqsv1zJ5PrbsWHHeXS8hgM8p4g7FJ87Gxmcr2TFXVsMtx2G2Ghm+MFleOOwUUPJbVa2moy+45YoorPSp+PsanVpTry6GXTzueRrB4K+4L7jhe46FrOqXCPf50yZHgQ3ZUrkfnJ+y61ViqlGtRqV7B5GtzqMLnuIP7+hDCM0g4iza1dldlVO3Cl1FjyLjEjDn8eYwfkeoxnF2a2QfNFCRbPzPRDzPRA+Z6BW0m7nXHzz5vOtcx45GZQ0z5noi+/meiBc0UKt6n8pYhaNk3YQOScJqXPjgeZ6EgfNFERGZVLi5DcmWv0xi1OlyavsA2ZKIlJ/L3r75dmtNhlacy1z3ky5zmYaXzPZ79h8025O2MCpR6b0MPmFV8k1riybQJENiXFdjPcaT2qSNfUFnKVZcrWTsWDjGSzMZtU4plua5kmkWinp1Y9lOApRk7cDLaKwxtV6lcK65XfdlJw/LZMWw+VsrzLMHmZicaxlNTf8WuNWyXMsoW8Z+YAdJkfJfUvl4XmSrCUrH7/kPOzJuZRY/Uo+CqYL1I9GOPLc7nDa95X5RnohyNzHW4ml2trLu9sshs3bC19hrX8JGYyu3O7yixn/stVLjtx5zUKUidBjzGhyNj0fyJVvSVOVOK0iCXkmN12XUxxZWE4Gxi6Vy5ca0r50uVCjz+I66VkiJTEmdVY9CYTIy7EIWW1hNOYZhcXFISlKiWVZdolNRW+I65GSnKVLtK2pVEjys0weNlUdDzWUY3BwriidFixU/BDZT6l9/rwrb9OZYVCyMz/JmTI8CG7Klcj85P2PWqsUUo1qNRgi2CQavsbSx0ljpLHSWOksdJY6Sx0ljpLHSWOksdJY6Sx0ljpLHSWOksdJY6Sx0ljpLHSWOksdJY6Sx0ljpLHSWOksdJY6Sx0ljpLHSWOksdJY6Sx0ljpLHSWOksdJY6Sx0ljpLHSWOksdJY6Sx0ljpLHSWOksdJY6Sx0ljpLHSX/Bn9v+jYbYSEn9D1+yU114brQ4rs/wBRwOGhQ5SpztMKkPNU1ZbcputWV/V21hxnbt0d7lmaSZ85OM4jK46tMUiRbvG4HJ9HIxdy2k1uMWPJD677Jqq9teOrFuiyXJsrm5VZni2ITcCs8MJi6xFvlijPGF2bkPA7LOGpN7lGK5dNo7IsVy/kzOW8hcRTVmtFr9mI2x0uVV040GRkWvx8tzWmwysOZbZ7yZc5zMNL5ns9+hFshXVj81ZGmLEZhN/A1sbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxv8Ag5qt/jk19Oj9hfYcPze1ubumUHmW5DS2XcPj5k1Jt6HH7bFuRbuucgWNBgWdYyh5NV+mcqCXxbls62OzkFV8pkREVnjHI1zAcg2NHhWf45EXGq/0zlMO8bZi/eFcOfpnKYvMGz3JY7bNpkNFcY4/TUtkf7CGB2/61h9dJV+KZ6Icj8xVuJpdray8vbLIrN2wtfQk7FbRqWknZSSS2gkI9gqVohmVx+t5ZYzS/ZsY1O/SeRKeUYP7CqM6nnK2jfycmP8Ac8kxmQf7C+44Ut9O2FOvf4kyZHr4jkqVyPzi/Y9arxRSjWo1GNBiM5JcJtqup2oaSW6Z79h5zb/omIWMsj+/7SLYsqK0dxx2+j1c1NpUw57ejGcf+K5LxK5HwqL76MaMaMaMaMaMaMaMaMaMZS8cvk68cB/f9uF2/wCi5bXS1J/Dy3NabDaw5ltnvJlznMw0yD+p+mvoK6semqI0xYjMNv4Gt+xOarcy/TqhB/f9iG1OLShGF8UrfNudkVlj8C1x6TRvJ/6fK1CSSj/H6vDn/TzVu/D1P8fq8f4/V4/x+rx/j9Xj/H6vH+P1eP8AH6vH+P1eP8fq8f4/V4/x+rxS8L49UV06M9l+BWWLOqdMy1+xP3GFXH63iddMP8Az0OR+Yq3E0u11XeXtjkVm7YWvoSNito1LSl2UkkoSSEexDVoZzb/reYWMtPpoUlBZZBOKJW4dx3XY02iS6SdEC/AeYQ+0pp3NOJzLqT8cdZWy4ptzXrwpb7RYU7m/55k2PXxXJUvkfnF+w61ViqlGpRqMaDEZyQ4TbVdTtQySt0z37GzK2KkxWwnA/v8AUEWxhvHFhkikSpVNRQKKCiHXkWi/DMtkMwwCuyhpT4v8dsscnHFsdemCXH6NmNfJUn7/AM2W5pTYbWHMtc85Muc5lmmR6aFfWPTVbTFhsQm/gZ37H5qt/gYr6hBiNEfmSG48bC+KWYnTn5AlskpJJfiqL4i0Lamg3UBcKwzPjadjxuS4BloJ2SiMsRtyu8Xrp38hnocjcxVuJk5XVd5e2ORWbtjaehIMxXUanEpdlJSlCCQj2OatDP7f9azKwfTjWKWmUTelBxTCazFYxduRa/IMKbJRGR5nxSxYE5PopcKTXynI0vhW36kKdUL/AIpk2NXxXJMvkfnJ+w6tTipqUpRqMaDMZ2Q4TbVfTtQyS47v2TldsVJjNhPGG8XS7o0T7uBWxayI3EhF9vyzLZDKcNrMpifDLpae049z6Auek/oW/wCDLc0psNrDm2uecm3GdSzTI9NCvrHpqvpFhsQmvgZ9lS4TE1KEyCTr84y2QlQmJsZceSlJlrf7jPQ5H5ircS6tdV3d7Y5DZu2Np6EgzFdRm4SXZSUpQgkI95TJsaBFdky+R+cn7HrVOKmpSjMzGgzGdkOk21X07UPTju/eX2GW5pTYZVnNtc85Muc6lGmRvfpoxX1js5X0iQ2ITXwNe8jMiHI3MdbiXVrqu7vbLIbN2xtPQkmZkK6jNwkuy0pShBIR7ymTY0CK7Jlcj85P2JPVOKmtSjM1DQYjOyHUttV9O1E046Z795Gehlua02GVZzbXPeTLjOpRpfMzP7jR7FfWOzlfSJDYhN/Az7y2Q5G5jrcS61dWXd7ZZDaO2Fp6Ek9kK2jNz4XpSUpbQSUaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaMaP+kmTY0CI7Jlckc5P2JPVOKqWpRmahozFXUz7ie3Cr6fhntWG3ZnjBOx4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6B4vQPF6P6Iz198uzWmwurOba57yZc51KMnzPZ7MEX1GH4LZ5bII2MbxarxaD21d7y2Q5G5jrcSJ6trLu9sshs3bC19EpM1ERYPxK9P6VlkEaKxCjNx43vKZNjwIjsqVyRzk/Yk9VYopalmZqGjMVVTOubBuFAwjjCFjhNzrH3nlua02F1ZzbbPeS7nOZRk+Z7PfoRDD8Fs8tkEbGN4tV4tA7av8AeWyHI3MVdiZO1tbd3tlkVm7YWvolJqVosH4lenm1ZZBGisQozcaN7ymTY8CI7Klckc5P2PWqsUUs1ntQ0KqpnXNg3BgYRxjCxwm51j7zy3NabC6w5trnnJdznEo0v/c/Qhh+C2eWySOPjeLVeLQO2r/eWxyNzFXYol2trLu9ssis3bG19Ep+I9DB+JXp5tWOQxorEKM3Gje8pk2PXxXJUvkjnF+w61Tii1ms9n6VVVNuZ7cGvwjjGFjhNzrH3nlua02GVZzLXPOS7nN5Xwv+hDEMFtMsk7j43i1Xi0Dtq73kf0IcjcxV2KJdr6u7vbLIrNyxtfRCTUeiwfiV6ebdjkMWKxCjNxo3vKZMjwIrsmXyRzk/YdWpxVazWo1H6VVVNuZyIVfhHGMLHCbnWXvPLs1psMqzmWuecl3OcSjRI9CGIYLaZZJ2xjeK1eLQO2rveRnotjkbmKtxIna+ru72yyK0dsbX0Qk1HosH4lfn9OxyGLFYhRW40b3lMmRoEV2TL5I5yfsDdqcVUs1KMz9KqqnXM5uFX4RxjBxwm51l7zy7NKbDas5lrnvJlznMo0SPQhiGCWmWSf8AgxrFavFYBRq73kZ/CWxyNzHW4kTtfV3d7ZZFaO2Vp6JT8X2wjipU8m7HIYzcOFGbjRus2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os2Os3/ACTJkaDFdky+R+c37E3qnFVLNSjM/RhhyQ4SG6+obiETjnxGPiMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbMbP+I/oMuzSmw2rOZa57yZc5zKNMgz2ezBEIFa7MV9IsRmG38DPvIzIvvyNzHXYiTtdWXd7ZZDaO2Vp6Ekz+1dSmvTslKUoSSEe8pk2NBiuypXI/Ob9l1qnFVLUozM/RiO5IcShuvqG4hE45v3lvQy/NKbDKvvLXPeTLnOZRpfM9nswRCDWuzVfSLEZht/Az7yMyL78jcx1uJE7XVl1e2eQ2jtjaehJM9arqU3CJ2SlKUIJCPeUybGgxHZUrkfnJ+y61Tiq1qWZmr0YjuSHCbbgVDcQicc37y2MuzWmwys720z3ky5zmUaX/v6aEGtcmq+kWIzDb+Br3kZkX35G5jrcSJ2trbq+s8htHbG19CSZiupTcInZKUpQgkI958j85P2RvVOKrWpZmavRiO5IcJtuvqG4hE45v3voQaxyar6RYjMNr4Gve+hXUprInZKUpQkko97sx3JDhNt19S3E045v3zFitQ2/ga/+6+xbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx2LY7Fsdi2OxbHYtjsWx/8QASRAAAQIDAwgFCQYFBAEEAwAAAQIDAAQRBSExEkFRYZGSk9ETImBxoRAgMkJSYnKB4QYUMECxwSMzUMLSFYKi8DQkQ4CyVGPi/9oACAEBAAk/AP8A52VW2PWxI5woKScCO3Rg5STig4GDRWdBxHbtRSoYEGKIdzHMrl24lFy8wi8VvStPtJVgoax5TFVt5lZ0woKQcCO20ql1F5Q4m5xpXtJVmPgc8AzlkqVRE4hPo1wDg9U68D4eYqqDig4GDRWdBxHbZpDrTiSlaFpCkqBxBBxENFbd6nbOrVSdbWke6b9FcISUrSSClQoQRmI8qilQwIiiHcxzK5dtwiRtkC6YSOo9qcAx+IXjXEmuXmE3it6Vp9pJwUNY8pglbeZWdPOFBSDgR22lEuovLbgucaPtIVmPgc8AzlkqV1JxCfR0BweqdeB8PMVVBxQcDBoRik4jts0h1pxJStC05SVA4gg4iGlLavU7ZtaqTraOce6b9FcISUqSSkpUKEEYgjyrKVDAiKIdzHMrl23CJG2QKiYSnqPHQ4Bj8QvGvCJNcvMIvFb0rT7STgoax5lVt5lZ084UFIOBHbaVDyLy24LnGle0lWY+BzwDOWSpVG5xtPo6A4PVOvA+HmGqD6SDgYNFD0knEdtmkOtOJKVoWkKSoHEEHEQ0pbV6nbOrVSdbRzj3cdFcIQpKkmikqFCDoPlUUqGBEEIdzHMrl23CZG2KVEwlPVe1OAY/EL++JNcu+i8VvSse0k4Eax5hym8ArOmFBSTgR22lQ8jFtxNy2le0hWY+BzwFTlkqVRubQn0dAcHqnXgfDzCCgnrJOBi3HEvoFXpZbIy2/wDleNYi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBzi13OAOcWu5wBz/ABm0OtOJKVoWkKSoHEEHEQ0pxq9TtnYqTraOce6b9FcISpKkmikqFCDoPlmFsTDZqhxBoRBblLRNEoc9Fp4/2q1YaNHbfJkbZpUTCU9V7U4Bj8WI14RKLl5hN4relY9pJwUNY8xS5mQFEoexcZH9ydWI8Ifbfl3BVDjaqg9tpUOoxbcFy2le0lWY+BzwFTlkqNG5ttPo6A4PVOvA+HmOBcss1dlXCchevUdYh3JfQKuyyz12+Y1jts2hxpxJStC0hSVA4gg4iG1Lb9J2zq1UnW1pHum/RohKkqSSFJUKEEYgjyvrYmGzVDiDQiC3KWiaJQ5g28f7VasNGjtvkSNs0umEp6j2pwDH4heNcSi5eYTeK3pWPaScFDWPKIK5mzxRKHsXGR/cnViM2iH235dwVQ42ag9tpUOt4tuJucaV7SFZj4HPAVOWSo/w5xtPo6A4PVOvA+HmOZcsojpZZw9RfI6xDuS+gfxZZZGW3zGsdtm0OtOJKVtrSFJUDiCDiIbK271O2bipOktHOPdx0VwhJStJIUlQoQRiCPK+4xMNGqHEKoR/3RBblLRNEocrRp4/2q1YaNHbfIkbapdMJT1HtTgGPxC/viVXLzCbxW9Kx7STgRrHmFyakBRKHvScZH9ydWIzaIfbfl3BVDjZqCO20ql1u8tuC5bSvaSrMfA54BnLJUqjc4hPo6A4PVOvA+HmOdJLLNXpZw9RevUdYhzJfQKuyzhotvmNY7bNocacSUrQtIUlQOIIOIhsrbvW7Z1aqTpLRzj3TforhCSlaTRSSKEHQfLMOMTDRqhxs0IgtylonqpcrRp4/wBqtWGjR23yJG2aVEwlPUe1OAY/ELxriUXLvpvFb0rHtJOBGseYXJqQFyHvScZH9ydWI8Ifbfl3RVDjZqCO20ql1u8tuC5bSvaSrMfA54BnLJUqiJxCfR0BweqdeB8PMc6SXWauyrh6i9eo6xDuS+kVdlnLlt8xrHa30C621StPSUBX5Cp+UXjT+A0hxpxJStC0gpUDiCDjDRW3ep2zq1UnW0c49036NEJKVpJCkkUIIzHyzDjEw2aocbNCIKJS0TRKXMG3j/arVho7WKuQkzDo1nqp8MqFVdQjoXfiRcf2Pz/CyJC2MQ+lPUe1OAY/ELxriUXLvpvFb0rT7STgoax5cIU5NSAolD2LjI/uTqxGbRD6H5d0VQ42agj/ALm7U4QqranShv4E9UfpX5wq5QEy2Nfoq/t/DlEut4tuC5bSvaQrMfA54SZyyVKo3ONp9HQHB6p14Hw8xzpJdZ/iyrhOQvkdY8YdyX0irssu5bfMax2oVkulromvjV1R+pPy8islsOht0+4rqn9a/L8RpDrTgKVoWkFKgcQQcRDRW3ep2zq1UnW0c49036NEJKFJJSpKhQgjEEeWYcYmGzVLjZoR/wB0QW5W0T1Uu+i28f7VasNGjtOq6hmXR/xT/d5VVdLQbd+NPVP6V+f4oRIWxSomEp6j2pwDH4hf3xJrl30Xit6Vp9pJwUNY8phTk1ICiUPYusj+5OrEZtETjDzDqcpC0rFCIeb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3xDze+Ieb3x+UVVoOdE18COqNtCfn5VeiRMtjv6qvHJ/GlA63i2sXLaV7SVZj4HPCTOWSpVG5xtPo6A4PVOvA+HmKykE3oOBhXWHpJOI7Rqo4lkpb+NXVHiYv8qqNLc6F34V3frQ/L8dpDrTiSlaFpCkqBzEHEQ0paL1O2dWqk62jnHum/RXCEKSpJKVJUKEHQR5VlKgcQYoh3Mcyu0Sr3CZh0DQLk+JOzzLjpGaDVbjQDmpableI/IBEhbFKiYSnqPanAMfiF41xJrl30Xit6Vp9pJwUNY8pglbeAVnTzhQUgi4jtAqrTa+ga+FF361PmqqWliYbGpVyvEDb+RlQ83eW1i5bSvaSrMfA54CpyyVKo3OIT6OgOD1TrwPh5iqoJ6yDgYPWHpJOI7PGimmTka1m5PiRBqTidJ81WS08r7u78K7vA0P5JpDrTiSlaFpCkqBxBBxhpS271O2dWpTraOce6b9GiEKSpJIUlQoQRmPlWUrBuIiiHdOZXLs6q95ZfdA9lNyfEnZ5xIUMCMxg9Z5lJXqWLleIP5PJkbZpX7wlPUeOhwDH4hf3xKLl30Xit6Vj2knAjWPKYJW3mVnTzhQUk4EYdmZxqVlW8XHDS/QBiTqF8fZWbtJKTk/eXwUI2DD5kRYDIV0YQGmXE0SkZgConPEhMSL2h1BAO2DVKhUEX181VVS7gebHuquPiPH8pKh1u8trFy2le0hWY+BzwFTdkqVRucQn0dCXB6p14HNo8xVUHFBwMHrD0kHEdlSIttp15BopEqhT1DoqkU8YYtZ3WmWSP1VCXWbCZWUSFn1IChpP7nEm4XCGW2WUCiG20hKQNQEPtLWn0koWCR3gRKtzLCh6KxhrBxB1iFrfsaaUehdUKltXsq1jxEXg4eYqjUyfuzncrD/kB+VaQ604kpW2tIUlQOIIOIhpS271OWbipOto5x7pv0aIQpK0khSVChBGY+VRSsG4iKIdzHMrlA7JzKpZrow7acwg3hJFci7NQiozlQGmLLYdcSL3phAcWo6b7h8olmUD3W0j9owETSpT/AFRRL7yTQ5ANKeBNM9AIn56XtGRbL4cU7/MCbzgBQ0hIDzzdHKCgykkpJHfSsAZLyeoqnoLHoqHcYGTNSbhaWO408w0WkhSToIwg/wDkMpWrUrBQ21/LZMjbNP8AyEp6j2pwDH4hf3xKLl5hN4relY9pJwI1+UwStvMrOnnCgpJwIPZKbblVOrHRLdremoIApqydkW02r4Gln9onJhfwyyv3pCZwvPVyVONBKbgTffqiYEta9nry5dxRoFZ8knNeKg9+mJSSs2UcomZmkkfxE57go1GoAVgHoZZsISTirSTrJqfImjdoy6VmmdY6p/8AqNvmq60o50iAT6i//wCgdv5eWDreLbguW0r2kKzHwOeAqcshSqNziE0ya4JcHqnXgfDzFVQcUHAwetnQcR2RsWUmprJCS64i8gYVob/nH2ZsoEaZVJ/URKssuSZ6SbkujCmlozqCcBrAzXihEMNNofRXJShIKFYKTcMxr5ulxs7Un9/NVRqcBll6Kq9H/kBt/MNodZWkpW2tIUlQOIIOIhtS2xVTlnVqpOktE4j3TforhCVJWkkKSoUIIzEeVRSsYERRDuY5lcuySAtp1JQtJwKSKEbIUVIkLRUhuui8f2+aPQnFJ2pB/bzVFLjagtJGYg1EUyZhlLl2YkXjbX8yUSNs0umEp6j2pwDH4hf3xKLl5hN4relY9pJwUNY8wlbeZWdPOFBSTgRn7I+raij/AM3PNF7U62doUIzgHzVVcknKoBPqLv8A1yvzUsl5vFtwXONK9pCsx8DnjKnLJUqjc4hPo6EuD1T4HNo8w1QcUHAwrresg4jseQEy7KnL85AuG2FVdcdbdWdKipZPifN/9txpf/MD94zoH6eaqjU6ky6q4ZWKfEU+f5ttDrLgKVtrSFJUDiCDiIbUtsVW7Z1aqTpLRzj3Tfo0QkpWklKkqFCCMxHlUUqGBEUQ6cDmVy7AWLK8ZXKLFleMrlFiyvGVyixZXjK5RYsrxlcosWV4yuUWLK8ZXKLFleMrlFiyvGVyixZXjK5RYsrxlcosWV4yuUWLK8ZXKLFleMrlEgxLNuqSVrbcUokA1peIzobP/I8/NmE/fptsJZYT1lE5QIJGYXZ4V/FbTkqScfNOS40tK0nQQaiLFlOMrlFiyvGVyixZXjK5RYsrxlcosWV4yuUWLK8ZXKLFleMrlFiyvGVyixZXjK5RYsrxlcosWV4yuUWLK8ZXKLFleMrlFiyvGVyixZXjK5RYsrxlcosWV4yuUWLK8ZXKLFleMrlFhyjMkk0cmluryRqF3WOrb+CUSNs0umAnqPanAMfiF/fEouXmE3it6Vj2kqwUNY8yq28ys6YUFIOCh2NzsIP/ACHPyuJbbQMpS1mgSNJOaJZUy/g5aChRtsaU1u/3H5Aw6bTtlZy1zD1VJQr3Qc+s36KQUSdrDrGlzb597QrXthhUpPNHJUlYoD/3x/LAqJNABeSYCmWDRSJQXLUPfPqjVj3Q2htlsZKEIFAkavwpVLzd5bWLltK9pCsx8Dnis5ZKlUbnEJ9HQHB6p14Hw8w1QcUHAwqivWQcR2M9aUB/5J8j/wDFUKtS7d7jncMw1m6FuWR9n65Tco36bwzE1x7z8hEqiXYTfROKjpUcSdZ8qMiYQP4Mygdds/uNR8Iby5dRoxNtiqFjnqN4hQUkioIw/Jy6nnTeaXJQNKjmEZM3aWPSqT1WzoQP3x7vxWkOtOJKVoWkKSoHEEHEQ2Vt3rds6tVJ1tHOPdN+iuEJKVpJCkqFCCMxHlWUqGcGKIdwBzK5diyAPuKiSTQAApvMS3+o2gblTIFWmtJGY95u74fNq2ws5RW6cpts6q+kRpNwzDzpdExLuDrNrF3eNB1iAudsWtVA3rY+LV7w+cKBScRnH5HKlbMre+pPWc1IGfvw74l0tNi9RxUs6VHOfyHRyNsgVD4T1HtTgGPxC/viUXLvpvFb0rHtJOBGseYjpQPRJNCIlU78Sw34lhvxLDfiWG/EsN+JYb8Sw34lhvxLDfiWG/EsN+JYb8Sw34lhvxLDfiWG/EsN+JYb8Sw34lhvxLDfiWG/EsN+JYb8Sw34lhvxLDfiWG/EsN+JYb8Sw34lhvxLDfiWG/EsN+JYb8Sw34lhvxLDfiWG/EsN+JYb8Sw34lhvxLDfiWG/EsN+JYb8Sw34lhvxLDfiWG/EsN+JYb8Sw34lhvxLDfjKm7NrXpAOu0PfAzaxd3fjd0Ta5SQaCW5l1BNXAfUAz1ya33XRKpZR66sVOHSo5z+AAQRQgjGEht/0nZHBK/g0H3cNFMIQWJlBKVtLFCCMbvxm1OuuHJQ2hNSo6AISlx0dZEmL0p+M5zqw74SAlIoABcB+SlUvN3ltYuW0r2kqzHwOeAZyyFKo3NoT6OgOD1TrwPh/Xkgg3EEQlDExepcobkOfCfVOrDuhpbLzZyVtrTRSTrH4nqpJgfxJx5byjpFckeCfHymiReToESRl22ZhTKDl5QcAvrquI88iTtVA6kykXL0BYGPfiNcS5l5lPorPorGkHONf4jPUT/MeVchsazp1C+Eh+dUKOTS09Y6QkeqPyrSHWnElK0OJCkqBxBBxENlxF6nLOrVSdbROI9036NEJKVpNFJIoQdBH9dENhqbSKNTLY6ydR0jUYaqyo/wphAqhz55jqP4fsR/+KD4ny+kWVgd+SY9JM24F99E/gS4Wm8tuJuW2dKTm/QwlU3ZS1Uam0D0dShmOrPmhQUg4EfghcpIGhSmlHHRq9ka8Yl22GG/RQgUHfrOv8x0cjbIFQ+lPUe1OAY/EL++JRcs+i8VvSse0k4KGsf15ht5hwUUhaagwlc1JDrLZxcaGr2h49/4XsGPVaKNi1DyiurTB6Nicc+8yKjcFYmg7xd3p/BZQ8y4nJW2tNUqGgiErmLP9J2TPWW0NI9oeI1waK9ZJxHnS6333DRKECp79Q1mA3Nz46yW6VaaP9x14aIH5qUS81ihYuW0r2kqzHwOeAZuyFKo3OIT6NcA4PVOvA+H9eEdHKWiakilG3jrGY6x84lly76MUqGbSNI1j8DOgjwjFl91s7cr+7yzS5RhpAdtCZR6QFxpdoqLs5OqJgt2vIgGWmlGhURmURhUitcxhpVm2o11S84mjbus6DrwMOoebN4W2oKSfmPwciUtMdZbQ6rb5/RKvA59MMKlZ5pWStpYpf5iOgk0mjk04OqNSR6x1bYYGWr+Y+u9xw6zo1C7860h1pxJStC0gpUDmIOIhsuIvU5Z1aqTraJxHum/RXCElK0khSVChB0Ef15gEp/lupuW2dKT+2EJ+8SBVRE0hNw1KHqnwP4HoInjk/NA5eW8BKb/9ybvJItTKB6JUKKT8KheIt60LLdxCcsqTtFD+sMydvS6cSinSEfKh8DFk2hZT+BykZaa+B8ItWVfUfUDgSvdNDAIOvzk9DOoFGZtA6ydR9pOrZSGTkn+TNIvQ4NIOf9RAysqmTk35VcKaYQWmvSRJ4KV8egase6GkNNNjJShAoEjQB+fEBEjbIFRMJT1HtTgGPxC/viTXLPovFb0rHtJOChrH9eaQ42sZKkLFQoaCDCMpPpLkq3j4D/aflohCkqSaFKhQg6CPNzC7vhOS5OuKmSDoNAnwFfn5FBDTSCtajmSBUwkj/Upspbr7IJJ8SB8vNQlyZnXEsMpIBIvqoj5Cnzhl+XtBDCA7MMOkErpeSDUY90faozLKfRlp3Cmi+o/SPsot1pOMzJG7vuqP0ieVJun1JtBRT/cKjxh5t5s4LaUFDaPMl0Py6/VViDpBzHWIkE2zYJ6pUpP8WWBzjMlWvA6om0zDCrlUuU2r2VDEH+hSiXW8UOC5xpXtJVmP654SqcshSqInEJ9GuAcHqnXgfD+vCAJW0AOrMIFytSxnGvGJYtLHoqF6XBpSc48pAFKknNCVoseVWFTDuGWfZGs+AvhAQhCQlKRgALgB5F9IHFf+um03oQgG9NdAznOaAQmjEugITXE6SdZNT5iglIFSSaADTFoMS9j2UCZUPKyQ+sHHReb78yRE7LPA523kq/Qw4hKRiVKAEKTadsPHIabY66EKOdRGPwj50iVbnbTnV9M8pRNWifVBGe+pIz90W3aFlPYgBZWnwof1j7nb8unu6Qj/AIn9YsW0LKfzkoK07DQ/rFqyzyz/AO2V5K900MVhKVJUKFKhUEaCIcUzIvzCWZ6RqchSTfQDRQGmg0pBqlQCh3H+hNIdacSUrbcSFJUDmIOIhsrbvU5ZtaqTraOce6b9FcIQULSSFJUKEEYgjN/XmW1vPupbZKxUoOJUNBAB2+VRblWzlTcxSoSmvicwGc90MhqXaFEjOTnJOcnOYfySqoaZRetw6AP3whf+g2A5gkV6R5PgVeA74Yycq9x1d63TpUf2wHmOJbbQMpS1kBKRpJzRlCz8J60CCElOge74q7osll4NJp0ygQ4s5yVChqYTOyx//XMV/UGLRtRxv2C6mn/1iQQ06RQvKOW4R8R/anmMtvtnFDqQobDEiqSdPryiyih+G8eEfbJ55S1Do7PeRlrpppeANlc0fYqael3EhQelmlJVQ6UitO40ixZiyfs5LPB59yZBCnaZhUCppUClwqSTAyQBQDR/Q5kJKgeiYRe48dCU/vgIkJaTCwEhtlN5AwK1esrX/XldSUaylj31/QDbArCC5OzSshKQcK59XKKLdPXfepe6vOe7MNUDpH19SXYre4vkM5gGYn3aLl5RwdRlOaqf0Tmz3+ZMtS7KcXHVhKR8zFnTNszhuBbQUt/pU7ANcWj9xs+uULPlSAT30uHeSTEs3LsJ9VOJOknEnWYIgiKQRBgwRBhkzv2gmyEtMoGV0VcCRpzgfM3QsWl9oXj0inXDlpYUcya4q97ZTyY/0I3wW5+2aZJQDVuXPvkYn3R86RNuTUy7iteYaAMABoH9eVkoQCpROYDGD/5DyljUn1RspGCRhpOiG6zc6CJcKH8trT3q/TvhQShIKlKOAAxMIKrIs5fQyLKsFKF4JH/I6yBm8s61LIzBZ6yvhSLzFiOLRXJM9NJohOumA+ZPdH2nadmSKlKkLWlGoYDYBH2wEq2bylllSa9+mPt89uL5x9vnt1fOPt89ur5x9vnt1fOPt89uL5x9vXtxfOPt89ur5x9vnt1fOPt89ur5x9uZmYmH15LUu3lBSgMVX5h+8APWnPMKWmYcOUtKgaqSCdIx7v6I+2ww0kqW66oJSkaSThDi5eUvS5P+i47qR7KdeJ1Qak5z/X1ZLs1SWb/3Y/8AEHyfyn3gXfhF58AYSEoSAlKRgAMBBP3ifWJVAGNDerwFPnAAU00C6R6zhvUdp8IWlCEgqUpRoEgYkmJerbZo9aboolOtNbgNBNScwicetqfVeovKPRg92KvndqhpDTSBRKEJCUp7gIUluZbFZydP/sjOAc1KipxqaCPtPark6by6k3V7ia+MTptKwppfRtTqq5TR1k33Zwa3Xg3QQQcCM/kqpLYAQgGhcWcEj/uFYtl+zpB4ZTElK1ByDgaVoO81Jj7RTpmG+t92mT1XNWg9xHzhoMWlKK6OaYF1D7QGYGhuzEeRwNstIK3FnBKQKkxUMhXRyrSvUQMOfeYNAw8lStacFDYTBqlSQQdI/oUyE5QPRMIvceOhI/c3CF/drMQqrUk2rqjWo+srXgMwHYFXVlkdK4PfXh4Dx8nouZTYJ0lKgPEiJ1hM+4nLRLlfXULzUD5GL2w6ZhadPW5IMKd+/e1kjo8rJysmta1pqh0oS4A7aDyfURjknuFCRnJAhkNMND5qOdSjnJ0+TGsXzq5/JdJxpeR4k+QCreQtsnMvLAFNp2xXpVSbZUTieryp5LpN20KPVw9UX/ImAABcAMw8lzLsn0j4GGXRB/U+PkXR+0XKuUzNJOHzNNhgUSgU8isp6XBl3K6U4f8AGn9AN8dFP2zSikVq3Ln3yMT7o+dIm3JqZcxWs4DQBgBqHYE5KUipJzCDUPvFSNSRckbAPIrJmZZYdbUMQQa/tCh00pOoIaRUgISBWnuiqR3EwsfcRZy3CK3oUA5VB11ugrE4q1Q8E1u6OuO9d3Qn/wBTPzZQk+ykdYgfMgf7fMlFzdhWgcqcZbxaVWtdV5JBwvIMWoWzSpbWyvLGqgBiXel/s9LuhyamnBTpCPpWg11MJyWm0hCEjMAKAeRQRNNq6WXWcAsZidBF0NP2faUsA2p1bZKXKXAml4OsVBxhS7Vn13NMtNqCSrNUkeABMVNr2mrLcScW0VrQ6CTmzUA8ispmRAlmtFU3HxKvKqiZhvp2wfaTcfA+H599phhpOUtx1QSlI0kmHFy8pelyfpkuOjQj2U68Tqg1JxPYJWS6+BLt6aquPhU+ZKzEww89lIQygKF4ooEEi4ikNzrdnLVlJaeb6zVcQKE1GiLNtNtgyvQNFTKaJIHVJ62kAxKT7zqXFuFxlpOSco1zmLOtUDT0SP8AKLNtbhJ/yizbW4SP8os21TmILSP8o+yLqnCakmSb5xZNpNNJuShDCEpGoAKizbW4Sf8AKLNtbhJ/yizbVNDQ/wAJH+UWBOzSBgHpVtVO6qro+zU1KOG7KalG0q25VYs21uEj/KLNtWovvaR/lF65h9SydNTX9/KaJaeGXT2DcrwJg1BFxGf87MhJVUMsIvceOhI/c3CF/drMQqrMk2qqRoKj6yteAzAdhFdVlJfdA9pVyfAHb5mSGp1Jl11wqoUHiEwhO6IbSWnUFtYyReCKH9Ycba/0iYU50jtAA2TQmuioB/3QVSH2ZlVUU+UdZ9Ywuz92AGN8BCVJomSn1DquJwAKjm0E4YGGEzdvTNEtMoQFdFXBShp0D5m6JgWi44Mq1ZY9YUJrWuentDA6omGm5NtP8bLAymleyRp0ac0LNl2FL5QlApN7rmZRpjrObAVMNpYtVqiWX1gZMwM1+BOg5++GUzNuPnIUpCQRLjP/ALvBOJh3/VLMfA/1JsD0F51Cvfcr5HGJloyBHVIT1lK9jJ9rNT9oeFlyzIrZbBFApQPpVGGHpacLhDCZW3peqVJWgAP0zjNlZ6Z8RCEvOoaV9+mW0ghlGCkg6b6E5q0xgUJBPj5iqutI6B3TlIu8RQ/P850U/bOBRWrcuffIxPuj50ibcmppzFazgNAGAGoXdhKCmcwaodeIb+AXJ8APMuclXkuJPceYEGqH20up7lCv7+R1xiz7YKGplbZp1kkDxGT+sKYkLPlgECtyU1NANZJ+cZJBGXLzLdCWyRcpJzg6MCIeE7aztQuYNTkJ9lNb9FTjmiaZemJUhL7SVAlFRn/7qiYUxZLiukmJFFRlLGATmCTU919MbnpeRlQpLDQV1Ug4BI/73wQ1ONDKlppOKDoOlJ+ohX3i03//ACJoipUcclNb6V24mJmXm0NLLMwhJCgDnSRnHgYfUqxQrpU2eSf5mivs+OaJpiWMwoNMIUQnKNMAM36YQ4JW1mP5EyLsPVVS+mg4iOvMzKmm35gjrOqKgT3C40EZkD9PMXc6gTDQOkXK8KbPzT7bLDScpxxxQSlI0kmHFy8oapcn6ZLjo0IzpTrxOqDUm8nygk6oQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbIQrZCFbPwFZLziOgaPvLu/Sp+XmitUmnfCquSilSytWSap8CPIP8A1EgoTTZGIAuV4Gvyh1UvYssno2WWVULzgFFKHzxPyGeFqmLAeUfuc7T+VqOgaRmxF0ETNpPijsy0qqWE56KwrQ3nN3xPOv2tKpKpps3iYBvVkjOPdOOOMOdA+xRL0nWrmXmCRnB05r64Qt2VkFIUmQlGjQpScF35s9TeruhSpixlnJk7QSCcgaDqGcYjNUQ4F5YpOWgg9RCM4CtGk58BE06/MMNBM3LOXiYAxIGce7joNYykTqOobPr/ABC5qPs+9+8TTstNTLdJKXQKBhOKSUnN7uOc3wroptvqys64rqPJzAqPgr5G+EhdnsvgrmaH+K4KiifdFT344Rmu8xWS2h4Jc+BXVV4Hwg1/MTASVV6FhF7jx0JT+5uEK+7WYhVWZJtXVGgqPrK14DMB5gKWwb1n9oSK51HEwOwKvQBmHQDnNyfDK85VEqyZlsdxofAjZ5BlNuJKFp0pIoYtSVlmrOmVBbcykE3qIqOqfZi1bHfl3MUqbFxzEEIuOsRaNkMl4grUU5SjTAVKK01Rb1k8Mf4RM2MuZUsLUaEJUoZykIodemLdskAYANj/AAi1bHmJZwdZCmxjmIORUHWItOx2G1qylnIylKOslFTFvWTwx/hE3YpnQoLysjqlQ9YpyKE/KLesnhj/AAi0rIfS0rKQcnJUnTQhFaHRD0m4zlKeaRLDSQFFRoCTdn0ecqrqW+hd05aLj+x+f5fop+2RcUhVW5c++RifdHzpE05MzThvWs4DQBgBqHmVSjEIwJ79EJCUjADsFSFVbLxQ18CeqP0r8/OOS3Mkyzh1Ku/Ujy3N2nKB5I0mgV+yvxDVMtJJrqJqr9x5ysQJhoE/7Vf2/lXm2ZdpOU464oJSgaSTC1y8oapcn/RcdGhGdI14nVBJJNST5UlSjmAijj3gnu7CKo4Wy01py1XD9a/Lz5ZYlZBxCy/SgqVAXaaGmGEXomWUOggaQCfGAdkApQ4syrivnT9FwDXugHZAOyAdkA7IB2QDsgHZAOyAdkAwbmilof7UpH7HzlZLXSht34FdU/rX5flJjJJr0TCKFx46Ep/c3CFfdrNQqrMk2rqjWo+srXgMwHmdVsYrIuhFK+krOewqs6pl0V/2p/uPmgqUo0AAqSYSptv0kSeClfGc3dthoIkX2SwUNjJyU+7opjH2mtlKRcEpUkAR9qLa30x9pLXXkmqcvIND8xH2otrfTH2otrfTH2otrfTH2otrfTH2otrfTH2otrfTH2otrfTH2otrfTH2otrfTH2otrfTH2otreTD0zPOzakkzLxAcbpWmSRhia1rWAZqzyqiJlCbhqWMx8D5yspwtBDvxp6p/Svz/JdHPW0LikKq1Ln3yMT7o+dImnJmacN61nAaAMABoF3mVSjMjOe/RCQlIuAHYUQrKaDvRNfAjqj9Cfn5kuXVm9SsEoGlRzCMmbtEi99abkakDN34/kkJW2sUUlQqFDQRCc+UuSJ/+h/tPy0QlSFoNFJUKEHQR5ir0kTLQOg9VX7fkHm2JdpJU464oJSgDOSYWuXkzVLk/elx3SEeynXidUEkk1JJ8qSpRzARRx7TmT3dh1BLiGilo++rqp8TBr5cqUs3HpCnrO6kD9zd3xLoZZTjTFR0qOc6/wAqBL2iB1JhA9LQFj1h4wwWyb0LTehwaUnP+vlVktLc6F0+6u79aH5fjzGQo16FhF7jx0JH7m4Qoy1mIVVqSbV1RoKj6ytebMB5gyWhis4QmmlRxPYhV7ijMOjULk+NdnkaW684aIQgVKj3QlD0wKKRKi9CPi9o6sO+AAAKADN+Xlm3mFZlC8HSDiDrEZU5ZwvKgOu0PeGcax8/IaHMdEEFbjIDnxpuV4j8Xo562QKFANWpc++RifdHzpE27MzTp6y1nAZgBgANA8wFKMyM579EJCUi4ADsQIVVltzoGqeyi79an5w1RpJo5MLFEN95znUL4QHZtaaOzLg66tQ9kah4/mgDXGogNy02esuXwbcOr2T4d0MrZfbNFtrTQgwqpaWH2x7qrleIG38N5tiXaSVuOuKCUoAzkmHHJeUNUuT/AKLjozhHsp14nVBJJNSSfKnKUcAIo494J7FGi2mj0etZuT4kR0ktJk5QaNzr3+I8Yl22JdsUS2gUA/Ot5EwkfwplA66OY1GEgyMwsy4mkfy1pXcK6DWlxjH8GZySoHomEXuPHQkfvgIUZazUKqzJNq6o0FR9ZWvNmA8wZLQxWf2hPeo4q7FsodShYcSFioChgaav6Ayh1pdykLFQYwH4BRP2yBkqQDVpg++RifdHzpE25MzTvpLWcBmAGAGoeYMlGIRnPfogBKRgAO2b7bDDSCtx1xQSlI0knCHHJeUNUuT/AKLjo0IzoTrxOqCSTeSfKnKUcAIot7wT3dtJnJKgeiYRe48dCU/vgIWZazUKqzJNq6o0FR9ZWvAZgPMGS2Deswm/Oo4q7aFuftgDJKAaty50rIxPuj50iccmpl3FazgNAGAGoXeUQMlGIRnPfogBKU3AAds322GGk5bjriglKRpJMOLl5U1S5P0yXHRoR7KdeJ1QSSbyTn8qCpRzCKOPeCe7tpMhJUD0LCKFx46Ej98BCzLWahVWZJtXVGgqPrK15swHmDIbBvWYTQ+so4ntoW5+2KUKQaty598jE+6PnSJxyamXMVrOA0AZgNAu8ogFKMQjOe+EhKQKAAds322GGU5TjjiglKBpJMOLl5U9VyfpkuOjQj2U68Tqgkk3knyyrkxMOG5CB4k5hrMWkkzRFVJQ3lJQdAJN/fFqq4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9YtRXB+sWorg/WLUVwfrFqK4P1i1FcH6xaiuD9f6HMhJVUMsIvceOhI/c3CF/drNQqrUk0rqjQpZ9ZWvAZgPMQWJJCqOzTgOSNSfaVq20hmilD+K+u9x06zo1YdszBan7YFxSDVqXPvkYn3R86RNuTU05itZwGYAYADQPKCawhxiVNFIlPRccHveyPE6oZQyw2nJQ22miUjUO2b7bDDSSpxxxQSlA0k5ocXLyhqlye9Fx0ZwgeqNeJ1QakmpJ8ss4/MOG5CB4nQNZjIm7TF4qKtsn3RnPvH5dtJkJKqhlhF7jx0JH7m4Qv7tZqFVakmldUa1H1la8BmA8xPQSSFUdmnB1RqT7R1baQzRSgOlfXe46dZ/YXdszHRT1si4pBq1Ln3yMT7o+dIm3JqacN61nAZgBgBqF3lBNdEJWxKnrIlMFufF7I8TqhlDLDYyUNoFEpGgDtm+2zLtJKnHXFZKUAZyc0OLl5Q1S5P8AouOjOEDFKdeJ1Qak3k6fLLOPzDnooQPE6BrMZE5aYvFRVtk+6M594/LtpMhKlV6FhF7jx0JH74CFfdrMQqrMi2qqRrUfWVrzZgPMT0Ekk0dmnB1U6h7R1bYZopQHSvrvcdOs6NWHbTo562hcUA1blz75GJ90fOkTbkzNOG9azgNAGAA0Dy1hK2JQgKRKYOO/F7I8TqhlDLLYyUNtiiUjQB2zebYl2klbjriglKAM5Jha5eTNUuT/AKLjozhHsp14nVF5N5Jz+WXcfmHPRQgeJ0DWY6OctPEGlW2T7ozn3j8u2kwEqUCGZdF7jx0JH7m4Qr7tZiFVZkm1dUaCo+srXgMwHmJ6GRSaOzTg6o1D2jq20hmi1U6V9d7jp1nRqw7adHPWyBQoBq3Ln3yMT7o+dIm3JmacxWs4DMAMABoHlxzQlbEoaKblMHHRpV7I8TqhlDLLYyUNtpolI0Ads3m2JdpOU464oJSgaSThC3JeTNUuT/ouOjQjOlOvE6oJJN5JOPll1vzCzchA8ToGsx0c5aeINKtsn3QcT7x+XbSYySoENMIoXXjoSP3NwhRlrNQasyTauqNBWfWVrwGYDzE9DIpVR2acHVGoe0dW2kM0Wr+a+u9x06zo1YDtp0c/bAFCgKq1Ln3yMT7o+dIm3JmacxWs4DMAMABoHlx0QlbErcpuUwcd+L2RqxOqGW2WW05KG200SkaAO2bzbDDSSpx1xQSlI0knCHHJeUPVcn70uOj3M6U68Tqgkk41OPll1zEws3IQPE6BrMBuctPEGlW2T7oOJ94/LtpM5KlAhlhFC68dCR++AhRlrNQqrMk2rqjQVH1la82YDzEdDJJVR2acHVGoe0dQ+dIYAUofxX13rdOkn9hcO2hbn7YAoUA1alz75GJ90fOkTbkzNOYrWcBoAwAGgeXGCGJX0m5XLAW6Pe9keJ1QlhlltOShtsgJSNAEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3hDiN4Q4jeEOI3h+I+hhhpJW464oJSkDOScIccl5M9Vyf9Fx0aEeynXidUEmuNc/lQVKOYRRb3gmCdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2wTtgnbBO2CdsE7YJ2/hzOQpX8lhF7jx0JH7m4QoytmoVVmSbV1RrUfWVrwGYDzBktjFZF0JppVnPbQtz9sC4orVqXPvkYn3R86ROOTM04b1rOA0AYADQPMBSnMjOe+EhKRcAM3bN9thhlOU464oJSgaSThDjkvJmqXZ+mS46M4R7KdeJ1QSampr5UFSjmEUW94J7aTOSpVeiYRe48RmSP3NwhZlbOQqrUk2rqjWo+srXmzAeYMlAxWRCaVxJxPbQtz9sC4orVpg++RifdHzpE45NTThvWs4DMAMANQu8ogEJzIwJ74ASkYAds322GGklTjjiglKRpJOEOLl5O9Lk/TJcd1I9ka8Tqg1JNanyoKlHMIot7wT3dtJkJJr0Uui9146Ep/fAQsy1moVVqSbV1RoKj6ytebMB5gyUDFZhPeo4ntp0c/bIuKAatS598jE+6PnSJtyamnDetZwGgDADUPKIBCcQjOe+AEpGAGbto4uXlL0uT9Clx3SEeynXidUGpJqTp8qCpRzCKLd8E93bnqtg3rMJvzqOJ7cAxVKcQjOe/RCQlIuAHbhJUo5hFFu+Ce3SaHOo4n/52KXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7RyhS9o5Qpe0coUvaOUKXtHKFL2jlCl7Ryj/8QALhEAAQQCAQQBBQABAwUAAAAAAQACAwQRFQUSFCFQEAYTICIwMSMkQDJBQmBw/9oACAECAQEIAP8A3yasHeWuaWnB97JE2QeZYXRnz70gOGDNVLfLPfTVg7y1zS04PvZImyDBlhdGfPvSARgzVS3yz301UP8ALZr8ELyyTbVFtqi21RbaottUW2qLbVFtqi21RbaottUW2qLbVFtqi21RbaottUW2qLbVFtqi21RbaottUW2qLbVFtqi21RbaottUW2qLbVFtqi21RbaottUW2qLbVFtqi21RbaottUW2qLbVFtqi21RbaottUW2qLbVFtqi21Rbap/K/x0F1nTJyPGT0XYfkrJWSslZKyVkrJWSslZKyVkrJWSslZKyVkrJWSslZKyVkrJWSslZKyVkrJWSslZKyVkrJWSslZKyVkrJWSslZKyVkrJWT/OSJkrSyTlfp58GZa3vuV4COzmSCaCSB5ZJ72/x0F1nTJyPFz0XYf72WJkrCyTlfp58GZa3vuV4COzmSCaCSF5ZJ7ZsuZCz87/HQXWdMvIcXPRfh/tHHpBJilIlDj+csTJWFknK/Tz4My1iPZ239MePiF/XGD/Hkfp+G077kbvp8NODoWrQtWhatC1aFq0LVoWrQtWhatC1aFq0LVoWrQtWhatC1aFq0LVoWrQtWhatC1aFq0LVoWrQtWhatC1aFq0LVoWrQtWhatC1aFq0LVoWrQtWhatC3+Vx+X9PxSf4Lf5SwtkGDLC6M+fXk4GS93U4n4rv6JB/NzQ4YM1Ut/ZnrrViJrSwuYW+fgKJ/WwO/pPVD/LXNLTg+q5Hl4KJDX3Pqd8sRZDFx8cjGPno3pKFgwTPb0nHxSf4Lf6ywtkHmWF0Z8+pu8HXuTGaTleLq0I+oV+VkhY1ifI57i91R5kqRPKrP6JB/ZzQ4YM1Ut/ZnqfqBoNB6PxxRzQZ8BRP62B395qof5a5pacH0HdxLu4l3cS7uJd3Eu7iXdxLmJRJTl6fjho3ih+3xWnaxnS7u4l3cS7uJd3Eu7iXdxLu4l3cS7uJMeHjI/GWFsg8ywujPn01wZpyqGCSZ4ZH9utQ8yDlrQn++qV2K839D4/iAScCCpj9n/m5ocMGeqW+Wf857HMOHflIGOryCSbkGRMMNMn4Y9zHBzeP5hlgCOy9hYcH8ooXSHAigbH/j+Rrxk5PbRLtol20S7aJdtEu2iXbRLtol20S7aJdtEu2iXbRLtol20S7aJdtEu2iXbRLtol20S7aJdtEu2iXbRLtol20S7aJdtEnxteMOmrOj8j8eaeW0cBQwsNKWU/AXHcy6ICGfDXNEjPwhql37Oa0NGB6uepn9mEEHB+eab1UcoKtEytH9qxaozVnYf80OSlpu/WvPFbZ9yBNYXHAgqhnl3rpq7ZApInRnDvjlnBtB2Wgk4HNH/c9Cr8jZrjpjqzwXpmwyyUqL3FsMnEW2DqaWlpwYJ5IHiSPjuRivYY+OJsYw32Dmhww6xEI34DQAC59+3JyMwjhZHDxv+pJI9z3F7mtJOBWZDxzC6yYOOJyJeQjhj+zSHMTOGJ+vjpv+rQTvYJq3GssMrNbZ9jI4ySEjm7vU7tIp5NdF28bI3yO6WRcSyMjvQ6lXGKklSGRxc7sK6PH1/wDv2FdcZwcPW2aQADwPY2H9EZKDi1r3N4uE9218raU9mxmeXk/tgxU+ODWsltPq8lJbmbBZmj+3I5ijl7GmyWJk55CCQT0aptWGxAuDSAxrupoI9jef/hqY7pdlNrfdmc2S423PUe0aa+qVK/XJDmUnVj9yseHvuOTWp2hD29manYZCYKvD8fNW+5LMqb+qPHsp39chPx9QMOI5hxBbOH1ZTyEcg+y8XmVR9qsLEFU9VLuKR/3RNmG35vd/HZAisUjB2uIFTf0yY/4OVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVn8J39EZPzykX3aLwqk5rztlFjoEphmDoq4EdUsqVwXUg2mT3Dg2tYH++L4p8xWWxwxQMZAmuLSCGu6gCP6z2gzw0vJOTkrJWSslZKyVkrJWSslZKyVkrJWSslZKyVkrJWSslZKyVkrJWSslZP4Xn/4Z8xx/dzGXscxxaeTHWyGYYKwVgrBWComdEETPmo/qjx/Rzg0ZM9ov/Vvop39chPxDA6QqOJsYw3pC6Qulq6Wrpaulq6WqaBsgUsTozhypvw/H85ZmxjzLM6Q+fRTP6GEr/Kgqf+TwAPA/i5ocMOnqlnlrXFrgQDkZ/jPaDP1a5xccn0dkOfiNsNZsfn+01QP8trE9HS78nODRkz2i/wDVvu5ZmxjzLM6Q+fdz2g3w1zi45PunODRkz2i/9W+7ucjXqD/Vl5qtIcnaVFtKi2lRbSotpUW0qLaVFtKi2lRbSotpUW0qLaVFtKi2lRbSotpUW0qLaVFtKi2lRbSotpUW0qLaVFtKi2lRbSotpUW0qLaVFtKi2lRbSotpUW0qLaVFtKi2lRbSp/xOV+oGV8xV5ZnzPL5PdSyxwsMknK/UEljMVcnPu7/JwUWZk5Dk57z8ye75X6gZXBirzTPmeXye6llZCwyScr9QPsZir+7v8nBRZmTkOTnvPzJ7vlfqBlfMVeaZ8zy+T3UsrIWGSTlfqB9jMUHu5Zmxjzfpy3X5k0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgC0AWgH8JrIb4a5xccn3TnBoyZrRd4b7uWZsY8yzOkPn3c1kN8Nc4uOT7pzg0ZM1ou8N93LK2MeZZnSHJ94XFxyf/nP/xAA5EQABAwEGAgcGBQQDAAAAAAABAAKhAxEhMUHR4VBREBIiYXGRsSAwQEKBwQQyUmBiE3Lw8TOAkv/aAAgBAgEJPwD9+Y/v/Dj+P7/w4/ijYR3HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HRPg6J8HT3QvyOYV4yOXHhaCr28sxqOP8AZfB0KFhHHhfkcwhaMjlx4Wgq9vLMajj/AGXwdELCOL5e2L8jmELRkcuPC0FXt5ZjUcUz932XQU+N1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1UjdVI3VSN1Ujf3WX7Mw4e8AnmQPgMeGXuOQ+6b1Sc7dlV6rqmF1udl5t5o2stsI+48ONuNvd/pMJtut62B8LE1rurgSLSPD1vV5K5WeRs+Bw4VlZ69ORIn4LHgRRRRRRRWAA9R0iztHysHSUUUUUUUUUeH8vuELSVY+py+UePM9ydfFnKzCxXPzGnwmHBj1W2XlDqtzPzHQdw6TYQrnc8j46+5x92EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFh7Wbh6HoFrgWgd1tvsdpkjw0RtacD7Nw4b5ezk4eh6HWCqP/P6Sf8wQuyOR8D7F7TiDgf8AOaPiMx/nPpvPD8fYzIs9ej5QB9QAnXcsR5FURac23fXlCrWH+Q+4uTesObb/AE6DYQuy+D4d/dxQ2NGJTT1RgM/FEOqjAC8A8ye7kjeegkPeLABZa0HM25nkqxA/t3Vo5uzPlgO5APH8h98U11M9148jfKcHNyyM6o9riZuGPedvVf8AIR2jy/iPuhaSqgZ3YnyGH1VRrT+ohxd6WD6L8S0k9ztF+Ib5O0X4hvk7RfiG+TtE8PacLLbz9cuKYgEjxsQuFrvGy/7Lshw6xJ5c0Oo3n8x7yfsEOsWWWA4Wk4nwQDmuuwF1uYswWRIQ7b7b8bADZYELXMHWDrL7sQVn6Zq4DDw4q2xoBDSMOqRh9NVTIdbYP7cfsqZhUes1wsI5j7L8O7r5FxF3hZj9VTKoFzcRYQCD3aKiQHYkkWnuuuATbDZYPrj6dGXFOVh+n+0bnC36ja1Mso4A5g87czzCb12D8xPzaAZd6tdUdhaPyjl3nvQ7f6Mrefh3c7lax7eQs6w5Wc+RTepTP5SPl1HNDs22WnE2DGbujPiny2H7FZFPYKRwbgRmCLsfVVWdTO03u8bsOQVVoc7MnAchdKez+r49kn9VlmPdgqrXEYEG89xuw78QqrP6eQBvb4XefNfl9e/6/A4o8EwcCPNC8L5mgfUXae1k0a9OXvbhwXDoCCCCCCCx6c+I+XvLx7vHg2PvrisR7jDjmPHceO4ccdYTknwdE+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwU+CnwfhO07nkNSjaTxs2ALst55nQccN+QzRuyGQ452nc8hqUbSeNmwBdlvPM6ccN+QzKN2QGA45e/nkNSjaTxs2AK5snQcdqXZCy4SqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkbqpG6qRuqkb+4x47h++ceO4f9NP/EACwRAAEEAgIBAwUAAgMBAQAAAAIAAQMEERUFElATISIGEBQgMCMyM0BgYTH/2gAIAQMBAQgA/wDeT02P5AQOD4Lzs0Ayt8pq5xP7+dIWJsPYpuPyDz1imx/IDBxfBedmgCVsFNAcT+/nSFibD2Kbj8g89YpifyAeKtE2R1Ftai2tRbWotrUW1qLa1Ftai2tRbWotrUW1qLa1Ftai2tRbWotrUW1qLa1Ftai2tRbWotrUW1qLa1Ftai2tRbWotrUW1qLa1Ftai2tRbWotrUW1qLa1Ftai2tRbWotrUW1qLa1Ftai2tRbWotrUW1qLa1Ftai2tRbWot/yimKN8tDOMre3nRJxfLQW2L4n56C24fEhJibLedimKJ8tDOMre3nRJxfLQW2L4n56C04fEhJibLeWmoPHTjs/vFMUT5aGcZW9vKRRvKYxjfpCdB4B/cScXy0Fti+J+T+na/q3O7uy5Kv8Aj2jj/jUtMJMMsXFBMDHHpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpVpf5fTdb06zyuvqitggnb+NDkpqR5ChyUN0Mh4+MHkNgGvC0MQxiuYrfkUzFv5RSnEbHHxfPBPiOfx3FFHFZGWWtdgstmJO2WwuQr/j2Ti/pxfPHBiKeKYJgY4/FQ1yl92jpMJZIpXF3YRIhdpoqlkbMIyivqitiQJ2/pQ5KameY6HJQ3QyHiY7JRj1avOcr4RQMT5TMzNhuAL/AByR/bmq3r0zZv6xSnEbHHxfPBPiKfxNR8St9+CLEso/Ymy2Hu1/x7Bxf34vnjgxFPDMEwMcfgNBfWgvrQX1oL60F9aC+tBfT8bJUjEpvtw0wDbIX+3OcTPZnaWDQX1oL60F9aC+tBfWgvrQX1oL60F9WK51z6SfrQ5GameY6HJQ3AyHhufb4RuiJhbL5OX/APGhFmw1HlyjdorTOztlv4SSDGLkfJ/UBHmKrl393/aKU4TY4+L54J8Rz/8AerWorMfqRft9QliIGYYnJ+0n2dsth6d+Wm/VQWI5wY4/2vcjBTDtJyHKT3S+X8o+YuxiwDvL63l9by+t5fW8vreX1vL63l9by+t5fW8vreX1vL63l9by+t5fW8vreX1vL63l9by+t5fW8vreX1vL63l9by+t5fW8vqrcmqn3i43mYbjdX/Xm3zaAfsRP6jN+kMstY/Uho8jFbbDfpynPhBmOvLNJMbnJ4pndny3GfULjiK0BibMQ/fm2xaAvsbub9gjlE2y33cXYmMeP5dpHaKwp544Ac5OT56SzmOHx3HctNSLDUr8NwO8X2502eeMWd8MqzfDKOEDfLmBRi5C0sjN8msA/s7OzohYmw9fl5qgOMl2/NcPvL5CGeSA2ki4i8d2v6h37oVIuznIRE80zuU3szMzNhnfCNymfAd5UMLk/aT8cW/1xMC/KFn6nO4ObuHkaUQ06YiU9grUrzGDes/Z3dhbLlO7/APH/AJD/AN2MmbDeqa9U16poimkjN4/JcRW/IuAL847tTdmnL/G/V5BAPiMOflJL7uwMcLAPcBfIs6IfVkcXcfSJnGQuo+1OgMNX0inheGUoi8j9L1sMc72q42ISiKTMeWUbgMjOvyYlLJEeE8jH7H+REyOQHLuAyC5dpOPYLNsBZfUdb0rTSN5HjK349UI/tdi9K5IKsM44NvSdn7N6Tn8jcCP2k6Sf8a6EH/G0Th8h4CMntEZL6irerU7t/fq7rqS6kupLqS6kupLqS6kupLqS6kupLqS6kupLqS6kupLqS6kupLqS6kupLqS6kupLqS6l+nF1vyLYB9+di6yxytIPcXFBnr2HBH7n/kL2k/yf6N8w/wCLqQ/IPpxif1ZCU0QyxkBSxvFIUZf14zgDmxLYjhjjFgDqK6iuorqK6iuorqK6iuorqK6iuorqK6iuorqK6iuorqK6iuorqK6iuorqK6iuorqK6j+n0vW/3nf7c4wvTJ3Z2dsqH2chXsvZey9l7LgRxXIvv9RVvSt92/nDCcxsEfF8FHXxJN4Lia/49QAdcjy8NJsPcvTXD7y5dZdZdZdZdZdZdcdys1IsDSvw3A7RL6kr+pV9Rv5cfxk10sBR46GmHWPwXHV/yLQRp3YWy/KfULNmKqREbuRfxhnkgNpI+M56OxiOeeIZoijKSN4zcC/hxfAHNiSxFEEQMAeD4KSKqx2puS5ma6/Vv68Zz0lfEc/NCH5PqxftDCcxsEfF8EFfEk3hf/n/AEP/AJ+1DjJrpYCjx0NMMR+b4vgDmxJYiiCIGAPNQwnMbBHxfBBXxJN5utXeY8PROhTDrHtKy2lZbSstpWW0rLaVltKy2lZbSstpWW0rLaVltKy2lZbSstpWW0rLaVltKy2lZbSstpWW0rLaVltKy2lZbSstpWW0rLaVltKy2lZbSstpWW0rLaVltKy2lZbSstpW/wCpBUc/kYiwthvNCLk+GgqMHuXm4oSlf2igGNvbzcFRy+RiLC2G80IuT4aCowe5ebihKV/aKAY29vNwVHP3MRYWw3mhFyfDQVGD3Lzc04RN7xcyMbYbfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfut+637rfv8AwsXGD4gROT5fzREwtkrFxz+IebmnGJveacpXy/m7Fxg+IETk+X80RMLZKxcc/iHm5pxib3mnKV8v5wicny//ALvDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDLDL/xAAyEQABAwIEBAQFBAMBAAAAAAABAAKh0eERITFBAxBQUSAwYXEigZGxwRJAYPAyQlJw/9oACAEDAQk/AP55kf5/p1/I/wAA06/mOv5FNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkJshNkeXr1/Xr+n8A16/kev6dY/wBibfY9d1JAWwy+Xk69U0bn89uWmOXsfJPw91xMQfS6fF0+Lp8XT4unxdPi6fF0+Lp8XT4unxdPi6fF0+Lp8XT4unxdPi6fF0+Lp8XT4unxdPi6fF0+Lp8XT4unxdPi6fF0+Lp8XT4unxdPi6fF0+Lp8XT4v5WrjA5ex/H58o5bjZHPcb9Q1K0Aw5ajMfLyzgQsnd9jfp4P6RnpinY/fnscvbbzM299xVHEHpeiOKbkEcHDSh9Fvy3yPy0/vp5py3GyOB3HSyiRjy2P3HLUZ/S2PnHAhZO77GnTfQ/fnsY2jz8299xVHEHoLJFUyRVMkVTJFUyRVMkVTJFUMHF0YHmdROPNuOWfyTJFUyRVMkVTJFUyRVMkVTJFUyRVMkVWvvj4jluNijnuN+j/APX4PLITyOWzq18o4ALId6eQcCFk7vsafvziPHr+r8FZmPB8TO249qI4jxnPYblHBuw8viHAey4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCi4kCiOH2Puvhf2p4tm4/U8vXwHDuNisnDUeHN3fYVKOJPTMx3rVHEeDdpg35D/Ge48JwI3WTu+xvyOAC+FkmnT829qdkfcbjnqAT9cOXqgnad8036I4e/MfrA07j39EfYbDqJwITcDp7rMnQdyjmdVk3noJTZX0Rw9kQUMFp1LLAZ/crTYdhdabV5DFAn0TDCYYTDCYU3/EYn06noMz8luQD7Yr2WeGSzMLLFZEctAtCtVmSM/UnVagkdS9h+VoVrjn7go5flFOwIThginYFO0RxAz+l+WjhI/o6lrhn7nloc/rdbI/EjgdlkBK07rMGEcTuv8An7m3LVpx+W/7EIIIIIIIIIIIIIIIIIIIIIIIIIIIIeDTHE+w574j8jkD+rumnH7JpwCB/TKaQmnH7rXED+/XloRgtQcPOyb23NAhgAggggggggggggggggggggggggggggh4PYfc/jmcCMCPly2Pi3cafjno4Y/g+YMSVm6B0PXDE+55Zu7V7I+w2HkZt3FEfcbjlq0wfLGA3OyGe53PQ9Mc/YcvrSqOJPlHAhfC6CtCMFqMvJyb23NEMAOiHADIeu5whZM7V874m99xVHFrxjXxjElZugdcGA3OyGe53PXMm9tzQIYAdbGJKzdA64cB3Rz3OBxMJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0GidBonQaJ0Gn7TTruZ65p13TruZ/nOnXcz1zVcObJk2TJsmTZMmyZNkybJk2TJsmTZMmyZNkybJk2TJsmTZMmyZNkybJk2TJsmTZMmyZNkybJk2TJsmTZMmyZNkybJk2TJsmTZMmyZNkybJk2TJsmTZMmyZNkybJk2TJsmTZMmyZNkybJk2TJsmTZMm3ka9dyHXNeu69c0WQ65r/7x/9k=",
-                                    "alt-text": "ZWG"
-                                },
-                                "main-content": {
-                                    "title": "TelOne ZWG Bundles",
-                                    "description": "Zimbabwe Gold"
-                                },
-                                "on-click-action": {
-                                    "name": "navigate",
-                                    "next": {
-                                        "type": "screen",
-                                        "name": "TELONE_SCREEN"
-                                    },
-                                    "payload": {
-                                        "currency": "ZWG"
-                                    }
-                                }
-                            },
-                            {
-                                "id": "TELONE_USD_SCREEN",
-                                "start": {
-                                    "image": "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",
-                                    "alt-text": "USD"
-                                },
-                                "main-content": {
-                                    "title": "TelOne USD Bundles",
-                                    "description": "US Dollar"
-                                },
-                                "on-click-action": {
-                                    "name": "navigate",
-                                    "next": {
-                                        "type": "screen",
-                                        "name": "TELONE_USD_SCREEN"
-                                    },
-                                    "payload": {
-                                        "currency": "USD"
-                                    }
-                                }
-                            }
-                        ]
+                        "list-items": "${data.telone_options}"
                     }
                 ]
             }
@@ -1302,6 +1606,20 @@
                 "ecocash_number": {
                     "type": "string",
                     "__example__": "0771234567"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": ""
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    }
                 }
             },
             "layout": {
@@ -1319,6 +1637,7 @@
                         "type": "Form",
                         "name": "telone_form",
                         "init-values": {
+                            "payment": "ecocash",
                             "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
@@ -1359,12 +1678,39 @@
                                 "helper-text": "Enter package name or code"
                             },
                             {
-                                "type": "TextInput",
-                                "name": "ecocash_number",
-                                "label": "EcoCash Number",
-                                "input-type": "phone",
+                                "type": "RadioButtonsGroup",
+                                "name": "payment",
+                                "label": "Pay with",
                                 "required": true,
-                                "helper-text": "Payment will be deducted from this number"
+                                "data-source": "${data.payment_methods}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} != 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} == 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "email",
+                                        "label": "Email",
+                                        "input-type": "email",
+                                        "required": true,
+                                        "helper-text": "Enter your email for payment receipt"
+                                    }
+                                ]
                             }
                         ]
                     },
@@ -1379,6 +1725,9 @@
                                 "biller_account": "${form.account_number}",
                                 "phone_number": "${form.phone_number}",
                                 "package": "${form.package_select}",
+                                "payment": "${form.payment}",
+                                "email": "${form.email}",
+                                "ecocash_number": "${form.ecocash_number}",
                                 "currency": "ZWG",
                                 "payment_account": "${form.ecocash_number}"
                             }
@@ -1400,6 +1749,20 @@
                 "ecocash_number": {
                     "type": "string",
                     "__example__": "0771234567"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": "user@example.com"
+                },
+                "payment_methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "title": {"type": "string"}
+                        }
+                    }
                 }
             },
             "layout": {
@@ -1417,6 +1780,7 @@
                         "type": "Form",
                         "name": "telone_usd_form",
                         "init-values": {
+                            "payment": "ecocash-usd",
                             "ecocash_number": "${data.ecocash_number}"
                         },
                         "children": [
@@ -1457,12 +1821,39 @@
                                 "helper-text": "Enter package name or code"
                             },
                             {
-                                "type": "TextInput",
-                                "name": "ecocash_number",
-                                "label": "EcoCash Number",
-                                "input-type": "phone",
+                                "type": "RadioButtonsGroup",
+                                "name": "payment",
+                                "label": "Pay with",
                                 "required": true,
-                                "helper-text": "Payment will be deducted from this number"
+                                "data-source": "${data.payment_methods}"
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} != 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "ecocash_number",
+                                        "label": "EcoCash Number",
+                                        "input-type": "phone",
+                                        "required": true,
+                                        "helper-text": "Payment will be deducted from this number"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "If",
+                                "condition": "${form.payment} == 'stripe'",
+                                "then": [
+                                    {
+                                        "type": "TextInput",
+                                        "name": "email",
+                                        "label": "Email",
+                                        "input-type": "email",
+                                        "required": true,
+                                        "helper-text": "Enter your email for payment receipt"
+                                    }
+                                ]
                             }
                         ]
                     },
@@ -1477,6 +1868,9 @@
                                 "biller_account": "${form.account_number}",
                                 "phone_number": "${form.phone_number}",
                                 "package": "${form.package_select}",
+                                "payment": "${form.payment}",
+                                "email": "${form.email}",
+                                "ecocash_number": "${form.ecocash_number}",
                                 "currency": "USD",
                                 "payment_account": "${form.ecocash_number}"
                             }
