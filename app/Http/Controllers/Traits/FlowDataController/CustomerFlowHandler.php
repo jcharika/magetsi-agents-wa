@@ -19,6 +19,38 @@ trait CustomerFlowHandler
     abstract protected function meterService(): MeterValidationService;
     abstract protected function buildSuccessResponse(string $flowToken, array $extraParams = []): array;
 
+    private static array $screenServiceMap = [
+        'ZESA_SCREEN' => 'ZESA',
+        'AIRTIME_SCREEN' => 'AIRTIME',
+        'BUNDLES_SCREEN' => 'BUNDLES',
+        'TELONE_HOME_SCREEN' => 'TELONE',
+        'TELONE_SCREEN' => 'TELONE',
+        'TELONE_USD_SCREEN' => 'TELONE',
+        'BILLERS_SCREEN' => 'BILLERS',
+        'SUPPORT_SCREEN' => 'SUPPORT',
+    ];
+
+    private function isCustomerServiceEnabled(string $service): bool
+    {
+        $key = "WHATSAPP_CUSTOMER_SERVICE_{$service}";
+        return env($key, 'true') === 'true';
+    }
+
+    private function serviceScreenDisabledResponse(string $screen): ?array
+    {
+        $service = self::$screenServiceMap[$screen] ?? null;
+        if ($service && !$this->isCustomerServiceEnabled($service)) {
+            Log::debug("Flow: service '{$service}' disabled, redirecting to HOME_SCREEN");
+            return [
+                'screen' => 'HOME_SCREEN',
+                'data' => [
+                    'error_message' => "This service is currently unavailable.",
+                ],
+            ];
+        }
+        return null;
+    }
+
     protected function handleCustomerInit(string $screen, array $data, Customer $customer): array
     {
         $screen = str_replace('BUY_ZESA_SCREEN', 'ZESA_SCREEN', $screen);
@@ -35,6 +67,9 @@ trait CustomerFlowHandler
                 ],
             ];
         }
+
+        $disabled = $this->serviceScreenDisabledResponse($screen);
+        if ($disabled) return $disabled;
 
         if ($screen === 'ZESA_SCREEN') {
             $responseData = [

@@ -1,6 +1,6 @@
-# WhatsApp Flows Encryption — Setup Guide
+# WhatsApp Flows Encryption & Setup Guide
 
-This guide covers the end-to-end setup for WhatsApp Flows with encrypted data exchange.
+This guide covers the end-to-end setup for WhatsApp Flows with encrypted data exchange for both the agent bot and customer bot.
 
 ## Architecture Overview
 
@@ -95,13 +95,17 @@ WHATSAPP_SETTINGS_FLOW_ID=
 
 ## Step 4: Create Flows in Meta WhatsApp Manager  
 
-### Option A: Via the Flows API
+### Agent Flows (separate per product)
+
+The agent bot uses two separate flows — `buy_zesa.json` and `settings.json`.
+
+#### Option A: Via the Flows API
 
 ```bash
 # Create Buy ZESA flow
 curl -X POST \
-  "https://graph.facebook.com/v21.0/<WABA_ID>/flows" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  "https://graph.facebook.com/v21.0/<AGENT_WABA_ID>/flows" \
+  -H "Authorization: Bearer <AGENT_TOKEN>" \
   -F "name=Buy ZESA Tokens" \
   -F "categories=[\"OTHER\"]"
 ```
@@ -116,7 +120,7 @@ Then upload the flow JSON:
 ```bash
 curl -X POST \
   "https://graph.facebook.com/v21.0/<BUY_ZESA_FLOW_ID>/assets" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  -H "Authorization: Bearer <AGENT_TOKEN>" \
   -F "name=flow.json" \
   -F "file=@resources/flows/buy_zesa.json"
 ```
@@ -125,8 +129,8 @@ Repeat for Settings:
 
 ```bash
 curl -X POST \
-  "https://graph.facebook.com/v21.0/<WABA_ID>/flows" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  "https://graph.facebook.com/v21.0/<AGENT_WABA_ID>/flows" \
+  -H "Authorization: Bearer <AGENT_TOKEN>" \
   -F "name=Agent Settings" \
   -F "categories=[\"OTHER\"]"
 ```
@@ -134,12 +138,12 @@ curl -X POST \
 ```bash
 curl -X POST \
   "https://graph.facebook.com/v21.0/<SETTINGS_FLOW_ID>/assets" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  -H "Authorization: Bearer <AGENT_TOKEN>" \
   -F "name=flow.json" \
   -F "file=@resources/flows/settings.json"
 ```
 
-### Option B: Via WhatsApp Manager UI
+#### Option B: Via WhatsApp Manager UI
 
 1. Go to **WhatsApp Manager** → **Account tools** → **Flows**
 2. Click **Create Flow** → Name: "Buy ZESA Tokens" → Category: "Other"
@@ -147,45 +151,104 @@ curl -X POST \
 4. Note the Flow ID and set `WHATSAPP_BUY_ZESA_FLOW_ID` in `.env`
 5. Repeat for "Agent Settings" with `resources/flows/settings.json`
 
+### Customer Flow (single unified flow)
+
+The customer bot uses a **single multi-screen flow** (`customer.json`) containing all service screens in one JSON file. Create only one flow.
+
+#### Via WhatsApp Manager UI
+
+1. Go to **WhatsApp Manager** → **Account tools** → **Flows**
+2. Click **Create Flow** → Name: "Magetsi Customer" → Category: "Other"
+3. In the editor, switch to JSON mode and paste the contents of `resources/flows/customer.json`
+4. Note the returned Flow ID and set `WHATSAPP_CUSTOMER_FLOW_ID` in `.env`
+
+#### Via API
+
+```bash
+# Create the flow
+curl -X POST \
+  "https://graph.facebook.com/v21.0/<CUSTOMER_WABA_ID>/flows" \
+  -H "Authorization: Bearer <CUSTOMER_TOKEN>" \
+  -F "name=Magetsi Customer" \
+  -F "categories=[\"OTHER\"]"
+```
+
+Then upload the JSON:
+
+```bash
+curl -X POST \
+  "https://graph.facebook.com/v21.0/<CUSTOMER_FLOW_ID>/assets" \
+  -H "Authorization: Bearer <CUSTOMER_TOKEN>" \
+  -F "name=flow.json" \
+  -F "file=@resources/flows/customer.json"
+```
+
 ## Step 5: Configure Flow Endpoint
 
-For each flow, set the endpoint URL:
+Each flow must have its endpoint URL set. The agent flows point to `/api/flow-data`; the customer flow points to `/api/customer/flow-data`.
+
+### Agent Flows
 
 ```bash
 # Set endpoint URL for Buy ZESA
 curl -X POST \
   "https://graph.facebook.com/v21.0/<BUY_ZESA_FLOW_ID>" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  -H "Authorization: Bearer <AGENT_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"endpoint_uri": "https://your-domain.com/api/flow-data"}'
 
 # Set endpoint URL for Settings
 curl -X POST \
   "https://graph.facebook.com/v21.0/<SETTINGS_FLOW_ID>" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  -H "Authorization: Bearer <AGENT_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"endpoint_uri": "https://your-domain.com/api/flow-data"}'
 ```
 
-**The endpoint must be HTTPS with a valid SSL certificate.**
+### Customer Flow
+
+```bash
+curl -X POST \
+  "https://graph.facebook.com/v21.0/<CUSTOMER_FLOW_ID>" \
+  -H "Authorization: Bearer <CUSTOMER_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"endpoint_uri": "https://your-domain.com/api/customer/flow-data"}'
+```
+
+**All endpoints must be HTTPS with a valid SSL certificate.**
 
 ## Step 6: Publish Flows
 
 Flows must be published before they can be used in production:
 
 ```bash
-curl -X POST \
-  "https://graph.facebook.com/v21.0/<FLOW_ID>/publish" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>"
+# Publish agent flows
+curl -X POST "https://graph.facebook.com/v21.0/<BUY_ZESA_FLOW_ID>/publish" \
+  -H "Authorization: Bearer <AGENT_TOKEN>"
+curl -X POST "https://graph.facebook.com/v21.0/<SETTINGS_FLOW_ID>/publish" \
+  -H "Authorization: Bearer <AGENT_TOKEN>"
+
+# Publish customer flow
+curl -X POST "https://graph.facebook.com/v21.0/<CUSTOMER_FLOW_ID>/publish" \
+  -H "Authorization: Bearer <CUSTOMER_TOKEN>"
 ```
 
-## Step 7: Configure Webhook
+## Step 7: Configure Webhooks
 
-Set the webhook URL in Meta Business Manager:
+Each bot has its own webhook endpoint.
+
+### Agent Bot
 
 1. Go to **App Dashboard** → **WhatsApp** → **Configuration**
 2. Set **Webhook URL** to: `https://your-domain.com/api/webhook`
-3. Set **Verify token** to the value in your `.env` (`WHATSAPP_VERIFY_TOKEN`)
+3. Set **Verify token** to the value of `WHATSAPP_VERIFY_TOKEN` in `.env`
+4. Subscribe to: `messages`
+
+### Customer Bot
+
+1. Go to **App Dashboard** → **WhatsApp** → **Configuration** (for the customer's Meta App)
+2. Set **Webhook URL** to: `https://your-domain.com/api/customer/webhook`
+3. Set **Verify token** to the value of `WHATSAPP_CUSTOMER_VERIFY_TOKEN` in `.env`
 4. Subscribe to: `messages`
 
 ## Encryption Details
@@ -214,6 +277,8 @@ sha256=HMAC-SHA256(request_body, app_secret)
 ```
 
 If verification fails, the endpoint returns HTTP 432.
+
+**The agent bot and customer bot use separate app secrets.** The agent bot's flow-data endpoint (`/api/flow-data`) verifies with `META_APP_SECRET`. The customer bot's flow-data endpoint (`/api/customer/flow-data`) verifies with `WHATSAPP_CUSTOMER_APP_SECRET`. Each must match the app secret of the Meta App that owns the respective WABA.
 
 ### Error Handling
 
@@ -245,8 +310,17 @@ php artisan whatsapp:generate-keypair --force
 - Ensure `phpseclib/phpseclib` is installed (`composer require phpseclib/phpseclib:^3.0`)
 
 ### "Invalid signature" errors
-- Verify `META_APP_SECRET` matches your app's secret in Meta App Dashboard
+- Verify `META_APP_SECRET` matches your **agent** app's secret
+- For customer flow, verify `WHATSAPP_CUSTOMER_APP_SECRET` matches your **customer** app's secret
 - The app connected to the flow must match the app secret you're using
+
+### Customer flow data exchange returns errors
+- Ensure the customer flow endpoint is set to `/api/customer/flow-data` (not `/api/flow-data`)
+- Verify `WHATSAPP_CUSTOMER_APP_SECRET` is set and matches the customer Meta App
+- The customer WABA must be connected to a different Meta App than the agent WABA
+
+### Does the customer bot use a separate encryption key pair?
+Currently both bots share the same RSA key pair (generated by `php artisan whatsapp:generate-keypair`). The public key must be uploaded for both the agent WABA and the customer WABA. To use separate keys, generate a second keypair and upload it for the customer WABA, then set `WHATSAPP_FLOW_PRIVATE_KEY_PATH` to a different file before `CustomerFlowController` processes requests (requires code changes).
 
 ### Health check failures
 - Ensure the endpoint is publicly accessible via HTTPS

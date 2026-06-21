@@ -297,6 +297,9 @@ class SimulatorController extends Controller
             }
             $schema = json_decode(File::get($path), true);
 
+            // Filter NavigationList items based on enabled services
+            $schema = $this->filterCustomerFlowNavList($schema);
+
             $customer = Customer::firstOrCreate(
                 ['phone' => '263778888888'],
                 ['name' => 'Customer', 'wa_id' => '263778888888', 'blocked' => false]
@@ -345,6 +348,37 @@ class SimulatorController extends Controller
             'schema' => $schema,
             'initial_data' => $initialData,
         ]);
+    }
+
+    /**
+     * Filter customer flow NavigationList to only show enabled services.
+     */
+    protected function filterCustomerFlowNavList(array $schema): array
+    {
+        $screenServiceMap = [
+            'ZESA_SCREEN' => 'ZESA',
+            'AIRTIME_SCREEN' => 'AIRTIME',
+            'BUNDLES_SCREEN' => 'BUNDLES',
+            'TELONE_HOME_SCREEN' => 'TELONE',
+            'BILLERS_SCREEN' => 'BILLERS',
+            'SUPPORT_SCREEN' => 'SUPPORT',
+        ];
+
+        foreach ($schema['screens'] as &$screen) {
+            if (($screen['id'] ?? '') !== 'HOME_SCREEN') continue;
+            foreach ($screen['layout']['children'] as &$child) {
+                if (($child['type'] ?? '') !== 'NavigationList') continue;
+                $child['list-items'] = array_values(array_filter($child['list-items'] ?? [], function ($item) use ($screenServiceMap) {
+                    $itemId = $item['id'] ?? '';
+                    $service = $screenServiceMap[$itemId] ?? null;
+                    if (!$service) return true;
+                    $key = "WHATSAPP_CUSTOMER_SERVICE_{$service}";
+                    return env($key, 'true') === 'true';
+                }));
+            }
+        }
+
+        return $schema;
     }
 
     /**

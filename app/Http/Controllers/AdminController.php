@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Dompdf\Dompdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
 class AdminController extends Controller
@@ -101,14 +102,20 @@ class AdminController extends Controller
                 'WHATSAPP_CUSTOMER_TOKEN' => ['label' => 'Access Token', 'type' => 'password'],
                 'WHATSAPP_CUSTOMER_PHONE_NUMBER_ID' => ['label' => 'Phone Number ID', 'type' => 'text'],
                 'WHATSAPP_CUSTOMER_VERIFY_TOKEN' => ['label' => 'Verify Token', 'type' => 'text'],
+                'WHATSAPP_CUSTOMER_BUSINESS_ACCOUNT_ID' => ['label' => 'Business Account ID', 'type' => 'text'],
             ],
             'WhatsApp Flows' => [
-                'WHATSAPP_CUSTOMER_BUY_ZESA_FLOW_ID' => ['label' => 'Buy ZESA Flow ID', 'type' => 'text'],
-                'WHATSAPP_CUSTOMER_SETTINGS_FLOW_ID' => ['label' => 'Settings Flow ID', 'type' => 'text'],
-                'WHATSAPP_CUSTOMER_FLOW_MODE' => ['label' => 'Flow Mode', 'type' => 'select', 'options' => ['interactive', 'template']],
-                'WHATSAPP_CUSTOMER_BUY_ZESA_TEMPLATE' => ['label' => 'Buy ZESA Template', 'type' => 'text'],
-                'WHATSAPP_CUSTOMER_SETTINGS_TEMPLATE' => ['label' => 'Settings Template', 'type' => 'text'],
+                'WHATSAPP_CUSTOMER_FLOW_ID' => ['label' => 'Customer Flow ID', 'type' => 'text'],
+                'WHATSAPP_CUSTOMER_FLOW_MODE' => ['label' => 'Flow Mode', 'type' => 'select', 'options' => ['interactive']],
                 'WHATSAPP_CUSTOMER_APP_SECRET' => ['label' => 'Meta App Secret', 'type' => 'password'],
+            ],
+            'Services' => [
+                'WHATSAPP_CUSTOMER_SERVICE_ZESA' => ['label' => 'ZESA Tokens', 'type' => 'select', 'options' => ['true', 'false']],
+                'WHATSAPP_CUSTOMER_SERVICE_AIRTIME' => ['label' => 'Airtime', 'type' => 'select', 'options' => ['true', 'false']],
+                'WHATSAPP_CUSTOMER_SERVICE_BUNDLES' => ['label' => 'Data Bundles', 'type' => 'select', 'options' => ['true', 'false']],
+                'WHATSAPP_CUSTOMER_SERVICE_TELONE' => ['label' => 'TelOne WiFi', 'type' => 'select', 'options' => ['true', 'false']],
+                'WHATSAPP_CUSTOMER_SERVICE_BILLERS' => ['label' => 'Billers', 'type' => 'select', 'options' => ['true', 'false']],
+                'WHATSAPP_CUSTOMER_SERVICE_SUPPORT' => ['label' => 'Support', 'type' => 'select', 'options' => ['true', 'false']],
             ],
         ];
 
@@ -130,9 +137,11 @@ class AdminController extends Controller
             'MAGETSI_LEGACY_URL', 'MAGETSI_LEGACY_TOKEN', 'MAGETSI_LEGACY_EMAIL',
             'MAGETSI_LEGACY_POLL_ATTEMPTS', 'MAGETSI_LEGACY_POLL_INTERVAL',
             'WHATSAPP_CUSTOMER_TOKEN', 'WHATSAPP_CUSTOMER_PHONE_NUMBER_ID', 'WHATSAPP_CUSTOMER_VERIFY_TOKEN',
-            'WHATSAPP_CUSTOMER_BUY_ZESA_FLOW_ID', 'WHATSAPP_CUSTOMER_SETTINGS_FLOW_ID',
-            'WHATSAPP_CUSTOMER_FLOW_MODE', 'WHATSAPP_CUSTOMER_BUY_ZESA_TEMPLATE',
-            'WHATSAPP_CUSTOMER_SETTINGS_TEMPLATE', 'WHATSAPP_CUSTOMER_APP_SECRET',
+            'WHATSAPP_CUSTOMER_BUSINESS_ACCOUNT_ID',
+            'WHATSAPP_CUSTOMER_FLOW_ID',
+            'WHATSAPP_CUSTOMER_FLOW_MODE', 'WHATSAPP_CUSTOMER_APP_SECRET',
+            'WHATSAPP_CUSTOMER_SERVICE_ZESA', 'WHATSAPP_CUSTOMER_SERVICE_AIRTIME', 'WHATSAPP_CUSTOMER_SERVICE_BUNDLES',
+            'WHATSAPP_CUSTOMER_SERVICE_TELONE', 'WHATSAPP_CUSTOMER_SERVICE_BILLERS', 'WHATSAPP_CUSTOMER_SERVICE_SUPPORT',
         ];
 
         $lines = explode("\n", $content);
@@ -164,6 +173,8 @@ class AdminController extends Controller
         if (function_exists('opcache_reset')) {
             opcache_reset();
         }
+
+        Artisan::call('optimize');
 
         return redirect()->route('admin.config')
             ->with('status', $result ? 'Configuration saved successfully.' : 'Failed to save configuration.');

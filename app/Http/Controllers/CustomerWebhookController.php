@@ -76,7 +76,7 @@ class CustomerWebhookController extends Controller
             }
         }
 
-        $customer = Customer::firstOrCreate(
+        $customer = Customer::query()->firstOrCreate(
             ['wa_id' => $waId],
             ['name' => $contactName, 'phone' => $waId],
         );
@@ -98,7 +98,7 @@ class CustomerWebhookController extends Controller
      */
     protected function launchCustomerFlow(Customer $customer): void
     {
-        $flowId = config('whatsapp.customer_flows.customer');
+        $flowId = config('whatsapp.flows.customer');
 
         if (!$flowId) {
             $this->whatsapp->sendTextMessage(
@@ -110,25 +110,14 @@ class CustomerWebhookController extends Controller
 
         $flowToken = $customer->wa_id . ':customer:' . Str::uuid()->toString();
 
-        if (config('whatsapp.customer_flow_mode', 'interactive') === 'template') {
-            $this->whatsapp->sendFlowTemplate(
-                to: $customer->wa_id,
-                templateName: config('whatsapp.customer_flow_templates.customer', 'customer_flow'),
-                language: config('whatsapp.template_language', 'en'),
-                flowToken: $flowToken,
-                flowData: [],
-                bodyParams: [$customer->name ?? 'Valued Customer'],
-            );
-        } else {
-            $this->whatsapp->sendFlow(
-                $customer->wa_id,
-                $flowId,
-                $flowToken,
-                'HOME_SCREEN',
-                [],
-                'Shop Now',
-                '🛒 *Magetsi Shop* — Tap the button below to get started'
-            );
-        }
+        $this->whatsapp->sendFlow(
+            $customer->wa_id,
+            $flowId,
+            $flowToken,
+            'HOME_SCREEN',
+            [],
+            'Shop Now',
+            '🛒 *Magetsi Shop* — Tap the button below to get started'
+        );
     }
 }

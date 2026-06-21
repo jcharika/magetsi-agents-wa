@@ -86,33 +86,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | WhatsApp Flow IDs — Customer
-    |--------------------------------------------------------------------------
-    */
-
-    'customer_flows' => [
-        'customer' => env('WHATSAPP_CUSTOMER_FLOW_ID'),
-        'zesa' => env('WHATSAPP_CUSTOMER_ZESA_FLOW_ID'),
-        'airtime' => env('WHATSAPP_CUSTOMER_AIRTIME_FLOW_ID'),
-        'bundle' => env('WHATSAPP_CUSTOMER_BUNDLE_FLOW_ID'),
-        'telone' => env('WHATSAPP_CUSTOMER_TELONE_FLOW_ID'),
-        'biller' => env('WHATSAPP_CUSTOMER_BILLER_FLOW_ID'),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Flow Template Names
+    | Flow Template Names — Agent
     |--------------------------------------------------------------------------
     */
 
     'flow_templates' => [
         'buy_zesa' => env('WHATSAPP_BUY_ZESA_TEMPLATE', 'buy_zesa_flow'),
         'settings' => env('WHATSAPP_SETTINGS_TEMPLATE', 'settings_flow'),
-        'customer' => env('WHATSAPP_CUSTOMER_TEMPLATE', 'customer_flow'),
-    ],
-
-    'customer_flow_templates' => [
-        'customer' => env('WHATSAPP_CUSTOMER_TEMPLATE', 'customer_flow'),
     ],
 
     // Language code for templates (must match template creation language)
