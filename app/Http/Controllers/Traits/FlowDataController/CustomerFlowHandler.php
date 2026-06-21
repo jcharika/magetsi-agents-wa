@@ -64,6 +64,7 @@ trait CustomerFlowHandler
                     'customer_name' => '',
                     'customer_address' => '',
                     'meter_currency' => 'ZWG',
+                    'enabled_services' => json_decode(file_get_contents(resource_path('flows/services.json')), false, 512, JSON_THROW_ON_ERROR)
                 ],
             ];
         }

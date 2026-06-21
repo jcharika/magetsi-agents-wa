@@ -103,7 +103,7 @@ class CustomerWebhookController extends Controller
         if (!$flowId) {
             $this->whatsapp->sendTextMessage(
                 $customer->wa_id,
-                "🛒 *Magetsi Shop*\n\nWelcome! How can I help you today?\n\n• Buy ZESA tokens\n• Buy airtime\n• Buy data bundles\n• Pay TelOne\n• Pay billers"
+                "🛒 *Welcome to Magetsi*\n\nWelcome! How can I help you today?\n\n• Buy ZESA tokens\n• Buy airtime\n• Buy data bundles\n• Pay TelOne\n• Pay billers"
             );
             return;
         }
@@ -116,8 +116,12 @@ class CustomerWebhookController extends Controller
             $flowToken,
             'HOME_SCREEN',
             [],
-            'Shop Now',
-            '🛒 *Magetsi Shop* — Tap the button below to get started'
+            'Browse Services',
+            implode("\n", [
+                '🛒 *Welcome to Magetsi*',
+                'Magetsi is a leading digital payment platform in Zimbabwe providing an array of payment services through web and the Magetsi WhatsApp Chatbot.',
+                'Tap the button below to get started'
+            ]),
         );
     }
 }
