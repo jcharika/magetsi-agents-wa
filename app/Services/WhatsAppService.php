@@ -131,7 +131,6 @@ class WhatsAppService
         ];
 
         if ($screenId) {
-            // Navigate mode — inline data, no endpoint call
             $flowAction['parameters']['flow_action'] = 'navigate';
             $flowAction['parameters']['flow_action_payload'] = [
                 'screen' => $screenId,
@@ -140,9 +139,6 @@ class WhatsAppService
             if ($data) {
                 $flowAction['parameters']['flow_action_payload']['data'] = $data;
             }
-        } else {
-            // Data exchange mode — endpoint provides screen data
-            $flowAction['parameters']['flow_action'] = 'data_exchange';
         }
 
         return $this->sendMessage($to, [

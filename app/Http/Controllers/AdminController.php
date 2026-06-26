@@ -115,6 +115,9 @@ class AdminController extends Controller
                 'WHATSAPP_CUSTOMER_SERVICE_BUNDLES' => ['label' => 'Data Bundles', 'type' => 'select', 'options' => ['true', 'false']],
                 'WHATSAPP_CUSTOMER_SERVICE_TELONE' => ['label' => 'TelOne WiFi', 'type' => 'select', 'options' => ['true', 'false']],
                 'WHATSAPP_CUSTOMER_SERVICE_BILLERS' => ['label' => 'Billers', 'type' => 'select', 'options' => ['true', 'false']],
+                'WHATSAPP_CUSTOMER_SERVICE_GIFT_CARDS' => ['label' => 'Gift Cards', 'type' => 'select', 'options' => ['true', 'false']],
+                'WHATSAPP_CUSTOMER_SERVICE_CORPORATE_BILLS' => ['label' => 'Corporate Bills', 'type' => 'select', 'options' => ['true', 'false']],
+                'WHATSAPP_CUSTOMER_SERVICE_ZESA_CALCULATOR' => ['label' => 'ZESA Calculator', 'type' => 'select', 'options' => ['true', 'false']],
                 'WHATSAPP_CUSTOMER_SERVICE_SUPPORT' => ['label' => 'Support', 'type' => 'select', 'options' => ['true', 'false']],
             ],
         ];
@@ -141,7 +144,9 @@ class AdminController extends Controller
             'WHATSAPP_CUSTOMER_FLOW_ID',
             'WHATSAPP_CUSTOMER_FLOW_MODE', 'WHATSAPP_CUSTOMER_APP_SECRET',
             'WHATSAPP_CUSTOMER_SERVICE_ZESA', 'WHATSAPP_CUSTOMER_SERVICE_AIRTIME', 'WHATSAPP_CUSTOMER_SERVICE_BUNDLES',
-            'WHATSAPP_CUSTOMER_SERVICE_TELONE', 'WHATSAPP_CUSTOMER_SERVICE_BILLERS', 'WHATSAPP_CUSTOMER_SERVICE_SUPPORT',
+            'WHATSAPP_CUSTOMER_SERVICE_TELONE', 'WHATSAPP_CUSTOMER_SERVICE_BILLERS',
+            'WHATSAPP_CUSTOMER_SERVICE_GIFT_CARDS', 'WHATSAPP_CUSTOMER_SERVICE_CORPORATE_BILLS', 'WHATSAPP_CUSTOMER_SERVICE_ZESA_CALCULATOR',
+            'WHATSAPP_CUSTOMER_SERVICE_SUPPORT',
         ];
 
         $lines = explode("\n", $content);

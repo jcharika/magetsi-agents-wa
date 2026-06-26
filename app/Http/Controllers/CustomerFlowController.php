@@ -70,7 +70,9 @@ class CustomerFlowController extends Controller
                 'INIT' => $this->handleCustomerInit($screen, $data, $this->resolveCustomer($flowToken)),
                 'ping' => $this->handlePing(),
                 'navigate' => $this->handleCustomerNavigate($screen, $this->resolveCustomer($flowToken)),
-                'data_exchange' => $this->handleCustomerDataExchange($screen, $data, $this->resolveCustomer($flowToken), $flowToken),
+                'data_exchange' => $this->wrapDataExchangeResponse(
+                    $this->handleCustomerDataExchange($screen, $data, $this->resolveCustomer($flowToken), $flowToken)
+                ),
                 'BACK' => $this->handleCustomerBack($screen, $data, $flowToken),
                 default => $this->handleErrorNotification($action, $data),
             };
@@ -79,7 +81,17 @@ class CustomerFlowController extends Controller
                 throw new \RuntimeException('Invalid response payload');
             }
 
-            Log::debug('CustomerFlow: response payload', ['screen' => $responsePayload['screen'] ?? '?', 'data_keys' => array_keys($responsePayload['data'] ?? [])]);
+            $logScreen = $responsePayload['screen']
+                ?? (isset($responsePayload['response']['screen']) ? $responsePayload['response']['screen'] : null)
+                ?? '?';
+            if (is_array($logScreen)) {
+                $logScreen = $logScreen['type'] ?? 'completion';
+            }
+            $logDataKeys = array_keys(
+                $responsePayload['data']
+                    ?? (isset($responsePayload['response']['data']) ? $responsePayload['response']['data'] : [])
+            );
+            Log::debug('CustomerFlow: response payload', ['screen' => $logScreen, 'data_keys' => $logDataKeys]);
 
             $encryptedResponse = $this->encryption->encryptResponse($responsePayload, $aesKey, $iv);
 
@@ -136,7 +148,10 @@ class CustomerFlowController extends Controller
     {
         return [
             'screen' => 'HOME_SCREEN',
-            'data' => $data,
+            'data' => [
+                'enabled_services' => $this->buildServiceNavItems(),
+            ],
         ];
     }
+
 }

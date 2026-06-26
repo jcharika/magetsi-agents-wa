@@ -10,6 +10,7 @@ use App\Jobs\ProcessBillerTransaction;
 use App\Models\Customer;
 use App\Services\BackendManager;
 use App\Services\MeterValidationService;
+use App\Services\ZesaCalculatorService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -32,6 +33,9 @@ trait CustomerFlowHandler
         'TELONE_USD_SCREEN' => 'TELONE',
         'BILLERS_SCREEN' => 'BILLERS',
         'SUPPORT_SCREEN' => 'SUPPORT',
+        'GIFT_CARDS_SCREEN' => 'SUPPORT',
+        'CORPORATE_BILLS_SCREEN' => 'SUPPORT',
+        'ZESA_CALCULATOR_SCREEN' => 'ZESA_CALCULATOR',
     ];
 
     private function isCustomerServiceEnabled(string $service): bool
@@ -74,10 +78,6 @@ trait CustomerFlowHandler
                     'customer_address' => '',
                     'meter_currency' => $defaultMeterCurrency,
                     'ecocash_number' => '',
-                    'payment_methods' => [
-                        ['id' => 'ecocash', 'title' => "EcoCash $defaultMeterCurrency"],
-                        ['id' => 'stripe', 'title' => 'International Card'],
-                    ],
                 ],
             ],
             'AIRTIME' => [
@@ -122,6 +122,36 @@ trait CustomerFlowHandler
                     'ecocash_number' => '',
                 ],
             ],
+            'GIFT_CARDS' => [
+                'screen' => 'GIFT_CARDS_SCREEN',
+                'title' => 'Buy Gift Cards',
+                'desc' => 'Netflix, Roblox and more',
+                'file' => 'gift-cards.png',
+                'alt' => 'Gift Cards',
+                'payload' => [
+                    'trigger' => 'init_gift_cards',
+                ],
+            ],
+            'CORPORATE_BILLS' => [
+                'screen' => 'CORPORATE_BILLS_SCREEN',
+                'title' => 'Corporate Bills',
+                'desc' => 'Bulk bill payments',
+                'file' => 'corporate.png',
+                'alt' => 'Corporate Bill Payments',
+                'payload' => [
+                    'trigger' => 'init_corporate_bills',
+                ],
+            ],
+            'ZESA_CALCULATOR' => [
+                'screen' => 'ZESA_CALCULATOR_SCREEN',
+                'title' => 'ZESA Calculator',
+                'desc' => 'Estimate ZESA costs',
+                'file' => 'zesa.png',
+                'alt' => 'ZESA Calculator',
+                'payload' => [
+                    'trigger' => 'init_zesa_calculator',
+                ],
+            ],
             'SUPPORT' => [
                 'screen' => 'SUPPORT_SCREEN',
                 'title' => 'Contact Support',
@@ -152,10 +182,11 @@ trait CustomerFlowHandler
                 ],
                 'main-content' => [
                     'title' => $svc['title'],
-                    'description' => $svc['desc'],
+                    'metadata' => $svc['desc'],
                 ],
                 'on-click-action' => [
-                    'name' => 'data_exchange',
+                    'name' => 'navigate',
+                    'next' => ['type' => 'screen', 'name' => $svc['screen']],
                     'payload' => $svc['payload'],
                 ],
             ];
@@ -174,10 +205,6 @@ trait CustomerFlowHandler
             return [
                 'screen' => 'HOME_SCREEN',
                 'data' => [
-                    'meter_valid' => false,
-                    'customer_name' => '',
-                    'customer_address' => '',
-                    'meter_currency' => 'ZWG',
                     'enabled_services' => $navItems,
                 ],
             ];
@@ -215,7 +242,7 @@ trait CustomerFlowHandler
         }
 
         $airtimeSubScreens = ['ECONET_USD_SCREEN', 'ECONET_ZWG_SCREEN', 'NETONE_USD_SCREEN'];
-        if (in_array($screen, $airtimeSubScreens)) {
+        if (in_array($screen, $airtimeSubScreens, true)) {
             $currency = $data['currency'] ?? (str_contains($screen, 'USD') ? 'USD' : 'ZWG');
             $responseData = [
                 'ecocash_number' => $customer->ecocash_number ?? '',
@@ -323,10 +350,49 @@ trait CustomerFlowHandler
             ];
         }
 
+        if ($screen === 'GIFT_CARDS_SCREEN') {
+            Log::debug('Flow: GIFT_CARDS_SCREEN init data');
+            return [
+                'screen' => 'GIFT_CARDS_SCREEN',
+                'data' => [],
+            ];
+        }
+
+        if ($screen === 'CORPORATE_BILLS_SCREEN') {
+            Log::debug('Flow: CORPORATE_BILLS_SCREEN init data');
+            return [
+                'screen' => 'CORPORATE_BILLS_SCREEN',
+                'data' => [],
+            ];
+        }
+
+        if ($screen === 'ZESA_CALCULATOR_SCREEN') {
+            Log::debug('Flow: ZESA_CALCULATOR_SCREEN init data');
+            return [
+                'screen' => 'ZESA_CALCULATOR_SCREEN',
+                'data' => [
+                    'meter_valid' => false,
+                    'customer_name' => '',
+                    'customer_address' => '',
+                    'calculation_modes' => [
+                        ['id' => 'units', 'title' => 'Units (kWh)'],
+                        ['id' => 'amount', 'title' => 'Amount (ZWG)'],
+                    ],
+                    'calc_total_cost' => '',
+                    'calc_energy_charge' => '',
+                    'calc_re_levy' => '',
+                    'calc_units' => '',
+                    'calc_tariff_band' => '',
+                ],
+            ];
+        }
+
         Log::warning('Flow: Unknown screen in init', ['screen' => $screen]);
         return [
             'screen' => 'HOME_SCREEN',
-            'data' => [],
+            'data' => [
+                'enabled_services' => $this->buildServiceNavItems(),
+            ],
         ];
     }
 
@@ -343,6 +409,9 @@ trait CustomerFlowHandler
             $triggerToScreen = [
                 'nav_click' => null, // no default, check item data
                 'init_zesa' => 'ZESA_SCREEN',
+                'init_zesa_calculator' => 'ZESA_CALCULATOR_SCREEN',
+                'init_gift_cards' => 'GIFT_CARDS_SCREEN',
+                'init_corporate_bills' => 'CORPORATE_BILLS_SCREEN',
                 'init_airtime' => 'AIRTIME_SCREEN',
                 'init_bundles' => 'BUNDLES_SCREEN',
                 'init_telone' => 'TELONE_HOME_SCREEN',
@@ -360,12 +429,17 @@ trait CustomerFlowHandler
                     'TELONE_HOME_SCREEN' => 'TELONE_HOME_SCREEN',
                     'BILLERS_SCREEN' => 'BILLERS_SCREEN',
                     'SUPPORT_SCREEN' => 'SUPPORT_SCREEN',
+                    'GIFT_CARDS_SCREEN' => 'GIFT_CARDS_SCREEN',
+                    'CORPORATE_BILLS_SCREEN' => 'CORPORATE_BILLS_SCREEN',
+                    'ZESA_CALCULATOR_SCREEN' => 'ZESA_CALCULATOR_SCREEN',
                     default => null,
                 };
             }
             if ($targetScreen) {
                 return $this->handleCustomerInit($targetScreen, $data, $customer);
             }
+
+            return $this->handleCustomerInit('HOME_SCREEN', $data, $customer);
         }
 
         $airtimeSubScreens = ['AIRTIME_SCREEN', 'ECONET_USD_SCREEN', 'ECONET_ZWG_SCREEN', 'NETONE_USD_SCREEN'];
@@ -388,6 +462,10 @@ trait CustomerFlowHandler
 
         if ($screen === 'BILLERS_SCREEN') {
             return $this->handleBillerDataExchange($customer, $data, $flowToken);
+        }
+
+        if ($screen === 'ZESA_CALCULATOR_SCREEN') {
+            return $this->handleZesaCalculatorDataExchange($customer, $data, $flowToken);
         }
 
         return $this->buildSuccessResponse($flowToken);
@@ -824,6 +902,122 @@ trait CustomerFlowHandler
                 ],
             ],
         ];
+    }
+
+    protected function handleZesaCalculatorDataExchange(Customer $customer, array $data, string $flowToken): array
+    {
+        $trigger = $data['trigger'] ?? null;
+
+        if ($trigger === 'verify_meter_number') {
+            return $this->verifyCalculatorMeter($data['meter_number'] ?? '');
+        }
+
+        if ($trigger === 'calculate_zesa') {
+            return $this->calculateZesa($data);
+        }
+
+        return [
+            'screen' => 'ZESA_CALCULATOR_SCREEN',
+            'data' => ['error_message' => 'Invalid action.'],
+        ];
+    }
+
+    protected function verifyCalculatorMeter(string $meterNumber): array
+    {
+        $result = Cache::remember("validation/$meterNumber", 360, function () use ($meterNumber) {
+            return $this->meterService()->validate($meterNumber);
+        });
+
+        return [
+            'screen' => 'ZESA_CALCULATOR_SCREEN',
+            'data' => [
+                'meter_valid' => $result['valid'] ?? false,
+                'customer_name' => $result['name'] ?? '',
+                'customer_address' => $result['address'] ?? '',
+                'error_message' => ($result['valid'] ?? false) ? '' : 'Invalid meter number.',
+            ],
+        ];
+    }
+
+    protected function calculateZesa(array $data): array
+    {
+        $meterNumber = $data['meter_number'] ?? '';
+        $mode = $data['mode'] ?? 'units';
+        $units = (float)($data['units'] ?? 0);
+        $amount = (float)($data['amount'] ?? 0);
+
+        if (!$meterNumber) {
+            return [
+                'screen' => 'ZESA_CALCULATOR_SCREEN',
+                'data' => ['error_message' => 'Please enter a meter number.'],
+            ];
+        }
+
+        if ($mode === 'units' && $units <= 0) {
+            return [
+                'screen' => 'ZESA_CALCULATOR_SCREEN',
+                'data' => ['error_message' => 'Please enter a valid number of units.'],
+            ];
+        }
+
+        if ($mode === 'amount' && $amount <= 0) {
+            return [
+                'screen' => 'ZESA_CALCULATOR_SCREEN',
+                'data' => ['error_message' => 'Please enter a valid amount.'],
+            ];
+        }
+
+        try {
+            $calculator = app(ZesaCalculatorService::class);
+
+            if ($mode === 'units') {
+                $result = $calculator->estimateByUnits($meterNumber, $units);
+
+                if (!$result['success']) {
+                    return [
+                        'screen' => 'ZESA_CALCULATOR_SCREEN',
+                        'data' => ['error_message' => 'Failed to calculate. Please try again.'],
+                    ];
+                }
+
+                return [
+                    'screen' => 'ZESA_CALCULATOR_SCREEN',
+                    'data' => [
+                        'calc_total_cost' => $result['total_cost'],
+                        'calc_energy_charge' => $result['energy_charge'],
+                        'calc_re_levy' => $result['re_levy'],
+                        'calc_units' => $result['expected_units'],
+                        'calc_tariff_band' => $result['tariff_band'],
+                    ],
+                ];
+            }
+
+            if ($mode === 'amount') {
+                $result = $calculator->estimateByAmount($meterNumber, $amount);
+
+                return [
+                    'screen' => 'ZESA_CALCULATOR_SCREEN',
+                    'data' => [
+                        'calc_total_cost' => $result['total_zwg'],
+                        'calc_energy_charge' => $result['energy_charge'],
+                        'calc_re_levy' => $result['re_levy'],
+                        'calc_units' => $result['units'],
+                        'calc_tariff_band' => $result['tariff_band'] ?? '',
+                    ],
+                ];
+            }
+
+            return [
+                'screen' => 'ZESA_CALCULATOR_SCREEN',
+                'data' => ['error_message' => 'Invalid calculation mode.'],
+            ];
+        } catch (\Exception $e) {
+            Log::error('ZESA Calculator error: ' . $e->getMessage());
+            return [
+                'screen' => 'ZESA_CALCULATOR_SCREEN',
+                'data' => ['error_message' => 'Calculation failed. Please try again later.'],
+            ];
+        }
     }
 
     private function buildAirtimeOptions(): array

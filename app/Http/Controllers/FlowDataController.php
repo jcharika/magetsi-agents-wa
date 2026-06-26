@@ -75,7 +75,9 @@ class FlowDataController extends Controller
                 'ping' => $this->handlePing(),
                 'INIT' => $this->handleInit($screen, $data, $flowToken),
                 'BACK' => $this->handleBack($screen, $data, $flowToken),
-                'data_exchange' => $this->handleDataExchange($screen, $data, $flowToken),
+                'data_exchange' => $this->wrapDataExchangeResponse(
+                    $this->handleDataExchange($screen, $data, $flowToken)
+                ),
                 default => $this->handleErrorNotification($action, $data),
             };
 

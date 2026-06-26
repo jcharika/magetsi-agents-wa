@@ -114,8 +114,8 @@ class CustomerWebhookController extends Controller
             $customer->wa_id,
             $flowId,
             $flowToken,
-            'HOME_SCREEN',
-            [],
+            null,
+            null,
             'Browse Services',
             implode("\n", [
                 '🛒 *Welcome to Magetsi*',

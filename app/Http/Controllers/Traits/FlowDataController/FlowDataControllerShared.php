@@ -25,6 +25,41 @@ trait FlowDataControllerShared
         ];
     }
 
+    /**
+     * Wrap a data_exchange handler result for the WhatsApp Flows endpoint.
+     *
+     * WhatsApp Flows expects data_exchange responses in the format:
+     *   {"response": {"screen": "...", "data": {...}}}
+     *
+     * Handlers internally return ["screen" => ..., "data" => ...]; this helper
+     * normalises the payload and ensures "data" is always encoded as a JSON object.
+     * Completion responses (success/failure screens or extension messages) are
+     * returned unchanged.
+     */
+    protected function wrapDataExchangeResponse(array $payload): array
+    {
+        $isCompletion = (isset($payload['screen']) && is_array($payload['screen']) && isset($payload['screen']['type']))
+            || isset($payload['data']['extension_message_response']);
+
+        if ($isCompletion) {
+            return $payload;
+        }
+
+        $data = $payload['data'] ?? [];
+
+        if (is_array($data) && empty($data)) {
+            $data = (object)[];
+        }
+
+        $response = ['data' => $data];
+
+        if (isset($payload['screen']) && is_string($payload['screen'])) {
+            $response['screen'] = $payload['screen'];
+        }
+
+        return ['response' => $response];
+    }
+
     protected function parseFlowToken(string $flowToken): array
     {
         $parts = explode(':', $flowToken, 3);

@@ -1,0 +1,189 @@
+{
+    "routing_model": {
+        "HOME_SCREEN": [
+            "SUPPORT_SCREEN"
+        ]
+    },
+    "data_api_version": "3.0",
+    "version": "7.3",
+    "screens": [
+        {
+            "id": "HOME_SCREEN",
+            "terminal": false,
+            "title": "Magetsi - Pay Your Bills Online",
+            "data": {
+                "enabled_services": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "main-content": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "metadata": {
+                                        "type": "string"
+                                    },
+                                    "on-click-action": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "on-click-action": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "__example__": [
+                        {
+                            "id": "ZESA_SCREEN",
+                            "main-content": {
+                                "title": "Buy ZESA Token",
+                                "metadata": "ZESA is the most popular electricity meter in Zimbabwe"
+                            },
+                            "on-click-action": {
+                                "name": "navigate",
+                                "payload": {
+                                    "screen": "ZESA_SCREEN"
+                                }
+                            }
+                        },
+                        {
+                            "id": "AIRTIME_SCREEN",
+                            "main-content": {
+                                "title": "Buy Airtime",
+                                "description": "Top up your phone",
+                                "metadata": "EcoCash ZWG is the most popular payment method in Zimbabwe"
+                            },
+                            "on-click-action": {
+                                "name": "navigate",
+                                "payload": {
+                                    "screen": "AIRTIME_SCREEN"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "NavigationList",
+                        "name": "main_nav",
+                        "label": "Magetsi Services",
+                        "list-items": [
+                            {
+                                "id": "ZESA_SCREEN",
+                                "main-content": {
+                                    "title": "Buy ZESA Token",
+                                    "metadata": "ZESA is the most popular electricity meter in Zimbabwe"
+                                },
+                                "on-click-action": {
+                                    "name": "navigate",
+                                    "payload": {
+                                        "screen": "ZESA_SCREEN"
+                                    }
+                                }
+                            },
+                            {
+                                "id": "AIRTIME_SCREEN",
+                                "main-content": {
+                                    "title": "Buy Airtime",
+                                    "description": "Top up your phone",
+                                    "metadata": "EcoCash ZWG is the most popular payment method in Zimbabwe"
+                                },
+                                "on-click-action": {
+                                    "name": "navigate",
+                                    "payload": {
+                                        "screen": "AIRTIME_SCREEN"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "SUPPORT_SCREEN",
+            "terminal": true,
+            "title": "Contact Support",
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Image",
+                        "src": "%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201804.32%201039.59%22%3E%3Cdefs%3E%3Cstyle%3E.cls-1%7Bfill%3A%23f05127%3B%7D.cls-2%7Bfill%3A%23252c65%3B%7D%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cpolygon%20class%3D%22cls-1%22%20points%3D%22231.57%2073.88%20500.48%2074.88%20327.05%20441.94%20418%20455.99%2028.6%201011.65%20162.76%20579.14%2055.64%20562.59%20231.57%2073.88%22%2F%3E%3Cpath%20class%3D%22cls-2%22%20d%3D%22M1513.2%2C53.15c-137.64%2C0-268.2%2C59.77-351.33%2C153.94-34-96-125-153.94-246.33-153.94-110.48%2C0-213.47%2C52.52-284.22%2C135.83l34.89-114.1h-118L390.79%2C408.07%2C493%2C423.91%2C81.39%2C1011.23H379.94L546.05%2C467.89c22.15-72.44%2C92.54-125%2C170.41-125s115%2C56.14%2C90.69%2C135.83L643.8%2C1013H977.05l166.66-545.15c22.15-72.44%2C92.54-125%2C170.42-125s115%2C56.14%2C90.68%2C135.83L1241.47%2C1013h333.24l182.73-597.67C1822.22%2C203.47%2C1708.8%2C53.15%2C1513.2%2C53.15Z%22%2F%3E%3C%2Fsvg%3E",
+                        "width": 120,
+                        "height": 70
+                    },
+                    {
+                        "type": "TextHeading",
+                        "text": "Contact Support"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Our customer support team is here to help you with any questions or issues you may have."
+                    },
+                    {
+                        "type": "TextSubheading",
+                        "text": "WhatsApp Support"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Chat with us on WhatsApp for immediate assistance."
+                    },
+                    {
+                        "type": "EmbeddedLink",
+                        "text": "Open WhatsApp Chat",
+                        "on-click-action": {
+                            "name": "open_url",
+                            "url": "https://wa.me/263782004005"
+                        }
+                    },
+                    {
+                        "type": "TextCaption",
+                        "text": "Available Monday - Friday, 8am - 5pm"
+                    },
+                    {
+                        "type": "TextSubheading",
+                        "text": "Email Support"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "For non-urgent inquiries, email us at support@magetsi.co.zw"
+                    },
+                    {
+                        "type": "TextSubheading",
+                        "text": "Phone Support"
+                    },
+                    {
+                        "type": "TextBody",
+                        "text": "Call us at: +263 782 004 005"
+                    },
+                    {
+                        "type": "Footer",
+                        "label": "Close",
+                        "on-click-action": {
+                            "name":"complete"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

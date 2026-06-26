@@ -48,8 +48,8 @@ trait CustomerConversationHandler
                 $agent->wa_id,
                 $flowId,
                 $flowToken,
-                'HOME_SCREEN',
-                $flowData,
+                null,
+                null,
                 $ctaText,
                 $message ?? '🛒 Magetsi Shop — tap to continue'
             );
