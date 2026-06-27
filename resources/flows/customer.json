@@ -368,34 +368,54 @@
                             "start": {
                                 "type": "object",
                                 "properties": {
-                                    "image": {"type": "string"},
-                                    "alt-text": {"type": "string"}
+                                    "image": {
+                                        "type": "string"
+                                    },
+                                    "alt-text": {
+                                        "type": "string"
+                                    }
                                 }
                             },
                             "main-content": {
                                 "type": "object",
                                 "properties": {
-                                    "title": {"type": "string"},
-                                    "description": {"type": "string"}
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
                                 }
                             },
                             "on-click-action": {
                                 "type": "object",
                                 "properties": {
-                                    "name": {"type": "string"},
+                                    "name": {
+                                        "type": "string"
+                                    },
                                     "next": {
                                         "type": "object",
                                         "properties": {
-                                            "type": {"type": "string"},
-                                            "name": {"type": "string"}
+                                            "type": {
+                                                "type": "string"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            }
                                         }
                                     },
                                     "payload": {
                                         "type": "object",
                                         "properties": {
-                                            "ecocash_number": {"type": "string"},
-                                            "network": {"type": "string"},
-                                            "currency": {"type": "string"}
+                                            "ecocash_number": {
+                                                "type": "string"
+                                            },
+                                            "network": {
+                                                "type": "string"
+                                            },
+                                            "currency": {
+                                                "type": "string"
+                                            }
                                         }
                                     }
                                 }
@@ -405,11 +425,20 @@
                     "__example__": [
                         {
                             "id": "ECONET_USD_SCREEN",
-                            "start": {"image": "", "alt-text": "ECONET USD"},
-                            "main-content": {"title": "Econet USD Airtime", "description": "US Dollar"},
+                            "start": {
+                                "image": "",
+                                "alt-text": "ECONET USD"
+                            },
+                            "main-content": {
+                                "title": "Econet USD Airtime",
+                                "description": "US Dollar"
+                            },
                             "on-click-action": {
                                 "name": "navigate",
-                                "next": {"type": "screen", "name": "ECONET_USD_SCREEN"},
+                                "next": {
+                                    "type": "screen",
+                                    "name": "ECONET_USD_SCREEN"
+                                },
                                 "payload": {
                                     "ecocash_number": "${data.ecocash_number}",
                                     "network": "econet",
@@ -459,8 +488,12 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
@@ -602,8 +635,12 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
@@ -744,12 +781,19 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
-                        {"id": "AIRTIME", "title": "Airtime"}
+                        {
+                            "id": "AIRTIME",
+                            "title": "Airtime"
+                        }
                     ]
                 },
                 "amount_options": {
@@ -757,17 +801,39 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
-                        {"id": "0.1", "title": "$0.1"},
-                        {"id": "0.5", "title": "$0.5"},
-                        {"id": "1", "title": "$1"},
-                        {"id": "5", "title": "$5"},
-                        {"id": "10", "title": "$10"},
-                        {"id": "20", "title": "$20"}
+                        {
+                            "id": "0.1",
+                            "title": "$0.1"
+                        },
+                        {
+                            "id": "0.5",
+                            "title": "$0.5"
+                        },
+                        {
+                            "id": "1",
+                            "title": "$1"
+                        },
+                        {
+                            "id": "5",
+                            "title": "$5"
+                        },
+                        {
+                            "id": "10",
+                            "title": "$10"
+                        },
+                        {
+                            "id": "20",
+                            "title": "$20"
+                        }
                     ]
                 },
                 "payment_methods": {
@@ -775,8 +841,12 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
@@ -925,8 +995,12 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
@@ -1068,8 +1142,12 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
@@ -1210,8 +1288,12 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
@@ -1352,12 +1434,19 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
-                        {"id": "AIRTIME", "title": "Airtime"}
+                        {
+                            "id": "AIRTIME",
+                            "title": "Airtime"
+                        }
                     ]
                 },
                 "amount_options": {
@@ -1365,17 +1454,39 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
-                        {"id": "0.1", "title": "$0.1"},
-                        {"id": "0.5", "title": "$0.5"},
-                        {"id": "1", "title": "$1"},
-                        {"id": "5", "title": "$5"},
-                        {"id": "10", "title": "$10"},
-                        {"id": "20", "title": "$20"}
+                        {
+                            "id": "0.1",
+                            "title": "$0.1"
+                        },
+                        {
+                            "id": "0.5",
+                            "title": "$0.5"
+                        },
+                        {
+                            "id": "1",
+                            "title": "$1"
+                        },
+                        {
+                            "id": "5",
+                            "title": "$5"
+                        },
+                        {
+                            "id": "10",
+                            "title": "$10"
+                        },
+                        {
+                            "id": "20",
+                            "title": "$20"
+                        }
                     ]
                 },
                 "payment_methods": {
@@ -1383,8 +1494,12 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
@@ -1526,34 +1641,54 @@
                             "start": {
                                 "type": "object",
                                 "properties": {
-                                    "image": {"type": "string"},
-                                    "alt-text": {"type": "string"}
+                                    "image": {
+                                        "type": "string"
+                                    },
+                                    "alt-text": {
+                                        "type": "string"
+                                    }
                                 }
                             },
                             "main-content": {
                                 "type": "object",
                                 "properties": {
-                                    "title": {"type": "string"},
-                                    "description": {"type": "string"}
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
                                 }
                             },
                             "on-click-action": {
                                 "type": "object",
                                 "properties": {
-                                    "name": {"type": "string"},
+                                    "name": {
+                                        "type": "string"
+                                    },
                                     "next": {
                                         "type": "object",
                                         "properties": {
-                                            "type": {"type": "string"},
-                                            "name": {"type": "string"}
+                                            "type": {
+                                                "type": "string"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            }
                                         }
                                     },
                                     "payload": {
                                         "type": "object",
                                         "properties": {
-                                            "ecocash_number": {"type": "string"},
-                                            "network": {"type": "string"},
-                                            "currency": {"type": "string"}
+                                            "ecocash_number": {
+                                                "type": "string"
+                                            },
+                                            "network": {
+                                                "type": "string"
+                                            },
+                                            "currency": {
+                                                "type": "string"
+                                            }
                                         }
                                     }
                                 }
@@ -1563,11 +1698,20 @@
                     "__example__": [
                         {
                             "id": "ECONET_USD_BUNDLE_SCREEN",
-                            "start": {"image": "", "alt-text": "ECONET USD"},
-                            "main-content": {"title": "Econet USD Bundles", "description": "US Dollar"},
+                            "start": {
+                                "image": "",
+                                "alt-text": "ECONET USD"
+                            },
+                            "main-content": {
+                                "title": "Econet USD Bundles",
+                                "description": "US Dollar"
+                            },
                             "on-click-action": {
                                 "name": "navigate",
-                                "next": {"type": "screen", "name": "ECONET_USD_BUNDLE_SCREEN"},
+                                "next": {
+                                    "type": "screen",
+                                    "name": "ECONET_USD_BUNDLE_SCREEN"
+                                },
                                 "payload": {
                                     "ecocash_number": "${data.ecocash_number}",
                                     "network": "econet",
@@ -1577,11 +1721,20 @@
                         },
                         {
                             "id": "ECONET_ZWG_BUNDLE_SCREEN",
-                            "start": {"image": "", "alt-text": "ECONET ZWG"},
-                            "main-content": {"title": "Econet ZWG Bundles", "description": "Zimbabwe Gold"},
+                            "start": {
+                                "image": "",
+                                "alt-text": "ECONET ZWG"
+                            },
+                            "main-content": {
+                                "title": "Econet ZWG Bundles",
+                                "description": "Zimbabwe Gold"
+                            },
                             "on-click-action": {
                                 "name": "navigate",
-                                "next": {"type": "screen", "name": "ECONET_ZWG_BUNDLE_SCREEN"},
+                                "next": {
+                                    "type": "screen",
+                                    "name": "ECONET_ZWG_BUNDLE_SCREEN"
+                                },
                                 "payload": {
                                     "ecocash_number": "${data.ecocash_number}",
                                     "network": "econet",
@@ -1591,11 +1744,20 @@
                         },
                         {
                             "id": "ECONET_SMARTSUITE_BUNDLE_SCREEN",
-                            "start": {"image": "", "alt-text": "SMARTSUITE"},
-                            "main-content": {"title": "Econet SmartSuite Bundles", "description": "SmartSuite"},
+                            "start": {
+                                "image": "",
+                                "alt-text": "SMARTSUITE"
+                            },
+                            "main-content": {
+                                "title": "Econet SmartSuite Bundles",
+                                "description": "SmartSuite"
+                            },
                             "on-click-action": {
                                 "name": "navigate",
-                                "next": {"type": "screen", "name": "ECONET_SMARTSUITE_BUNDLE_SCREEN"},
+                                "next": {
+                                    "type": "screen",
+                                    "name": "ECONET_SMARTSUITE_BUNDLE_SCREEN"
+                                },
                                 "payload": {
                                     "ecocash_number": "${data.ecocash_number}",
                                     "network": "econet",
@@ -1605,11 +1767,20 @@
                         },
                         {
                             "id": "NETONE_USD_BUNDLE_SCREEN",
-                            "start": {"image": "", "alt-text": "ECONET USD"},
-                            "main-content": {"title": "Econet USD Bundles", "description": "US Dollar"},
+                            "start": {
+                                "image": "",
+                                "alt-text": "ECONET USD"
+                            },
+                            "main-content": {
+                                "title": "Econet USD Bundles",
+                                "description": "US Dollar"
+                            },
                             "on-click-action": {
                                 "name": "navigate",
-                                "next": {"type": "screen", "name": "ECONET_USD_BUNDLE_SCREEN"},
+                                "next": {
+                                    "type": "screen",
+                                    "name": "ECONET_USD_BUNDLE_SCREEN"
+                                },
                                 "payload": {
                                     "ecocash_number": "${data.ecocash_number}",
                                     "network": "econet",
@@ -1648,32 +1819,48 @@
                             "start": {
                                 "type": "object",
                                 "properties": {
-                                    "image": {"type": "string"},
-                                    "alt-text": {"type": "string"}
+                                    "image": {
+                                        "type": "string"
+                                    },
+                                    "alt-text": {
+                                        "type": "string"
+                                    }
                                 }
                             },
                             "main-content": {
                                 "type": "object",
                                 "properties": {
-                                    "title": {"type": "string"},
-                                    "description": {"type": "string"}
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
                                 }
                             },
                             "on-click-action": {
                                 "type": "object",
                                 "properties": {
-                                    "name": {"type": "string"},
+                                    "name": {
+                                        "type": "string"
+                                    },
                                     "next": {
                                         "type": "object",
                                         "properties": {
-                                            "type": {"type": "string"},
-                                            "name": {"type": "string"}
+                                            "type": {
+                                                "type": "string"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            }
                                         }
                                     },
                                     "payload": {
                                         "type": "object",
                                         "properties": {
-                                            "currency": {"type": "string"}
+                                            "currency": {
+                                                "type": "string"
+                                            }
                                         }
                                     }
                                 }
@@ -1683,12 +1870,23 @@
                     "__example__": [
                         {
                             "id": "TELONE_RECHARGE_USD",
-                            "start": {"image": "", "alt-text": "TelOne USD"},
-                            "main-content": {"title": "TelOne Recharge USD", "description": "US Dollar"},
+                            "start": {
+                                "image": "",
+                                "alt-text": "TelOne USD"
+                            },
+                            "main-content": {
+                                "title": "TelOne Recharge USD",
+                                "description": "US Dollar"
+                            },
                             "on-click-action": {
                                 "name": "navigate",
-                                "next": {"type": "screen", "name": "TELONE_USD_SCREEN"},
-                                "payload": {"currency": "USD"}
+                                "next": {
+                                    "type": "screen",
+                                    "name": "TELONE_USD_SCREEN"
+                                },
+                                "payload": {
+                                    "currency": "USD"
+                                }
                             }
                         }
                     ]
@@ -1729,8 +1927,12 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
@@ -1882,8 +2084,12 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
@@ -2174,7 +2380,7 @@
                     },
                     {
                         "type": "EmbeddedLink",
-                        "text": "Visit magetsi.co.zw/gift-cards to purchase",
+                        "text": "Visit magetsi.co.zw to purchase",
                         "on-click-action": {
                             "name": "open_url",
                             "url": "https://magetsi.co.zw/gift-cards"
@@ -2199,7 +2405,7 @@
                     },
                     {
                         "type": "EmbeddedLink",
-                        "text": "Visit magetsi.co.zw/business to transact",
+                        "text": "Visit magetsi.co.zw to transact",
                         "on-click-action": {
                             "name": "open_url",
                             "url": "https://magetsi.co.zw/business"
@@ -2229,13 +2435,23 @@
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {"type": "string"},
-                            "title": {"type": "string"}
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
                         }
                     },
                     "__example__": [
-                        {"id": "units", "title": "Units (kWh)"},
-                        {"id": "amount", "title": "Amount (ZWG)"}
+                        {
+                            "id": "units",
+                            "title": "Units (kWh)"
+                        },
+                        {
+                            "id": "amount",
+                            "title": "Amount (ZWG)"
+                        }
                     ]
                 },
                 "calc_total_cost": {
@@ -2304,53 +2520,53 @@
                                     {
                                         "type": "TextBody",
                                         "text": "${data.customer_address}"
+                                    },
+                                    {
+                                        "type": "RadioButtonsGroup",
+                                        "name": "mode",
+                                        "label": "Calculate by",
+                                        "required": true,
+                                        "data-source": "${data.calculation_modes}"
+                                    },
+                                    {
+                                        "type": "If",
+                                        "condition": "${form.mode} == 'units'",
+                                        "then": [
+                                            {
+                                                "type": "TextInput",
+                                                "name": "units",
+                                                "label": "Units (kWh)",
+                                                "input-type": "number",
+                                                "required": true,
+                                                "helper-text": "Enter kWh units to purchase"
+                                            }
+                                        ],
+                                        "else": [
+                                            {
+                                                "type": "TextInput",
+                                                "name": "amount",
+                                                "label": "Amount (ZWG)",
+                                                "input-type": "number",
+                                                "required": true,
+                                                "helper-text": "Enter amount in ZWG to spend"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Footer",
+                                        "label": "Calculate",
+                                        "on-click-action": {
+                                            "name": "data_exchange",
+                                            "payload": {
+                                                "trigger": "calculate_zesa",
+                                                "meter_number": "${form.meter_number}",
+                                                "mode": "${form.mode}",
+                                                "units": "${form.units}",
+                                                "amount": "${form.amount}"
+                                            }
+                                        }
                                     }
                                 ]
-                            },
-                            {
-                                "type": "RadioButtonsGroup",
-                                "name": "mode",
-                                "label": "Calculate by",
-                                "required": true,
-                                "data-source": "${data.calculation_modes}"
-                            },
-                            {
-                                "type": "If",
-                                "condition": "${form.mode} == 'units'",
-                                "then": [
-                                    {
-                                        "type": "TextInput",
-                                        "name": "units",
-                                        "label": "Units (kWh)",
-                                        "input-type": "number",
-                                        "required": true,
-                                        "helper-text": "Enter kWh units to purchase"
-                                    }
-                                ],
-                                "else": [
-                                    {
-                                        "type": "TextInput",
-                                        "name": "amount",
-                                        "label": "Amount (ZWG)",
-                                        "input-type": "number",
-                                        "required": true,
-                                        "helper-text": "Enter amount in ZWG to spend"
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "EmbeddedLink",
-                                "text": "Calculate",
-                                "on-click-action": {
-                                    "name": "data_exchange",
-                                    "payload": {
-                                        "trigger": "calculate_zesa",
-                                        "meter_number": "${form.meter_number}",
-                                        "mode": "${form.mode}",
-                                        "units": "${form.units}",
-                                        "amount": "${form.amount}"
-                                    }
-                                }
                             }
                         ]
                     },

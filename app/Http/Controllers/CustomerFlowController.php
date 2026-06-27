@@ -5,9 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Traits\FlowDataController\CustomerFlowHandler;
 use App\Http\Controllers\Traits\FlowDataController\FlowDataControllerShared;
 use App\Models\Customer;
-use App\Services\BackendManager;
+use App\Services\CustomerFlow\CustomerFlowDispatcher;
 use App\Services\FlowEncryptionService;
-use App\Services\MeterValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -20,8 +19,7 @@ class CustomerFlowController extends Controller
     protected FlowEncryptionService $encryption;
 
     public function __construct(
-        protected MeterValidationService $meterService,
-        protected BackendManager $backend,
+        protected CustomerFlowDispatcher $customerFlowDispatcher,
     )
     {
         $this->encryption = FlowEncryptionService::forCustomer();
@@ -103,6 +101,11 @@ class CustomerFlowController extends Controller
         }
     }
 
+    protected function customerFlowDispatcher(): CustomerFlowDispatcher
+    {
+        return $this->customerFlowDispatcher;
+    }
+
     protected function handlePing(): array
     {
         return ['data' => ['status' => 'active']];
@@ -113,16 +116,6 @@ class CustomerFlowController extends Controller
         return $this->resolveCustomerFromToken(
             $this->parseFlowToken($flowToken)
         );
-    }
-
-    protected function backend(): BackendManager
-    {
-        return $this->backend;
-    }
-
-    protected function meterService(): MeterValidationService
-    {
-        return $this->meterService;
     }
 
     protected function handleCustomerNavigate(string $screen, Customer $customer): array
